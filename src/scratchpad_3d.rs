@@ -3,7 +3,7 @@ use bevy::prelude::*;
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
     app.add_systems(Startup, setup_molecule)
-        .add_systems(PostStartup, (setup_atoms, setup_bonds));
+        .add_systems(PostStartup, setup_atoms);
 }
 
 #[derive(Component, Default)]
@@ -115,28 +115,96 @@ fn setup_atoms(
         &mut molecule,
         Vec3::ZERO,
     );
+
+    let length = 1.0;
+
+    // tetrahedral angle
+    // note that this is used for the angles with the center of the molecule as vertex,
+    // the angle between the molecules forming a circle has to be 120° (360° / 3 molecules)
+    let bond_angle = 109.5_f32.to_radians();
+
+    // first atom up on y axis
+    let p1 = Vec3::new(0.0, length, 0.0);
+
+    let rot_x = Quat::from_rotation_x(bond_angle);
+    let rot_y_angle = 120.0_f32.to_radians();
+    let rot_y = Quat::from_rotation_y(rot_y_angle);
+
+    // second atom "back-right"
+    let p2 = (rot_y * rot_x * Vec3::Y) * length;
+
+    // third atom "back-left"
+    let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
+    let p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
+
+    // fourth atom "front"
+    let p4 = rot_x * Vec3::Y * length;
+
     add_atom(
         &mut commands,
         &mut meshes,
         &mut materials,
         &mut molecule,
-        Vec3::new(1.0, -1.0, 1.0),
+        p1,
     );
-}
 
-fn setup_bonds(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut molecule: Query<Entity, With<MyMolecule>>,
-) {
+    add_atom(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut molecule,
+        p2,
+    );
+
+    add_atom(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut molecule,
+        p3,
+    );
+
+    add_atom(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut molecule,
+        p4,
+    );
+
+    // add bonds connecting atoms
+
     add_bond(
         &mut commands,
         &mut meshes,
         &mut materials,
         &mut molecule,
         Vec3::ZERO,
-        Vec3::new(1.0, -1.0, 1.0),
+        p1,
+    );
+    add_bond(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut molecule,
+        Vec3::ZERO,
+        p2,
+    );
+    add_bond(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut molecule,
+        Vec3::ZERO,
+        p3,
+    );
+    add_bond(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut molecule,
+        Vec3::ZERO,
+        p4,
     );
 }
 
