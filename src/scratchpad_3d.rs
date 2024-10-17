@@ -3,7 +3,7 @@ use bevy::prelude::*;
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
     app.add_systems(Startup, setup_molecule)
-        .add_systems(PostStartup, (setup_atom, setup_local_axes));
+        .add_systems(PostStartup, (setup_atoms, setup_local_axes));
 }
 
 #[derive(Component, Default)]
@@ -13,10 +13,10 @@ pub struct MySphere;
 pub struct MyMolecule;
 
 fn add_atom(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut molecule: Query<Entity, With<MyMolecule>>,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    molecule: &mut Query<Entity, With<MyMolecule>>,
     position: Vec3,
 ) {
     if let Ok(molecule) = molecule.get_single_mut() {
@@ -70,13 +70,26 @@ fn create_local_axis(
     }
 }
 
-fn setup_atom(
-    commands: Commands,
-    meshes: ResMut<Assets<Mesh>>,
-    materials: ResMut<Assets<StandardMaterial>>,
-    molecule: Query<Entity, With<MyMolecule>>,
+fn setup_atoms(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut molecule: Query<Entity, With<MyMolecule>>,
 ) {
-    add_atom(commands, meshes, materials, molecule, Vec3::ZERO);
+    add_atom(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut molecule,
+        Vec3::ZERO,
+    );
+    add_atom(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut molecule,
+        Vec3::new(1.0, -1.0, 1.0),
+    );
 }
 
 fn setup_local_axes(
