@@ -124,7 +124,6 @@ fn setup_atoms(
     );
 }
 
-/// A marker component for our shapes so we can query them separately from other things
 fn setup_bonds(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
