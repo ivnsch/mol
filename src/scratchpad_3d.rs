@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    color::palettes::css::{BLACK, DARK_GRAY, WHITE},
+    prelude::*,
+};
 
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
@@ -21,7 +24,10 @@ fn add_bond(
     atom2_loc: Vec3,
 ) {
     if let Ok(molecule) = molecule.get_single_mut() {
-        let material: Handle<StandardMaterial> = materials.add(StandardMaterial { ..default() });
+        let material: Handle<StandardMaterial> = materials.add(StandardMaterial {
+            base_color: DARK_GRAY.into(),
+            ..default()
+        });
 
         let bond = create_bond(meshes, &material, atom1_loc, atom2_loc);
 
@@ -66,10 +72,13 @@ fn add_atom(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     molecule: &mut Query<Entity, With<MyMolecule>>,
     position: Vec3,
+    color: Color,
 ) {
     if let Ok(molecule) = molecule.get_single_mut() {
-        let debug_material: Handle<StandardMaterial> =
-            materials.add(StandardMaterial { ..default() });
+        let debug_material: Handle<StandardMaterial> = materials.add(StandardMaterial {
+            base_color: color,
+            ..default()
+        });
 
         let mesh = meshes.add(Sphere { ..default() }.mesh().uv(32, 18));
 
@@ -114,6 +123,7 @@ fn setup_atoms(
         &mut materials,
         &mut molecule,
         Vec3::ZERO,
+        BLACK.into(),
     );
 
     let length = 1.0;
@@ -146,6 +156,7 @@ fn setup_atoms(
         &mut materials,
         &mut molecule,
         p1,
+        WHITE.into(),
     );
 
     add_atom(
@@ -154,6 +165,7 @@ fn setup_atoms(
         &mut materials,
         &mut molecule,
         p2,
+        WHITE.into(),
     );
 
     add_atom(
@@ -162,6 +174,7 @@ fn setup_atoms(
         &mut materials,
         &mut molecule,
         p3,
+        WHITE.into(),
     );
 
     add_atom(
@@ -170,6 +183,7 @@ fn setup_atoms(
         &mut materials,
         &mut molecule,
         p4,
+        WHITE.into(),
     );
 
     // add bonds connecting atoms
