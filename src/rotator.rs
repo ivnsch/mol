@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 use std::fmt;
 
-use crate::scratchpad_3d::MySphere;
+use crate::scratchpad_3d::MyMolecule;
 
 pub struct RotatorPlugin;
 
 impl Plugin for RotatorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (run_sphere_rotator, run_rotator));
+        app.add_systems(Update, (run_molecule_rotator, run_rotator));
     }
 }
 
@@ -58,9 +58,9 @@ Rotator Controls:
     }
 }
 
-fn run_sphere_rotator(
+fn run_molecule_rotator(
     key_input: Res<ButtonInput<KeyCode>>,
-    mut sphere: Query<&mut Transform, With<MySphere>>,
+    mut sphere: Query<&mut Transform, With<MyMolecule>>,
     mut rotator: Query<&mut Rotator, With<Camera>>,
 ) {
     if let Ok(mut transform) = sphere.get_single_mut() {
