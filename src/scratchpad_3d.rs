@@ -25,11 +25,14 @@ fn add_atom(
 
         let mesh = meshes.add(Sphere { ..default() }.mesh().uv(32, 18));
 
+        let scale = 0.4;
+
         let sphere = (
             PbrBundle {
                 mesh,
                 material: debug_material.clone(),
-                transform: Transform::from_translation(position),
+                transform: Transform::from_translation(position)
+                    .with_scale(Vec3::new(scale, scale, scale)),
                 ..default()
             },
             Shape,
