@@ -117,14 +117,23 @@ fn setup_atoms(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut molecule: Query<Entity, With<MyMolecule>>,
 ) {
-    add_atom(
+    add_atoms(
         &mut commands,
         &mut meshes,
         &mut materials,
         &mut molecule,
         Vec3::ZERO,
-        BLACK.into(),
     );
+}
+
+fn add_atoms(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    molecule: &mut Query<Entity, With<MyMolecule>>,
+    center: Vec3,
+) {
+    add_atom(commands, meshes, materials, molecule, center, BLACK.into());
 
     let length = 1.0;
 
@@ -134,92 +143,41 @@ fn setup_atoms(
     let bond_angle = 109.5_f32.to_radians();
 
     // first atom up on y axis
-    let p1 = Vec3::new(0.0, length, 0.0);
+    let mut p1 = Vec3::new(0.0, length, 0.0);
 
     let rot_x = Quat::from_rotation_x(bond_angle);
     let rot_y_angle = 120.0_f32.to_radians();
     let rot_y = Quat::from_rotation_y(rot_y_angle);
 
     // second atom "back-right"
-    let p2 = (rot_y * rot_x * Vec3::Y) * length;
+    let mut p2 = (rot_y * rot_x * Vec3::Y) * length;
 
     // third atom "back-left"
     let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
-    let p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
+    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
 
     // fourth atom "front"
-    let p4 = rot_x * Vec3::Y * length;
+    let mut p4 = rot_x * Vec3::Y * length;
 
-    add_atom(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        &mut molecule,
-        p1,
-        WHITE.into(),
-    );
+    p1 = p1 + center;
+    p2 = p2 + center;
+    p3 = p3 + center;
+    p4 = p4 + center;
 
-    add_atom(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        &mut molecule,
-        p2,
-        WHITE.into(),
-    );
+    add_atom(commands, meshes, materials, molecule, p1, WHITE.into());
 
-    add_atom(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        &mut molecule,
-        p3,
-        WHITE.into(),
-    );
+    add_atom(commands, meshes, materials, molecule, p2, WHITE.into());
 
-    add_atom(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        &mut molecule,
-        p4,
-        WHITE.into(),
-    );
+    add_atom(commands, meshes, materials, molecule, p3, WHITE.into());
+
+    add_atom(commands, meshes, materials, molecule, p4, WHITE.into());
 
     // add bonds connecting atoms
 
-    add_bond(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        &mut molecule,
-        Vec3::ZERO,
-        p1,
-    );
-    add_bond(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        &mut molecule,
-        Vec3::ZERO,
-        p2,
-    );
-    add_bond(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        &mut molecule,
-        Vec3::ZERO,
-        p3,
-    );
-    add_bond(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        &mut molecule,
-        Vec3::ZERO,
-        p4,
-    );
+    add_bond(commands, meshes, materials, molecule, center, p1);
+    add_bond(commands, meshes, materials, molecule, center, p2);
+    add_bond(commands, meshes, materials, molecule, center, p3);
+    add_bond(commands, meshes, materials, molecule, center, p4);
 }
 
 #[derive(Component)]
