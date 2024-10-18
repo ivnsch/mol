@@ -117,7 +117,7 @@ fn setup_atoms(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut molecule: Query<Entity, With<MyMolecule>>,
 ) {
-    add_atoms(
+    add_carbon(
         &mut commands,
         &mut meshes,
         &mut materials,
@@ -126,13 +126,14 @@ fn setup_atoms(
     );
 }
 
-fn add_atoms(
+fn add_carbon(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     molecule: &mut Query<Entity, With<MyMolecule>>,
     center: Vec3,
 ) {
+    // center carbon
     add_atom(commands, meshes, materials, molecule, center, BLACK.into());
 
     let length = 1.0;
@@ -142,21 +143,21 @@ fn add_atoms(
     // the angle between the molecules forming a circle has to be 120° (360° / 3 molecules)
     let bond_angle = 109.5_f32.to_radians();
 
-    // first atom up on y axis
+    // first h up on y axis
     let mut p1 = Vec3::new(0.0, length, 0.0);
 
     let rot_x = Quat::from_rotation_x(bond_angle);
     let rot_y_angle = 120.0_f32.to_radians();
     let rot_y = Quat::from_rotation_y(rot_y_angle);
 
-    // second atom "back-right"
+    // second h "back-right"
     let mut p2 = (rot_y * rot_x * Vec3::Y) * length;
 
-    // third atom "back-left"
+    // third h "back-left"
     let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
     let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
 
-    // fourth atom "front"
+    // fourth h "front"
     let mut p4 = rot_x * Vec3::Y * length;
 
     p1 = p1 + center;
