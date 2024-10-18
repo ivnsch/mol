@@ -6,6 +6,8 @@ use bevy::{
     prelude::*,
 };
 
+use crate::rotator::Rotator;
+
 #[derive(Event, Default, Debug)]
 pub struct UiInputsEvent {
     pub carbon_count: String,
@@ -26,9 +28,17 @@ pub struct CarbonCountPlusMarker;
 #[derive(Component, Default)]
 pub struct CarbonCountMinusMarker;
 
+#[derive(Component, Default, QueryData)]
+pub struct RotXLabelMarker;
+#[derive(Component, Default)]
+pub struct RotYLabelMarker;
+#[derive(Component, Default)]
+pub struct RotZLabelMarker;
+
 pub fn add_ui(app: &mut App) {
     app.add_event::<UiInputsEvent>()
         .add_event::<PlusMinusInputEvent>()
+        .add_event::<RotationInputEvent>()
         .insert_resource(PlusMinusInput::Plus)
         .add_systems(
             Update,
@@ -38,6 +48,9 @@ pub fn add_ui(app: &mut App) {
                 plus_button_handler,
                 minus_button_handler,
                 listen_carbon_count_ui_inputs,
+                rot_x_button_handler,
+                rot_y_button_handler,
+                rot_z_button_handler,
             ),
         )
         .add_systems(Startup, setup_ui);
@@ -70,9 +83,32 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
         add_carbons_value_row(&mut commands, &font, root_id, init_carbon_count);
     commands.spawn(init_carbon_count);
 
+    add_spacer(&mut commands, root_id);
+
+    add_header(&mut commands, root_id, &font, "Rotate");
+    add_rotate_row(&mut commands, &font, root_id);
+
     commands.insert_resource(UiInputEntities {
         carbon_count: carbon_count_value_label,
     });
+}
+
+/// adds a generic vertical spacer element with fixed height
+fn add_spacer(commands: &mut Commands, root_id: Entity) {
+    let spacer_id = commands
+        .spawn(NodeBundle {
+            style: Style {
+                position_type: PositionType::Relative,
+                top: Val::Px(0.0),
+                right: Val::Px(0.0),
+                width: Val::Percent(100.0),
+                height: Val::Px(20.0),
+                ..default()
+            },
+            ..default()
+        })
+        .id();
+    commands.entity(root_id).push_children(&[spacer_id]);
 }
 
 /// adds component to set carbon count
@@ -110,6 +146,27 @@ pub fn add_carbons_value_row(
     add_square_button(commands, row_id, font, "+", CarbonCountPlusMarker);
 
     carbon_count_value_entity
+}
+
+pub fn add_rotate_row(commands: &mut Commands, font: &Handle<Font>, root_id: Entity) {
+    let row = NodeBundle {
+        style: Style {
+            position_type: PositionType::Relative,
+            flex_direction: FlexDirection::Row,
+            top: Val::Px(0.0),
+            width: Val::Percent(100.0),
+            height: Val::Px(30.0),
+            ..default()
+        },
+        ..default()
+    };
+
+    let row_id = commands.spawn(row).id();
+    commands.entity(root_id).push_children(&[row_id]);
+
+    add_square_button(commands, row_id, font, "x", RotXLabelMarker);
+    add_square_button(commands, row_id, font, "y", RotYLabelMarker);
+    add_square_button(commands, row_id, font, "z", RotZLabelMarker);
 }
 
 /// generates a column header styled text
@@ -410,4 +467,75 @@ pub enum PlusMinusInput {
 #[derive(Event, Default, Debug)]
 pub struct PlusMinusInputEvent {
     pub plus_minus: PlusMinusInput,
+}
+
+#[derive(Debug, Default, Clone, Copy, Resource)]
+pub enum RotationInput {
+    #[default]
+    X,
+    Y,
+    Z,
+}
+
+/// event for when user clicked a rotation button on UI
+#[derive(Event, Default, Debug)]
+pub struct RotationInputEvent {
+    pub rot: RotationInput,
+}
+
+#[allow(clippy::type_complexity)]
+pub fn rot_x_button_handler(
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<RotXLabelMarker>)>,
+    mut query: Query<&mut Transform, With<Camera>>,
+) {
+    let q: Result<Mut<'_, Transform>, bevy::ecs::query::QuerySingleError> = query.get_single_mut();
+    if let Ok(mut transform) = q {
+        for interaction in &mut interaction_query {
+            if interaction == &Interaction::Pressed {
+                let rotation = 0.03;
+                transform.rotate_around(
+                    Vec3::ZERO,
+                    Quat::from_euler(EulerRot::XYZ, rotation, 0.0, 0.0),
+                );
+            }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn rot_y_button_handler(
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<RotYLabelMarker>)>,
+    mut query: Query<&mut Transform, With<Camera>>,
+) {
+    let q: Result<Mut<'_, Transform>, bevy::ecs::query::QuerySingleError> = query.get_single_mut();
+    if let Ok(mut transform) = q {
+        for interaction in &mut interaction_query {
+            if interaction == &Interaction::Pressed {
+                let rotation = 0.03;
+                transform.rotate_around(
+                    Vec3::ZERO,
+                    Quat::from_euler(EulerRot::XYZ, 0.0, rotation, 0.0),
+                );
+            }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn rot_z_button_handler(
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<RotZLabelMarker>)>,
+    mut query: Query<&mut Transform, With<Camera>>,
+) {
+    let q: Result<Mut<'_, Transform>, bevy::ecs::query::QuerySingleError> = query.get_single_mut();
+    if let Ok(mut transform) = q {
+        for interaction in &mut interaction_query {
+            if interaction == &Interaction::Pressed {
+                let rotation = 0.03;
+                transform.rotate_around(
+                    Vec3::ZERO,
+                    Quat::from_euler(EulerRot::XYZ, 0.0, 0.0, rotation),
+                );
+            }
+        }
+    }
 }
