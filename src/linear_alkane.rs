@@ -17,6 +17,10 @@ pub struct MySphere;
 #[derive(Component, Default)]
 pub struct MyMolecule;
 
+const ATOM_SCALE: f32 = 0.4;
+const BOND_LENGTH: f32 = 0.2;
+const BOND_DIAM: f32 = 0.01;
+
 fn add_bond(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -44,8 +48,6 @@ fn create_bond(
 ) -> PbrBundle {
     let cuboid: Handle<Mesh> = meshes.add(Cuboid::default());
 
-    let line_thickness = 0.01;
-
     let midpoint = (p1 + p2) / 2.0;
 
     let distance = p1.distance(p2);
@@ -58,7 +60,7 @@ fn create_bond(
         transform: Transform {
             translation: midpoint,
             rotation,
-            scale: Vec3::new(line_thickness, distance, line_thickness),
+            scale: Vec3::new(BOND_DIAM, distance, BOND_DIAM),
         },
         ..default()
     }
@@ -79,14 +81,12 @@ fn add_atom(
 
     let mesh = meshes.add(Sphere { ..default() }.mesh().uv(32, 18));
 
-    let scale = 0.4;
-
     let sphere = (
         PbrBundle {
             mesh,
             material: debug_material.clone(),
             transform: Transform::from_translation(position)
-                .with_scale(Vec3::new(scale, scale, scale)),
+                .with_scale(Vec3::new(ATOM_SCALE, ATOM_SCALE, ATOM_SCALE)),
             ..default()
         },
         Shape,
@@ -300,8 +300,6 @@ fn add_outer_carbon(
     // center carbon
     add_atom(commands, meshes, materials, parent, center, BLACK.into());
 
-    let length = 1.0;
-
     // tetrahedral angle
     // note that this is used for the angles with the center of the molecule as vertex,
     // the angle between the molecules forming a circle has to be 120° (360° / 3 molecules)
@@ -312,17 +310,17 @@ fn add_outer_carbon(
     let rot_y = Quat::from_rotation_y(rot_y_angle);
 
     // first h up on y axis
-    let mut p1 = Vec3::new(0.0, length, 0.0);
+    let mut p1 = Vec3::new(0.0, BOND_LENGTH, 0.0);
 
     // second h "back-right"
-    let mut p2 = (rot_y * rot_x * Vec3::Y) * length;
+    let mut p2 = (rot_y * rot_x * Vec3::Y) * BOND_LENGTH;
 
     // third h "back-left"
     let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
-    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
+    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * BOND_LENGTH;
 
     // fourth h "front"
-    let mut p4 = rot_x * Vec3::Y * length;
+    let mut p4 = rot_x * Vec3::Y * BOND_LENGTH;
 
     p1 += center;
     p2 += center;
@@ -358,8 +356,6 @@ fn add_inner_carbon(
     // center carbon
     add_atom(commands, meshes, materials, parent, center, BLACK.into());
 
-    let length = 1.0;
-
     // tetrahedral angle
     // note that this is used for the angles with the center of the molecule as vertex,
     // the angle between the molecules forming a circle has to be 120° (360° / 3 molecules)
@@ -370,11 +366,11 @@ fn add_inner_carbon(
     let rot_y = Quat::from_rotation_y(rot_y_angle);
 
     // first h
-    let mut p2 = (rot_y * rot_x * Vec3::Y) * length;
+    let mut p2 = (rot_y * rot_x * Vec3::Y) * BOND_LENGTH;
 
     // second h
     let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
-    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
+    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * BOND_LENGTH;
 
     p2 += center;
     p3 += center;
