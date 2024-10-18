@@ -311,17 +311,13 @@ fn add_outer_carbon(
     let rot_y_angle = 120.0_f32.to_radians();
     let rot_y = Quat::from_rotation_y(rot_y_angle);
 
-    // first h up on y axis
     let mut p1 = Vec3::new(0.0, BOND_LENGTH, 0.0);
 
-    // second h "back-right"
     let mut p2 = (rot_y * rot_x * Vec3::Y) * BOND_LENGTH;
 
-    // third h "back-left"
     let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
     let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * BOND_LENGTH;
 
-    // fourth h "front"
     let mut p4 = rot_x * Vec3::Y * BOND_LENGTH;
 
     p1 += center;
