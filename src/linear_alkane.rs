@@ -5,10 +5,12 @@ use bevy::{
     prelude::*,
 };
 
+use crate::ui::{despawn_all_entities, CarbonCount};
+
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
     app.add_systems(Startup, setup_molecule)
-        .add_systems(PostStartup, setup_linear_alkane);
+        .add_systems(Update, setup_linear_alkane);
 }
 
 #[derive(Component, Default)]
@@ -16,6 +18,12 @@ pub struct MySphere;
 
 #[derive(Component, Default)]
 pub struct MyMolecule;
+
+#[derive(Component, Default)]
+pub struct MyParent;
+
+#[derive(Component, Default)]
+pub struct MyInterParentBond;
 
 const ATOM_SCALE: f32 = 0.4;
 const BOND_LENGTH: f32 = 1.0;
@@ -28,6 +36,7 @@ fn add_bond(
     molecule: Entity,
     atom1_loc: Vec3,
     atom2_loc: Vec3,
+    is_inter_parent: bool,
 ) {
     let material: Handle<StandardMaterial> = materials.add(StandardMaterial {
         base_color: DARK_GRAY.into(),
@@ -36,7 +45,12 @@ fn add_bond(
 
     let bond = create_bond(meshes, &material, atom1_loc, atom2_loc);
 
-    let entity = commands.spawn(bond).id();
+    let entity = if is_inter_parent {
+        commands.spawn((bond, MyInterParentBond))
+    } else {
+        commands.spawn(bond)
+    }
+    .id();
     commands.entity(molecule).push_children(&[entity]);
 }
 
@@ -94,7 +108,6 @@ fn add_atom(
 
     let entity = commands.spawn(sphere).id();
     commands.entity(molecule).push_children(&[entity]);
-    println!("pushed the shere to molecule..");
 }
 
 fn setup_molecule(mut commands: Commands) {
@@ -110,15 +123,24 @@ fn setup_linear_alkane(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut molecule: Query<Entity, With<MyMolecule>>,
+    mut parents: Query<Entity, With<MyParent>>,
+    mut inter_parent_bonds: Query<Entity, With<MyInterParentBond>>,
+    carbon_count_query: Query<&CarbonCount>,
 ) {
-    add_linear_alkane(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        &mut molecule,
-        Vec3::ZERO,
-        5,
-    )
+    if let Ok(carbon_count) = carbon_count_query.get_single() {
+        despawn_all_entities(&mut commands, &mut parents);
+        despawn_all_entities(&mut commands, &mut inter_parent_bonds);
+
+        add_linear_alkane(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            &mut molecule,
+            Vec3::ZERO,
+            carbon_count.0,
+        )
+    } else {
+    }
 }
 
 fn add_linear_alkane(
@@ -155,6 +177,7 @@ fn add_linear_alkane(
                     },
                     ..default()
                 },
+                MyParent,
             ))
             .id();
         commands.entity(molecule).push_children(&[first_parent]);
@@ -194,6 +217,7 @@ fn add_linear_alkane(
                     },
                     ..default()
                 },
+                MyParent,
             ))
             .id();
 
@@ -215,6 +239,7 @@ fn add_linear_alkane(
                 molecule,
                 last_parent_trans,
                 first_parent_trans,
+                true,
             );
             return;
         }
@@ -234,6 +259,7 @@ fn add_linear_alkane(
                     molecule,
                     first_parent_trans,
                     inner_parent_trans,
+                    true,
                 );
             }
             let inner_parent = commands
@@ -251,6 +277,7 @@ fn add_linear_alkane(
                         },
                         ..default()
                     },
+                    MyParent,
                 ))
                 .id();
             add_inner_carbon(
@@ -269,6 +296,7 @@ fn add_linear_alkane(
                     molecule,
                     inner_parent_trans,
                     previous_trans,
+                    true,
                 );
             }
 
@@ -283,6 +311,7 @@ fn add_linear_alkane(
                 molecule,
                 last_parent_trans,
                 previous_trans,
+                true,
             );
         }
     } else {
@@ -333,14 +362,14 @@ fn add_outer_carbon(
 
     // add bonds connecting atoms
 
-    add_bond(commands, meshes, materials, parent, center, p2);
-    add_bond(commands, meshes, materials, parent, center, p3);
-    add_bond(commands, meshes, materials, parent, center, p4);
+    add_bond(commands, meshes, materials, parent, center, p2, false);
+    add_bond(commands, meshes, materials, parent, center, p3, false);
+    add_bond(commands, meshes, materials, parent, center, p4, false);
 
     if single {
         // p1 only shown when there's only 1 carbon, i.e. 4 bonds with hydrogen
         add_atom(commands, meshes, materials, parent, p1, WHITE.into());
-        add_bond(commands, meshes, materials, parent, center, p1);
+        add_bond(commands, meshes, materials, parent, center, p1, false);
     }
 }
 
@@ -375,8 +404,8 @@ fn add_inner_carbon(
 
     add_atom(commands, meshes, materials, parent, p2, WHITE.into());
     add_atom(commands, meshes, materials, parent, p3, WHITE.into());
-    add_bond(commands, meshes, materials, parent, center, p2);
-    add_bond(commands, meshes, materials, parent, center, p3);
+    add_bond(commands, meshes, materials, parent, center, p2, false);
+    add_bond(commands, meshes, materials, parent, center, p3, false);
 }
 #[derive(Component)]
 struct Shape;
