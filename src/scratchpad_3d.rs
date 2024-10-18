@@ -135,13 +135,13 @@ fn setup_atoms(
     //     Vec3::ZERO,
     // );
 
-    add_inner_greater_2(
+    add_linear_alkane(
         &mut commands,
         &mut meshes,
         &mut materials,
         &mut molecule,
         Vec3::ZERO,
-        0,
+        10,
     )
 }
 
@@ -243,8 +243,8 @@ fn add_ethane(
 
         commands.entity(molecule).push_children(&[parent1, parent2]);
 
-        add_outer_carbon(commands, meshes, materials, parent1, center);
-        add_outer_carbon(commands, meshes, materials, parent2, center);
+        add_outer_carbon(commands, meshes, materials, parent1, center, false);
+        add_outer_carbon(commands, meshes, materials, parent2, center, false);
 
         // parent
     } else {
@@ -308,7 +308,7 @@ fn add_propane(
 
         commands.entity(molecule).push_children(&[parent1, parent2]);
 
-        add_outer_carbon(commands, meshes, materials, parent1, center);
+        add_outer_carbon(commands, meshes, materials, parent1, center, false);
         // inter part bonds here since we don't know the distance to the next part inside of a part
         // part being an outer carbon or inner carbon (with respective hydrogens)
         add_bond(
@@ -328,7 +328,7 @@ fn add_propane(
             parent3_trans,
             parent2_trans,
         );
-        add_outer_carbon(commands, meshes, materials, parent3, center);
+        add_outer_carbon(commands, meshes, materials, parent3, center, false);
 
         // parent
     } else {
@@ -336,7 +336,7 @@ fn add_propane(
     }
 }
 
-fn add_inner_greater_2(
+fn add_linear_alkane(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
@@ -344,15 +344,27 @@ fn add_inner_greater_2(
     center: Vec3,
     n: u32,
 ) {
-    // add wrapper entities to transform as a group
+    if n == 0 {
+        println!("n == 0, nothing to draw");
+        return;
+    }
+
     if let Ok(molecule) = molecule.get_single_mut() {
+        let single = n == 1;
+        let first_parent_rotation = Quat::from_rotation_z(if single {
+            0.0_f32.to_radians()
+        } else {
+            -45.0_f32.to_radians()
+        });
+
+        // add parent wrapper entities to transform as a group
         let first_parent_trans = Vec3::new(0.0, 0.0, 0.0);
         let first_parent = commands
             .spawn((
                 Name::new("first_parent"),
                 SpatialBundle {
                     transform: Transform {
-                        rotation: Quat::from_rotation_z(-45.0_f32.to_radians()),
+                        rotation: first_parent_rotation,
                         translation: first_parent_trans,
                         ..Default::default()
                     },
@@ -360,13 +372,21 @@ fn add_inner_greater_2(
                 },
             ))
             .id();
+        commands.entity(molecule).push_children(&[first_parent]);
+        add_outer_carbon(commands, meshes, materials, first_parent, center, single);
+        if single {
+            return;
+        }
 
-        let (y, z_rot) = if n % 2 == 0 {
+        assert!(n >= 2, "programmatic error: should exit early if n < 2");
+        let inner_carbons = n - 2;
+
+        let (y, z_rot) = if inner_carbons % 2 == 0 {
             (1.0, 135.0_f32.to_radians())
         } else {
             (0.0, 45.0_f32.to_radians())
         };
-        let last_parent_trans = Vec3::new((n + 1) as f32, y, 0.0);
+        let last_parent_trans = Vec3::new((inner_carbons + 1) as f32, y, 0.0);
         let last_parent = commands
             .spawn((
                 Name::new("last_parent"),
@@ -380,13 +400,11 @@ fn add_inner_greater_2(
                 },
             ))
             .id();
-        commands
-            .entity(molecule)
-            .push_children(&[first_parent, last_parent]);
-        add_outer_carbon(commands, meshes, materials, first_parent, center);
-        add_outer_carbon(commands, meshes, materials, last_parent, center);
 
-        if n == 0 {
+        commands.entity(molecule).push_children(&[last_parent]);
+        add_outer_carbon(commands, meshes, materials, last_parent, center, false);
+
+        if inner_carbons == 0 {
             add_bond(
                 commands,
                 meshes,
@@ -399,7 +417,8 @@ fn add_inner_greater_2(
         }
 
         let mut previous_inner_parent_trans = None;
-        for i in 0..n {
+
+        for i in 0..inner_carbons {
             let even = i % 2 == 0;
             let y = if even { 1.0 } else { 0.0 };
             let inner_parent_trans = Vec3::new(1.0 * i as f32 + 1.0, y, 0.0);
@@ -533,7 +552,7 @@ fn add_butane(
 
         commands.entity(molecule).push_children(&[parent1, parent2]);
 
-        add_outer_carbon(commands, meshes, materials, parent1, center);
+        add_outer_carbon(commands, meshes, materials, parent1, center, false);
         // inter part bonds here since we don't know the distance to the next part inside of a part
         // part being an outer carbon or inner carbon (with respective hydrogens)
         add_bond(
@@ -562,7 +581,7 @@ fn add_butane(
             parent4_trans,
             parent3_trans,
         );
-        add_outer_carbon(commands, meshes, materials, parent4, center);
+        add_outer_carbon(commands, meshes, materials, parent4, center, false);
 
         // parent
     } else {
@@ -579,6 +598,7 @@ fn add_outer_carbon(
     // molecule: &mut Query<Entity, With<MyMolecule>>,
     parent: Entity,
     center: Vec3,
+    single: bool,
 ) {
     // center carbon
     add_atom(commands, meshes, materials, parent, center, BLACK.into());
@@ -623,6 +643,12 @@ fn add_outer_carbon(
     add_bond(commands, meshes, materials, parent, center, p2);
     add_bond(commands, meshes, materials, parent, center, p3);
     add_bond(commands, meshes, materials, parent, center, p4);
+
+    if single {
+        // p1 only shown when there's only 1 carbon, i.e. 4 bonds with hydrogen
+        add_atom(commands, meshes, materials, parent, p1, WHITE.into());
+        add_bond(commands, meshes, materials, parent, center, p1);
+    }
 }
 
 // the same as add_carbon, without two of the H
