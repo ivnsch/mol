@@ -141,7 +141,7 @@ fn setup_atoms(
         &mut materials,
         &mut molecule,
         Vec3::ZERO,
-        30,
+        0,
     )
 }
 
@@ -385,6 +385,18 @@ fn add_inner_greater_2(
             .push_children(&[first_parent, last_parent]);
         add_outer_carbon(commands, meshes, materials, first_parent, center);
         add_outer_carbon(commands, meshes, materials, last_parent, center);
+
+        if n == 0 {
+            add_bond(
+                commands,
+                meshes,
+                materials,
+                molecule,
+                last_parent_trans,
+                first_parent_trans,
+            );
+            return;
+        }
 
         let mut previous_inner_parent_trans = None;
         for i in 0..n {
