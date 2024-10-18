@@ -13,7 +13,7 @@ pub fn add_3d_space(app: &mut App) {
         DefocusPlugin,
     ))
     .add_systems(Startup, (setup_camera, setup_light))
-    .add_systems(Update, (setup_axes, setup_global_axes));
+    .add_systems(Update, setup_global_axes);
 }
 
 fn setup_light(mut commands: Commands) {
@@ -32,53 +32,6 @@ fn setup_light(mut commands: Commands) {
 }
 
 fn setup_global_axes(mut gizmos: Gizmos) {
-    let size = 2.0;
-    let zero = 0.0;
-    // x
-    gizmos.line(
-        Vec3 {
-            x: -size,
-            y: zero,
-            z: zero,
-        },
-        Vec3 {
-            x: size,
-            y: zero,
-            z: zero,
-        },
-        GREEN,
-    );
-    // y
-    gizmos.line(
-        Vec3 {
-            x: zero,
-            y: -size,
-            z: zero,
-        },
-        Vec3 {
-            x: zero,
-            y: size,
-            z: zero,
-        },
-        RED,
-    );
-    // z
-    gizmos.line(
-        Vec3 {
-            x: zero,
-            y: zero,
-            z: -size,
-        },
-        Vec3 {
-            x: zero,
-            y: zero,
-            z: size,
-        },
-        BLUE,
-    );
-}
-
-fn setup_axes(mut gizmos: Gizmos) {
     let size = 2.0;
     let zero = 0.0;
     // x
