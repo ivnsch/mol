@@ -119,7 +119,15 @@ fn setup_atoms(
     //     Vec3::ZERO,
     // );
 
-    add_propane(
+    // add_propane(
+    //     &mut commands,
+    //     &mut meshes,
+    //     &mut materials,
+    //     &mut molecule,
+    //     Vec3::ZERO,
+    // );
+
+    add_butane(
         &mut commands,
         &mut meshes,
         &mut materials,
@@ -312,6 +320,114 @@ fn add_propane(
             parent2_trans,
         );
         add_outer_carbon(commands, meshes, materials, parent3, center);
+
+        // parent
+    } else {
+        println!("couldn't get molecule entity");
+    }
+}
+
+fn add_butane(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    molecule: &mut Query<Entity, With<MyMolecule>>,
+    center: Vec3,
+) {
+    // add wrapper entities to transform as a group
+    let parent1_trans = Vec3::new(0.0, 0.0, 0.0);
+    if let Ok(molecule) = molecule.get_single_mut() {
+        let parent1 = commands
+            .spawn((
+                Name::new("parent1"),
+                SpatialBundle {
+                    transform: Transform {
+                        rotation: Quat::from_rotation_z(-45.0_f32.to_radians()),
+                        translation: parent1_trans,
+                        ..Default::default()
+                    },
+                    ..default()
+                },
+            ))
+            .id();
+
+        let parent2_trans = Vec3::new(1.0, 1.0, 0.0);
+        let parent2 = commands
+            .spawn((
+                Name::new("parent2"),
+                SpatialBundle {
+                    transform: Transform {
+                        rotation: Quat::from_euler(EulerRot::XYZ, PI, -PI / 4.0, 0.0),
+                        translation: parent2_trans,
+                        ..Default::default()
+                    },
+                    ..default()
+                },
+            ))
+            .id();
+
+        let parent3_trans = Vec3::new(2.0, 0.0, 0.0);
+        let parent3 = commands
+            .spawn((
+                Name::new("parent2"),
+                SpatialBundle {
+                    transform: Transform {
+                        rotation: Quat::from_euler(EulerRot::XYZ, 0.0, 135.0_f32.to_radians(), 0.0),
+                        translation: parent3_trans,
+                        ..Default::default()
+                    },
+                    ..default()
+                },
+            ))
+            .id();
+
+        let parent4_trans = Vec3::new(3.0, 1.0, 0.0);
+        let parent4 = commands
+            .spawn((
+                Name::new("parent3"),
+                SpatialBundle {
+                    transform: Transform {
+                        rotation: Quat::from_rotation_z(135.0_f32.to_radians()),
+                        translation: parent4_trans,
+                        ..Default::default()
+                    },
+                    ..default()
+                },
+            ))
+            .id();
+
+        commands.entity(molecule).push_children(&[parent1, parent2]);
+
+        add_outer_carbon(commands, meshes, materials, parent1, center);
+        // inter part bonds here since we don't know the distance to the next part inside of a part
+        // part being an outer carbon or inner carbon (with respective hydrogens)
+        add_bond(
+            commands,
+            meshes,
+            materials,
+            molecule,
+            parent1_trans,
+            parent2_trans,
+        );
+        add_inner_carbon(commands, meshes, materials, parent2, center);
+        add_bond(
+            commands,
+            meshes,
+            materials,
+            molecule,
+            parent3_trans,
+            parent2_trans,
+        );
+        add_inner_carbon(commands, meshes, materials, parent3, center);
+        add_bond(
+            commands,
+            meshes,
+            materials,
+            molecule,
+            parent4_trans,
+            parent3_trans,
+        );
+        add_outer_carbon(commands, meshes, materials, parent4, center);
 
         // parent
     } else {
