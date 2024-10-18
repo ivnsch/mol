@@ -117,7 +117,7 @@ fn setup_linear_alkane(
         &mut materials,
         &mut molecule,
         Vec3::ZERO,
-        10,
+        5,
     )
 }
 
