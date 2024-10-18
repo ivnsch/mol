@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::{
     color::palettes::css::{BLACK, DARK_GRAY, WHITE},
     prelude::*,
@@ -241,14 +243,15 @@ fn add_propane(
     center: Vec3,
 ) {
     // add wrapper entities to transform as a group
+    let parent1_trans = Vec3::new(0.0, 0.0, 0.0);
     if let Ok(molecule) = molecule.get_single_mut() {
         let parent1 = commands
             .spawn((
                 Name::new("parent1"),
                 SpatialBundle {
                     transform: Transform {
-                        rotation: Quat::from_rotation_z(-90.0_f32.to_radians()),
-                        translation: Vec3::new(0.0, 0.0, 0.0),
+                        rotation: Quat::from_rotation_z(-45.0_f32.to_radians()),
+                        translation: parent1_trans,
                         ..Default::default()
                     },
                     ..default()
@@ -256,26 +259,29 @@ fn add_propane(
             ))
             .id();
 
+        let parent2_trans = Vec3::new(1.0, 1.0, 0.0);
         let parent2 = commands
             .spawn((
                 Name::new("parent2"),
                 SpatialBundle {
                     transform: Transform {
-                        rotation: Quat::from_rotation_z(90.0_f32.to_radians()),
-                        translation: Vec3::new(1.0, 0.0, 0.0),
+                        rotation: Quat::from_euler(EulerRot::XYZ, PI, -PI / 4.0, 0.0),
+                        translation: parent2_trans,
                         ..Default::default()
                     },
                     ..default()
                 },
             ))
             .id();
+
+        let parent3_trans = Vec3::new(2.0, 0.0, 0.0);
         let parent3 = commands
             .spawn((
                 Name::new("parent3"),
                 SpatialBundle {
                     transform: Transform {
-                        rotation: Quat::from_rotation_z(90.0_f32.to_radians()),
-                        translation: Vec3::new(2.0, 0.0, 0.0),
+                        rotation: Quat::from_rotation_z(45.0_f32.to_radians()),
+                        translation: parent3_trans,
                         ..Default::default()
                     },
                     ..default()
@@ -286,7 +292,25 @@ fn add_propane(
         commands.entity(molecule).push_children(&[parent1, parent2]);
 
         add_outer_carbon(commands, meshes, materials, parent1, center);
+        // inter part bonds here since we don't know the distance to the next part inside of a part
+        // part being an outer carbon or inner carbon (with respective hydrogens)
+        add_bond(
+            commands,
+            meshes,
+            materials,
+            molecule,
+            parent1_trans,
+            parent2_trans,
+        );
         add_inner_carbon(commands, meshes, materials, parent2, center);
+        add_bond(
+            commands,
+            meshes,
+            materials,
+            molecule,
+            parent3_trans,
+            parent2_trans,
+        );
         add_outer_carbon(commands, meshes, materials, parent3, center);
 
         // parent
@@ -345,7 +369,6 @@ fn add_outer_carbon(
 
     // add bonds connecting atoms
 
-    add_bond(commands, meshes, materials, parent, center, p1);
     add_bond(commands, meshes, materials, parent, center, p2);
     add_bond(commands, meshes, materials, parent, center, p3);
     add_bond(commands, meshes, materials, parent, center, p4);
@@ -395,7 +418,6 @@ fn add_inner_carbon(
 
     add_atom(commands, meshes, materials, parent, p2, WHITE.into());
     add_atom(commands, meshes, materials, parent, p3, WHITE.into());
-    add_bond(commands, meshes, materials, parent, center, p1);
     add_bond(commands, meshes, materials, parent, center, p2);
     add_bond(commands, meshes, materials, parent, center, p3);
 }
