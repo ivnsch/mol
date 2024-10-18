@@ -12,8 +12,8 @@ pub fn add_3d_space(app: &mut App) {
         RotatorPlugin,
         DefocusPlugin,
     ))
-    .add_systems(Startup, (setup_camera, setup_light))
-    .add_systems(Update, setup_global_axes);
+    .add_systems(Startup, (setup_camera, setup_light));
+    // .add_systems(Update, setup_global_axes);
 }
 
 fn setup_light(mut commands: Commands) {
@@ -31,6 +31,7 @@ fn setup_light(mut commands: Commands) {
     });
 }
 
+#[allow(dead_code)]
 fn setup_global_axes(mut gizmos: Gizmos) {
     let size = 2.0;
     let zero = 0.0;
