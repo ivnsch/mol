@@ -8,7 +8,7 @@ use bevy::{
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
     app.add_systems(Startup, setup_molecule)
-        .add_systems(PostStartup, setup_atoms);
+        .add_systems(PostStartup, setup_linear_alkane);
 }
 
 #[derive(Component, Default)]
@@ -105,7 +105,7 @@ fn setup_molecule(mut commands: Commands) {
     ));
 }
 
-fn setup_atoms(
+fn setup_linear_alkane(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -126,16 +126,16 @@ fn add_linear_alkane(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     molecule: &mut Query<Entity, With<MyMolecule>>,
-    center: Vec3,
-    n: u32,
+    center_first_carbon: Vec3,
+    carbons: u32,
 ) {
-    if n == 0 {
+    if carbons == 0 {
         println!("n == 0, nothing to draw");
         return;
     }
 
     if let Ok(molecule) = molecule.get_single_mut() {
-        let single = n == 1;
+        let single = carbons == 1;
         let first_parent_rotation = Quat::from_rotation_z(if single {
             0.0_f32.to_radians()
         } else {
@@ -158,13 +158,23 @@ fn add_linear_alkane(
             ))
             .id();
         commands.entity(molecule).push_children(&[first_parent]);
-        add_outer_carbon(commands, meshes, materials, first_parent, center, single);
+        add_outer_carbon(
+            commands,
+            meshes,
+            materials,
+            first_parent,
+            center_first_carbon,
+            single,
+        );
         if single {
             return;
         }
 
-        assert!(n >= 2, "programmatic error: should exit early if n < 2");
-        let inner_carbons = n - 2;
+        assert!(
+            carbons >= 2,
+            "programmatic error: should exit early if n < 2"
+        );
+        let inner_carbons = carbons - 2;
 
         let (y, z_rot) = if inner_carbons % 2 == 0 {
             (1.0, 135.0_f32.to_radians())
@@ -187,7 +197,14 @@ fn add_linear_alkane(
             .id();
 
         commands.entity(molecule).push_children(&[last_parent]);
-        add_outer_carbon(commands, meshes, materials, last_parent, center, false);
+        add_outer_carbon(
+            commands,
+            meshes,
+            materials,
+            last_parent,
+            center_first_carbon,
+            false,
+        );
 
         if inner_carbons == 0 {
             add_bond(
@@ -205,8 +222,8 @@ fn add_linear_alkane(
 
         for i in 0..inner_carbons {
             let even = i % 2 == 0;
-            let y = if even { 1.0 } else { 0.0 };
-            let inner_parent_trans = Vec3::new(1.0 * i as f32 + 1.0, y, 0.0);
+            let inner_parent_y = if even { 1.0 } else { 0.0 };
+            let inner_parent_trans = Vec3::new(1.0 * i as f32 + 1.0, inner_parent_y, 0.0);
             if i == 0 {
                 add_bond(
                     commands,
@@ -217,7 +234,6 @@ fn add_linear_alkane(
                     inner_parent_trans,
                 );
             }
-            println!("i: {i}, inner trans: {inner_parent_trans}");
             let inner_parent = commands
                 .spawn((
                     Name::new(format!("inner_parent_{i}")),
@@ -235,7 +251,13 @@ fn add_linear_alkane(
                     },
                 ))
                 .id();
-            add_inner_carbon(commands, meshes, materials, inner_parent, center);
+            add_inner_carbon(
+                commands,
+                meshes,
+                materials,
+                inner_parent,
+                center_first_carbon,
+            );
 
             if let Some(previous_trans) = previous_inner_parent_trans {
                 add_bond(
@@ -266,16 +288,14 @@ fn add_linear_alkane(
     }
 }
 
-// the same as add_carbon, without one of the H
-// TODO refactor
+/// the first or last carbon of the chain
 fn add_outer_carbon(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    // molecule: &mut Query<Entity, With<MyMolecule>>,
     parent: Entity,
-    center: Vec3,
-    single: bool,
+    center: Vec3, // carbon center
+    single: bool, // whether it's the only carbon in the molecule (methane)
 ) {
     // center carbon
     add_atom(commands, meshes, materials, parent, center, BLACK.into());
@@ -328,13 +348,10 @@ fn add_outer_carbon(
     }
 }
 
-// the same as add_carbon, without two of the H
-// TODO refactor
 fn add_inner_carbon(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    // molecule: &mut Query<Entity, With<MyMolecule>>,
     parent: Entity,
     center: Vec3,
 ) {
