@@ -352,23 +352,15 @@ fn add_inner_carbon(
     let rot_y_angle = 120.0_f32.to_radians();
     let rot_y = Quat::from_rotation_y(rot_y_angle);
 
-    // first h up on y axis
-    let mut p1 = Vec3::new(0.0, length, 0.0);
-
-    // second h "back-right"
+    // first h
     let mut p2 = (rot_y * rot_x * Vec3::Y) * length;
 
-    // third h "back-left"
+    // second h
     let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
     let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
 
-    // fourth h "front"
-    let mut p4 = rot_x * Vec3::Y * length;
-
-    p1 = p1 + center;
     p2 = p2 + center;
     p3 = p3 + center;
-    p4 = p4 + center;
 
     add_atom(commands, meshes, materials, parent, p2, WHITE.into());
     add_atom(commands, meshes, materials, parent, p3, WHITE.into());
