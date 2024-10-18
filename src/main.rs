@@ -1,11 +1,11 @@
 mod camera_controller;
 mod defocus;
 mod rotator;
-mod scratchpad_3d;
+mod linear_alkane;
 mod system_3d;
 
 use bevy::app::App;
-use scratchpad_3d::add_3d_scratch;
+use linear_alkane::add_3d_scratch;
 use system_3d::add_3d_space;
 
 fn main() {
