@@ -82,7 +82,7 @@ fn setup_global_axes(mut gizmos: Gizmos) {
 fn setup_camera(mut commands: Commands) {
     commands.spawn((
         Camera3dBundle {
-            transform: Transform::from_xyz(0., 1.5, 6.).looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_xyz(0., 1.5, 8.).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         },
         CameraController::default(),
