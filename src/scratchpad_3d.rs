@@ -19,23 +19,19 @@ fn add_bond(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    molecule: &mut Query<Entity, With<MyMolecule>>,
+    molecule: Entity,
     atom1_loc: Vec3,
     atom2_loc: Vec3,
 ) {
-    if let Ok(molecule) = molecule.get_single_mut() {
-        let material: Handle<StandardMaterial> = materials.add(StandardMaterial {
-            base_color: DARK_GRAY.into(),
-            ..default()
-        });
+    let material: Handle<StandardMaterial> = materials.add(StandardMaterial {
+        base_color: DARK_GRAY.into(),
+        ..default()
+    });
 
-        let bond = create_bond(meshes, &material, atom1_loc, atom2_loc);
+    let bond = create_bond(meshes, &material, atom1_loc, atom2_loc);
 
-        let entity = commands.spawn(bond).id();
-        commands.entity(molecule).push_children(&[entity]);
-    } else {
-        println!("couldn't get molecule")
-    }
+    let entity = commands.spawn(bond).id();
+    commands.entity(molecule).push_children(&[entity]);
 }
 
 fn create_bond(
@@ -70,37 +66,33 @@ fn add_atom(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    molecule: &mut Query<Entity, With<MyMolecule>>,
+    molecule: Entity,
     position: Vec3,
     color: Color,
 ) {
-    if let Ok(molecule) = molecule.get_single_mut() {
-        let debug_material: Handle<StandardMaterial> = materials.add(StandardMaterial {
-            base_color: color,
+    let debug_material: Handle<StandardMaterial> = materials.add(StandardMaterial {
+        base_color: color,
+        ..default()
+    });
+
+    let mesh = meshes.add(Sphere { ..default() }.mesh().uv(32, 18));
+
+    let scale = 0.4;
+
+    let sphere = (
+        PbrBundle {
+            mesh,
+            material: debug_material.clone(),
+            transform: Transform::from_translation(position)
+                .with_scale(Vec3::new(scale, scale, scale)),
             ..default()
-        });
+        },
+        Shape,
+    );
 
-        let mesh = meshes.add(Sphere { ..default() }.mesh().uv(32, 18));
-
-        let scale = 0.4;
-
-        let sphere = (
-            PbrBundle {
-                mesh,
-                material: debug_material.clone(),
-                transform: Transform::from_translation(position)
-                    .with_scale(Vec3::new(scale, scale, scale)),
-                ..default()
-            },
-            Shape,
-        );
-
-        let entity = commands.spawn(sphere).id();
-        commands.entity(molecule).push_children(&[entity]);
-        println!("pushed the shere to molecule..");
-    } else {
-        println!("couldn't get molecule entity");
-    }
+    let entity = commands.spawn(sphere).id();
+    commands.entity(molecule).push_children(&[entity]);
+    println!("pushed the shere to molecule..");
 }
 
 fn setup_molecule(mut commands: Commands) {
@@ -133,52 +125,56 @@ fn add_carbon(
     molecule: &mut Query<Entity, With<MyMolecule>>,
     center: Vec3,
 ) {
-    // center carbon
-    add_atom(commands, meshes, materials, molecule, center, BLACK.into());
+    if let Ok(molecule) = molecule.get_single_mut() {
+        // center carbon
+        add_atom(commands, meshes, materials, molecule, center, BLACK.into());
 
-    let length = 1.0;
+        let length = 1.0;
 
-    // tetrahedral angle
-    // note that this is used for the angles with the center of the molecule as vertex,
-    // the angle between the molecules forming a circle has to be 120° (360° / 3 molecules)
-    let bond_angle = 109.5_f32.to_radians();
+        // tetrahedral angle
+        // note that this is used for the angles with the center of the molecule as vertex,
+        // the angle between the molecules forming a circle has to be 120° (360° / 3 molecules)
+        let bond_angle = 109.5_f32.to_radians();
 
-    // first h up on y axis
-    let mut p1 = Vec3::new(0.0, length, 0.0);
+        // first h up on y axis
+        let mut p1 = Vec3::new(0.0, length, 0.0);
 
-    let rot_x = Quat::from_rotation_x(bond_angle);
-    let rot_y_angle = 120.0_f32.to_radians();
-    let rot_y = Quat::from_rotation_y(rot_y_angle);
+        let rot_x = Quat::from_rotation_x(bond_angle);
+        let rot_y_angle = 120.0_f32.to_radians();
+        let rot_y = Quat::from_rotation_y(rot_y_angle);
 
-    // second h "back-right"
-    let mut p2 = (rot_y * rot_x * Vec3::Y) * length;
+        // second h "back-right"
+        let mut p2 = (rot_y * rot_x * Vec3::Y) * length;
 
-    // third h "back-left"
-    let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
-    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
+        // third h "back-left"
+        let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
+        let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
 
-    // fourth h "front"
-    let mut p4 = rot_x * Vec3::Y * length;
+        // fourth h "front"
+        let mut p4 = rot_x * Vec3::Y * length;
 
-    p1 = p1 + center;
-    p2 = p2 + center;
-    p3 = p3 + center;
-    p4 = p4 + center;
+        p1 = p1 + center;
+        p2 = p2 + center;
+        p3 = p3 + center;
+        p4 = p4 + center;
 
-    add_atom(commands, meshes, materials, molecule, p1, WHITE.into());
+        add_atom(commands, meshes, materials, molecule, p1, WHITE.into());
 
-    add_atom(commands, meshes, materials, molecule, p2, WHITE.into());
+        add_atom(commands, meshes, materials, molecule, p2, WHITE.into());
 
-    add_atom(commands, meshes, materials, molecule, p3, WHITE.into());
+        add_atom(commands, meshes, materials, molecule, p3, WHITE.into());
 
-    add_atom(commands, meshes, materials, molecule, p4, WHITE.into());
+        add_atom(commands, meshes, materials, molecule, p4, WHITE.into());
 
-    // add bonds connecting atoms
+        // add bonds connecting atoms
 
-    add_bond(commands, meshes, materials, molecule, center, p1);
-    add_bond(commands, meshes, materials, molecule, center, p2);
-    add_bond(commands, meshes, materials, molecule, center, p3);
-    add_bond(commands, meshes, materials, molecule, center, p4);
+        add_bond(commands, meshes, materials, molecule, center, p1);
+        add_bond(commands, meshes, materials, molecule, center, p2);
+        add_bond(commands, meshes, materials, molecule, center, p3);
+        add_bond(commands, meshes, materials, molecule, center, p4);
+    } else {
+        println!("couldn't get molecule entity");
+    }
 }
 
 #[derive(Component)]
