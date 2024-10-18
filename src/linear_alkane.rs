@@ -18,7 +18,7 @@ pub struct MySphere;
 pub struct MyMolecule;
 
 const ATOM_SCALE: f32 = 0.4;
-const BOND_LENGTH: f32 = 0.2;
+const BOND_LENGTH: f32 = 1.0;
 const BOND_DIAM: f32 = 0.01;
 
 fn add_bond(
@@ -177,17 +177,18 @@ fn add_linear_alkane(
         let inner_carbons = carbons - 2;
 
         let (y, z_rot) = if inner_carbons % 2 == 0 {
-            (1.0, 135.0_f32.to_radians())
+            (BOND_LENGTH, 135.0_f32.to_radians())
         } else {
             (0.0, 45.0_f32.to_radians())
         };
-        let last_parent_trans = Vec3::new((inner_carbons + 1) as f32, y, 0.0);
+        let last_parent_trans =
+            Vec3::new((inner_carbons + 1) as f32 * BOND_LENGTH, last_parent_y, 0.0);
         let last_parent = commands
             .spawn((
                 Name::new("last_parent"),
                 SpatialBundle {
                     transform: Transform {
-                        rotation: Quat::from_rotation_z(z_rot),
+                        rotation: Quat::from_rotation_z(last_parent_z_rot),
                         translation: last_parent_trans,
                         ..Default::default()
                     },
@@ -222,8 +223,9 @@ fn add_linear_alkane(
 
         for i in 0..inner_carbons {
             let even = i % 2 == 0;
-            let inner_parent_y = if even { 1.0 } else { 0.0 };
-            let inner_parent_trans = Vec3::new(1.0 * i as f32 + 1.0, inner_parent_y, 0.0);
+            let inner_parent_y = if even { BOND_LENGTH } else { 0.0 };
+            let inner_parent_trans =
+                Vec3::new(BOND_LENGTH * i as f32 + BOND_LENGTH, inner_parent_y, 0.0);
             if i == 0 {
                 add_bond(
                     commands,
