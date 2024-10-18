@@ -176,7 +176,7 @@ fn add_linear_alkane(
         );
         let inner_carbons = carbons - 2;
 
-        let (y, z_rot) = if inner_carbons % 2 == 0 {
+        let (last_parent_y, last_parent_z_rot) = if inner_carbons % 2 == 0 {
             (BOND_LENGTH, 135.0_f32.to_radians())
         } else {
             (0.0, 45.0_f32.to_radians())
