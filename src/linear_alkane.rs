@@ -324,10 +324,10 @@ fn add_outer_carbon(
     // fourth h "front"
     let mut p4 = rot_x * Vec3::Y * length;
 
-    p1 = p1 + center;
-    p2 = p2 + center;
-    p3 = p3 + center;
-    p4 = p4 + center;
+    p1 += center;
+    p2 += center;
+    p3 += center;
+    p4 += center;
 
     add_atom(commands, meshes, materials, parent, p2, WHITE.into());
 
@@ -376,8 +376,8 @@ fn add_inner_carbon(
     let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
     let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
 
-    p2 = p2 + center;
-    p3 = p3 + center;
+    p2 += center;
+    p3 += center;
 
     add_atom(commands, meshes, materials, parent, p2, WHITE.into());
     add_atom(commands, meshes, materials, parent, p3, WHITE.into());
