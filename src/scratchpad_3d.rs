@@ -127,13 +127,22 @@ fn setup_atoms(
     //     Vec3::ZERO,
     // );
 
-    add_butane(
+    // add_butane(
+    //     &mut commands,
+    //     &mut meshes,
+    //     &mut materials,
+    //     &mut molecule,
+    //     Vec3::ZERO,
+    // );
+
+    add_inner_greater_2(
         &mut commands,
         &mut meshes,
         &mut materials,
         &mut molecule,
         Vec3::ZERO,
-    );
+        30,
+    )
 }
 
 fn add_carbon(
@@ -322,6 +331,120 @@ fn add_propane(
         add_outer_carbon(commands, meshes, materials, parent3, center);
 
         // parent
+    } else {
+        println!("couldn't get molecule entity");
+    }
+}
+
+fn add_inner_greater_2(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    molecule: &mut Query<Entity, With<MyMolecule>>,
+    center: Vec3,
+    n: u32,
+) {
+    // add wrapper entities to transform as a group
+    if let Ok(molecule) = molecule.get_single_mut() {
+        let first_parent_trans = Vec3::new(0.0, 0.0, 0.0);
+        let first_parent = commands
+            .spawn((
+                Name::new("first_parent"),
+                SpatialBundle {
+                    transform: Transform {
+                        rotation: Quat::from_rotation_z(-45.0_f32.to_radians()),
+                        translation: first_parent_trans,
+                        ..Default::default()
+                    },
+                    ..default()
+                },
+            ))
+            .id();
+
+        let (y, z_rot) = if n % 2 == 0 {
+            (1.0, 135.0_f32.to_radians())
+        } else {
+            (0.0, 45.0_f32.to_radians())
+        };
+        let last_parent_trans = Vec3::new((n + 1) as f32, y, 0.0);
+        let last_parent = commands
+            .spawn((
+                Name::new("last_parent"),
+                SpatialBundle {
+                    transform: Transform {
+                        rotation: Quat::from_rotation_z(z_rot),
+                        translation: last_parent_trans,
+                        ..Default::default()
+                    },
+                    ..default()
+                },
+            ))
+            .id();
+        commands
+            .entity(molecule)
+            .push_children(&[first_parent, last_parent]);
+        add_outer_carbon(commands, meshes, materials, first_parent, center);
+        add_outer_carbon(commands, meshes, materials, last_parent, center);
+
+        let mut previous_inner_parent_trans = None;
+        for i in 0..n {
+            let even = i % 2 == 0;
+            let y = if even { 1.0 } else { 0.0 };
+            let inner_parent_trans = Vec3::new(1.0 * i as f32 + 1.0, y, 0.0);
+            if i == 0 {
+                add_bond(
+                    commands,
+                    meshes,
+                    materials,
+                    molecule,
+                    first_parent_trans,
+                    inner_parent_trans,
+                );
+            }
+            println!("i: {i}, inner trans: {inner_parent_trans}");
+            let inner_parent = commands
+                .spawn((
+                    Name::new(format!("inner_parent_{i}")),
+                    SpatialBundle {
+                        transform: Transform {
+                            rotation: if even {
+                                Quat::from_euler(EulerRot::XYZ, PI, -PI / 4.0, 0.0)
+                            } else {
+                                Quat::from_euler(EulerRot::XYZ, 0.0, 135.0_f32.to_radians(), 0.0)
+                            },
+                            translation: inner_parent_trans,
+                            ..Default::default()
+                        },
+                        ..default()
+                    },
+                ))
+                .id();
+            add_inner_carbon(commands, meshes, materials, inner_parent, center);
+
+            if let Some(previous_trans) = previous_inner_parent_trans {
+                add_bond(
+                    commands,
+                    meshes,
+                    materials,
+                    molecule,
+                    inner_parent_trans,
+                    previous_trans,
+                );
+            }
+
+            previous_inner_parent_trans = Some(inner_parent_trans);
+        }
+
+        if let Some(previous_trans) = previous_inner_parent_trans {
+            add_bond(
+                commands,
+                meshes,
+                materials,
+                molecule,
+                last_parent_trans,
+                previous_trans,
+            );
+        }
     } else {
         println!("couldn't get molecule entity");
     }
