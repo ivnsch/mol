@@ -109,7 +109,15 @@ fn setup_atoms(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut molecule: Query<Entity, With<MyMolecule>>,
 ) {
-    add_carbon(
+    // add_carbon(
+    //     &mut commands,
+    //     &mut meshes,
+    //     &mut materials,
+    //     &mut molecule,
+    //     Vec3::ZERO,
+    // );
+
+    add_ethane(
         &mut commands,
         &mut meshes,
         &mut materials,
@@ -175,6 +183,110 @@ fn add_carbon(
     } else {
         println!("couldn't get molecule entity");
     }
+}
+
+fn add_ethane(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    molecule: &mut Query<Entity, With<MyMolecule>>,
+    center: Vec3,
+) {
+    // add wrapper entities to transform as a group
+    if let Ok(molecule) = molecule.get_single_mut() {
+        let parent1 = commands
+            .spawn((
+                Name::new("parent1"),
+                SpatialBundle {
+                    transform: Transform {
+                        rotation: Quat::from_rotation_z(-90.0_f32.to_radians()),
+                        translation: Vec3::new(0.0, 0.0, 0.0),
+                        ..Default::default()
+                    },
+                    ..default()
+                },
+            ))
+            .id();
+
+        let parent2 = commands
+            .spawn((
+                Name::new("parent2"),
+                SpatialBundle {
+                    transform: Transform {
+                        rotation: Quat::from_rotation_z(90.0_f32.to_radians()),
+                        translation: Vec3::new(1.0, 0.0, 0.0),
+                        ..Default::default()
+                    },
+                    ..default()
+                },
+            ))
+            .id();
+
+        commands.entity(molecule).push_children(&[parent1, parent2]);
+
+        add_outer_carbon(commands, meshes, materials, parent1, center);
+        add_outer_carbon(commands, meshes, materials, parent2, center);
+
+        // parent
+    } else {
+        println!("couldn't get molecule entity");
+    }
+}
+
+// the same as add_carbon, without one of the H
+// TODO refactor
+fn add_outer_carbon(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    // molecule: &mut Query<Entity, With<MyMolecule>>,
+    parent: Entity,
+    center: Vec3,
+) {
+    // center carbon
+    add_atom(commands, meshes, materials, parent, center, BLACK.into());
+
+    let length = 1.0;
+
+    // tetrahedral angle
+    // note that this is used for the angles with the center of the molecule as vertex,
+    // the angle between the molecules forming a circle has to be 120° (360° / 3 molecules)
+    let bond_angle = 109.5_f32.to_radians();
+
+    let rot_x = Quat::from_rotation_x(bond_angle);
+    let rot_y_angle = 120.0_f32.to_radians();
+    let rot_y = Quat::from_rotation_y(rot_y_angle);
+
+    // first h up on y axis
+    let mut p1 = Vec3::new(0.0, length, 0.0);
+
+    // second h "back-right"
+    let mut p2 = (rot_y * rot_x * Vec3::Y) * length;
+
+    // third h "back-left"
+    let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
+    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * length;
+
+    // fourth h "front"
+    let mut p4 = rot_x * Vec3::Y * length;
+
+    p1 = p1 + center;
+    p2 = p2 + center;
+    p3 = p3 + center;
+    p4 = p4 + center;
+
+    add_atom(commands, meshes, materials, parent, p2, WHITE.into());
+
+    add_atom(commands, meshes, materials, parent, p3, WHITE.into());
+
+    add_atom(commands, meshes, materials, parent, p4, WHITE.into());
+
+    // add bonds connecting atoms
+
+    add_bond(commands, meshes, materials, parent, center, p1);
+    add_bond(commands, meshes, materials, parent, center, p2);
+    add_bond(commands, meshes, materials, parent, center, p3);
+    add_bond(commands, meshes, materials, parent, center, p4);
 }
 
 #[derive(Component)]
