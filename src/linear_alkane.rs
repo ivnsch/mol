@@ -5,7 +5,7 @@ use bevy::{
     prelude::*,
 };
 use bevy_mod_picking::{
-    events::{Click, Down, Pointer},
+    events::{Click, Pointer},
     prelude::{Highlight, HighlightKind, On},
     DefaultPickingPlugins, PickableBundle,
 };
@@ -151,7 +151,6 @@ fn add_atom(
         On::<Pointer<Click>>::target_commands_mut(move |_click, _target_commands| {
             println!("clicked! {description_string}")
         }),
-        On::<Pointer<Down>>::target_commands_mut(|_down, target_commands| println!("down! ")),
         HIGHLIGHT_TINT.clone(),
         Shape,
     );
