@@ -148,7 +148,7 @@ fn add_atom(
             ..default()
         },
         PickableBundle::default(),
-        On::<Pointer<Click>>::target_commands_mut(move |_click, target_commands| {
+        On::<Pointer<Click>>::target_commands_mut(move |_click, _target_commands| {
             println!("clicked! {description_string}")
         }),
         On::<Pointer<Down>>::target_commands_mut(|_down, target_commands| println!("down! ")),

@@ -6,8 +6,6 @@ use bevy::{
     prelude::*,
 };
 
-use crate::rotator::Rotator;
-
 #[derive(Event, Default, Debug)]
 pub struct UiInputsEvent {
     pub carbon_count: String,
@@ -39,7 +37,6 @@ pub struct RotZLabelMarker;
 pub fn add_ui(app: &mut App) {
     app.add_event::<UiInputsEvent>()
         .add_event::<PlusMinusInputEvent>()
-        .add_event::<RotationInputEvent>()
         .insert_resource(PlusMinusInput::Plus)
         .add_systems(
             Update,
@@ -485,20 +482,6 @@ pub enum PlusMinusInput {
 #[derive(Event, Default, Debug)]
 pub struct PlusMinusInputEvent {
     pub plus_minus: PlusMinusInput,
-}
-
-#[derive(Debug, Default, Clone, Copy, Resource)]
-pub enum RotationInput {
-    #[default]
-    X,
-    Y,
-    Z,
-}
-
-/// event for when user clicked a rotation button on UI
-#[derive(Event, Default, Debug)]
-pub struct RotationInputEvent {
-    pub rot: RotationInput,
 }
 
 #[allow(clippy::type_complexity)]
