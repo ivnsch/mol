@@ -11,6 +11,7 @@ use crate::rotator::Rotator;
 #[derive(Event, Default, Debug)]
 pub struct UiInputsEvent {
     pub carbon_count: String,
+    pub carbon_count_changed: bool,
 }
 
 #[derive(Resource)]
@@ -420,6 +421,7 @@ pub fn listen_carbon_count_ui_inputs(
     mut commands: Commands,
     mut carbon_count_query: Query<&CarbonCount>,
     carbon_count_entity_query: Query<Entity, With<CarbonCount>>,
+    mut my_events: EventWriter<UiInputsEvent>,
 ) {
     for input in events.read() {
         for e in carbon_count_query.iter_mut() {
@@ -439,6 +441,12 @@ pub fn listen_carbon_count_ui_inputs(
             // spawn updated carbon count
             let carbon_count = CarbonCount(new);
             commands.spawn(carbon_count);
+
+            // send a new event reflecting the update
+            my_events.send(UiInputsEvent {
+                carbon_count: carbon_count.0.to_string(),
+                carbon_count_changed: current as u32 != carbon_count.0,
+            });
         }
     }
 }

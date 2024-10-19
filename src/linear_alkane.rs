@@ -10,13 +10,25 @@ use bevy_mod_picking::{
     DefaultPickingPlugins, PickableBundle,
 };
 
-use crate::ui::{despawn_all_entities, CarbonCount, UiCarbonCountUpdateSet};
+use crate::ui::{despawn_all_entities, CarbonCount, UiInputsEvent};
 
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
     app.add_plugins(DefaultPickingPlugins)
         .add_systems(Startup, setup_molecule)
-        .add_systems(Update, setup_linear_alkane.after(UiCarbonCountUpdateSet));
+        .add_systems(
+            Update,
+            setup_linear_alkane.run_if(run_if_carbon_count_changed),
+        );
+}
+
+fn run_if_carbon_count_changed(mut events: EventReader<UiInputsEvent>) -> bool {
+    for input in events.read() {
+        if input.carbon_count_changed {
+            return true;
+        }
+    }
+    false
 }
 
 #[derive(Component, Default)]
