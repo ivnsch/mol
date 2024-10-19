@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 bevy = { version = "0.14.2" }
 bevy_simple_text_input = "0.8.0"
+bevy_mod_picking = "0.20.1"

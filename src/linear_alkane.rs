@@ -4,12 +4,18 @@ use bevy::{
     color::palettes::css::{BLACK, DARK_GRAY, WHITE},
     prelude::*,
 };
+use bevy_mod_picking::{
+    events::{Click, Pointer},
+    prelude::On,
+    DefaultPickingPlugins, PickableBundle,
+};
 
 use crate::ui::{despawn_all_entities, CarbonCount};
 
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
-    app.add_systems(Startup, setup_molecule)
+    app.add_plugins(DefaultPickingPlugins)
+        .add_systems(Startup, setup_molecule)
         .add_systems(Update, setup_linear_alkane);
 }
 
@@ -87,6 +93,7 @@ fn add_atom(
     molecule: Entity,
     position: Vec3,
     color: Color,
+    description: &str,
 ) {
     let debug_material: Handle<StandardMaterial> = materials.add(StandardMaterial {
         base_color: color,
@@ -95,6 +102,7 @@ fn add_atom(
 
     let mesh = meshes.add(Sphere { ..default() }.mesh().uv(32, 18));
 
+    let description_string = description.to_string();
     let sphere = (
         PbrBundle {
             mesh,
@@ -103,6 +111,10 @@ fn add_atom(
                 .with_scale(Vec3::new(ATOM_SCALE, ATOM_SCALE, ATOM_SCALE)),
             ..default()
         },
+        PickableBundle::default(),
+        On::<Pointer<Click>>::target_commands_mut(move |_click, target_commands| {
+            println!("clicked! {description_string}")
+        }),
         Shape,
     );
 
@@ -329,7 +341,15 @@ fn add_outer_carbon(
     single: bool, // whether it's the only carbon in the molecule (methane)
 ) {
     // center carbon
-    add_atom(commands, meshes, materials, parent, center, BLACK.into());
+    add_atom(
+        commands,
+        meshes,
+        materials,
+        parent,
+        center,
+        BLACK.into(),
+        "C",
+    );
 
     // tetrahedral angle
     // note that this is used for the angles with the center of the molecule as vertex,
@@ -354,11 +374,11 @@ fn add_outer_carbon(
     p3 += center;
     p4 += center;
 
-    add_atom(commands, meshes, materials, parent, p2, WHITE.into());
+    add_atom(commands, meshes, materials, parent, p2, WHITE.into(), "H");
 
-    add_atom(commands, meshes, materials, parent, p3, WHITE.into());
+    add_atom(commands, meshes, materials, parent, p3, WHITE.into(), "H");
 
-    add_atom(commands, meshes, materials, parent, p4, WHITE.into());
+    add_atom(commands, meshes, materials, parent, p4, WHITE.into(), "H");
 
     // add bonds connecting atoms
 
@@ -368,7 +388,7 @@ fn add_outer_carbon(
 
     if single {
         // p1 only shown when there's only 1 carbon, i.e. 4 bonds with hydrogen
-        add_atom(commands, meshes, materials, parent, p1, WHITE.into());
+        add_atom(commands, meshes, materials, parent, p1, WHITE.into(), "H");
         add_bond(commands, meshes, materials, parent, center, p1, false);
     }
 }
@@ -381,7 +401,15 @@ fn add_inner_carbon(
     center: Vec3,
 ) {
     // center carbon
-    add_atom(commands, meshes, materials, parent, center, BLACK.into());
+    add_atom(
+        commands,
+        meshes,
+        materials,
+        parent,
+        center,
+        BLACK.into(),
+        "C",
+    );
 
     // tetrahedral angle
     // note that this is used for the angles with the center of the molecule as vertex,
@@ -402,8 +430,8 @@ fn add_inner_carbon(
     p2 += center;
     p3 += center;
 
-    add_atom(commands, meshes, materials, parent, p2, WHITE.into());
-    add_atom(commands, meshes, materials, parent, p3, WHITE.into());
+    add_atom(commands, meshes, materials, parent, p2, WHITE.into(), "H");
+    add_atom(commands, meshes, materials, parent, p3, WHITE.into(), "H");
     add_bond(commands, meshes, materials, parent, center, p2, false);
     add_bond(commands, meshes, materials, parent, center, p3, false);
 }
