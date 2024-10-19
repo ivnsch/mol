@@ -443,7 +443,7 @@ pub fn listen_carbon_count_ui_inputs(
             // send a new event reflecting the update
             my_events.send(UiInputsEvent {
                 carbon_count: carbon_count.0.to_string(),
-                carbon_count_changed: current as u32 != carbon_count.0,
+                carbon_count_changed: current != carbon_count.0,
             });
         }
     }

@@ -33,7 +33,7 @@ fn run_if_carbon_count_changed(mut events: EventReader<UiInputsEvent>) -> bool {
 
 /// Used to tint the mesh instead of simply replacing the mesh's material with a single color. See
 /// `tinted_highlight` for more details.
-const HIGHLIGHT_TINT: Highlight<StandardMaterial> = Highlight {
+static HIGHLIGHT_TINT: Highlight<StandardMaterial> = Highlight {
     hovered: Some(HighlightKind::new_dynamic(|matl| StandardMaterial {
         base_color: matl
             .base_color
@@ -172,13 +172,13 @@ fn setup_linear_alkane(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut molecule: Query<Entity, With<MyMolecule>>,
-    mut parents: Query<Entity, With<MyParent>>,
-    mut inter_parent_bonds: Query<Entity, With<MyInterParentBond>>,
+    parents: Query<Entity, With<MyParent>>,
+    inter_parent_bonds: Query<Entity, With<MyInterParentBond>>,
     carbon_count_query: Query<&CarbonCount>,
 ) {
     if let Ok(carbon_count) = carbon_count_query.get_single() {
-        despawn_all_entities(&mut commands, &mut parents);
-        despawn_all_entities(&mut commands, &mut inter_parent_bonds);
+        despawn_all_entities(&mut commands, &parents);
+        despawn_all_entities(&mut commands, &inter_parent_bonds);
 
         add_linear_alkane(
             &mut commands,
@@ -188,7 +188,6 @@ fn setup_linear_alkane(
             Vec3::ZERO,
             carbon_count.0,
         )
-    } else {
     }
 }
 
