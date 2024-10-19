@@ -58,7 +58,11 @@ pub fn add_ui(app: &mut App) {
 }
 
 /// adds right column with ui elements to scene
-pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_ui(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut my_events: EventWriter<UiInputsEvent>,
+) {
     let font = asset_server.load("fonts/FiraMono-Medium.ttf");
 
     let root = commands.spawn(NodeBundle {
@@ -91,6 +95,12 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     commands.insert_resource(UiInputEntities {
         carbon_count: carbon_count_value_label,
+    });
+
+    // trigger initial render
+    my_events.send(UiInputsEvent {
+        carbon_count: init_carbon_count.0.to_string(),
+        carbon_count_changed: true,
     });
 }
 
