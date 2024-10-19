@@ -5,8 +5,8 @@ use bevy::{
     prelude::*,
 };
 use bevy_mod_picking::{
-    events::{Click, Pointer},
-    prelude::On,
+    events::{Click, Down, Pointer},
+    prelude::{Highlight, HighlightKind, On},
     DefaultPickingPlugins, PickableBundle,
 };
 
@@ -30,6 +30,30 @@ fn run_if_carbon_count_changed(mut events: EventReader<UiInputsEvent>) -> bool {
     }
     false
 }
+
+/// Used to tint the mesh instead of simply replacing the mesh's material with a single color. See
+/// `tinted_highlight` for more details.
+const HIGHLIGHT_TINT: Highlight<StandardMaterial> = Highlight {
+    hovered: Some(HighlightKind::new_dynamic(|matl| StandardMaterial {
+        base_color: matl
+            .base_color
+            .mix(&Color::srgba(-0.5, -0.3, 0.9, 0.8), 0.5),
+        ..matl.to_owned()
+    })),
+    pressed: Some(HighlightKind::new_dynamic(|matl| StandardMaterial {
+        base_color: matl
+            .base_color
+            .mix(&Color::srgba(-0.5, -0.3, 0.9, 0.8), 0.5),
+        ..matl.to_owned()
+    })),
+    selected: Some(HighlightKind::new_dynamic(|matl| StandardMaterial {
+        base_color: matl
+            .base_color
+            .mix(&Color::srgba(-0.4, -0.4, 0.8, 0.8), 0.5),
+
+        ..matl.to_owned()
+    })),
+};
 
 #[derive(Component, Default)]
 pub struct MySphere;
@@ -127,6 +151,8 @@ fn add_atom(
         On::<Pointer<Click>>::target_commands_mut(move |_click, target_commands| {
             println!("clicked! {description_string}")
         }),
+        On::<Pointer<Down>>::target_commands_mut(|_down, target_commands| println!("down! ")),
+        HIGHLIGHT_TINT.clone(),
         Shape,
     );
 
