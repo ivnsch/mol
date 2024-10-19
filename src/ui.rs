@@ -36,9 +36,6 @@ pub struct RotYLabelMarker;
 #[derive(Component, Default)]
 pub struct RotZLabelMarker;
 
-#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct UiCarbonCountUpdateSet;
-
 pub fn add_ui(app: &mut App) {
     app.add_event::<UiInputsEvent>()
         .add_event::<PlusMinusInputEvent>()
@@ -52,12 +49,6 @@ pub fn add_ui(app: &mut App) {
                 plus_button_handler,
                 minus_button_handler,
                 listen_carbon_count_ui_inputs,
-            )
-                .in_set(UiCarbonCountUpdateSet),
-        )
-        .add_systems(
-            Update,
-            (
                 rot_x_button_handler,
                 rot_y_button_handler,
                 rot_z_button_handler,
