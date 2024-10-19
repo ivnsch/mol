@@ -330,6 +330,7 @@ fn add_linear_alkane(
                     MyParent,
                 ))
                 .id();
+            commands.entity(molecule).push_children(&[inner_parent]);
             add_inner_carbon(
                 commands,
                 meshes,
