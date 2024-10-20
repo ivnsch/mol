@@ -5,10 +5,12 @@ use bevy::{
     ecs::query::QueryData,
     prelude::*,
 };
+use wasm_bindgen::prelude::wasm_bindgen;
 
+#[wasm_bindgen]
 #[derive(Event, Default, Debug)]
 pub struct UiInputsEvent {
-    pub carbon_count: String,
+    pub carbon_count: u32,
     pub carbon_count_changed: bool,
 }
 
@@ -96,7 +98,7 @@ pub fn setup_ui(
 
     // trigger initial render
     my_events.send(UiInputsEvent {
-        carbon_count: init_carbon_count.0.to_string(),
+        carbon_count: init_carbon_count.0,
         carbon_count_changed: true,
     });
 }
@@ -317,15 +319,10 @@ pub fn listen_ui_inputs(
     carbon_count_query: Query<Entity, With<CarbonCount>>,
 ) {
     for input in events.read() {
-        match parse_i32(&input.carbon_count) {
-            Ok(i) => {
-                // ensure only 1 carbon count active at a time
-                despawn_all_entities(&mut commands, &carbon_count_query);
-                // spawn new level
-                commands.spawn(CarbonCount(i));
-            }
-            Err(err) => println!("error: {}", err),
-        }
+        // ensure only 1 carbon count active at a time
+        despawn_all_entities(&mut commands, &carbon_count_query);
+        // spawn new level
+        commands.spawn(CarbonCount(input.carbon_count));
     }
 }
 
@@ -442,7 +439,7 @@ pub fn listen_carbon_count_ui_inputs(
 
             // send a new event reflecting the update
             my_events.send(UiInputsEvent {
-                carbon_count: carbon_count.0.to_string(),
+                carbon_count: carbon_count.0,
                 carbon_count_changed: current != carbon_count.0,
             });
         }
