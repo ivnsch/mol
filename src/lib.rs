@@ -28,6 +28,8 @@ pub fn init_sim() {
 
     add_3d_space(app);
     log::info!("after adding 3d space");
+
+    // this causes a stack overflow error
     add_3d_scratch(app);
     log::info!("after adding 3d scratch");
 
