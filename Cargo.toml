@@ -1,5 +1,5 @@
 [package]
-name = "chem"
+name = "mol"
 version = "0.1.0"
 edition = "2021"
 
