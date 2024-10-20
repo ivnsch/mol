@@ -23,7 +23,7 @@ pub fn greet(name: &str) {
 }
 
 #[wasm_bindgen]
-pub fn game123() {
+pub fn init_sim() {
     log::info!("called start_sim");
     let app = &mut App::new();
     log::info!("after app new");
