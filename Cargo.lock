@@ -1517,6 +1517,18 @@ dependencies = [
  "bevy",
  "bevy_mod_picking",
  "bevy_simple_text_input",
+ "chemcore",
+ "gamma",
+]
+
+[[package]]
+name = "chemcore"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90fca31e666be34bb6b18e3616f415689fea95a37d65bd80fbf9e610883d052b"
+dependencies = [
+ "gamma",
+ "purr",
 ]
 
 [[package]]
@@ -1999,6 +2011,12 @@ dependencies = [
  "parking",
  "pin-project-lite",
 ]
+
+[[package]]
+name = "gamma"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8f27b584c7b9e7f3ae888fde2eea31b499670e062af3d1c6fba85cbe7c9dbd1"
 
 [[package]]
 name = "gethostname"
@@ -3198,6 +3216,12 @@ name = "profiling"
 version = "1.0.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afbdc74edc00b6f6a218ca6a5364d6226a259d4b8ea1af4a0ea063f27e179f4d"
+
+[[package]]
+name = "purr"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d47e886f7cebbd34d1b3325c26b6389bbf177d90c40ce313529ae139fa5409d5"
 
 [[package]]
 name = "quote"

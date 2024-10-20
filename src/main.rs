@@ -1,4 +1,6 @@
 mod camera_controller;
+#[cfg(test)]
+mod chemcore_exploration_tests;
 mod defocus;
 mod linear_alkane;
 mod rotator;
