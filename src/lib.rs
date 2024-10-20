@@ -31,8 +31,9 @@ pub fn init_sim() {
     add_3d_space(app);
     log::info!("after adding 3d space");
     add_3d_scratch(app);
-    add_ui(app);
-    log::info!("after adding everything");
+    log::info!("after adding 3d scratch");
+    // add_ui(app);
+    // log::info!("after adding everything");
 
     app.run();
 }
