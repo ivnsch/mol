@@ -4,6 +4,7 @@ mod chemcore_exploration_tests;
 mod defocus;
 mod linear_alkane;
 mod rotator;
+mod smiles;
 mod system_3d;
 mod ui;
 

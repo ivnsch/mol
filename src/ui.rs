@@ -1,20 +1,32 @@
 use std::cmp;
 
 use bevy::{
-    color::palettes::css::{BLACK, GREEN, WHITE},
+    color::palettes::css::{BLACK, GRAY, GREEN, WHITE},
     ecs::query::QueryData,
     prelude::*,
 };
+use bevy_simple_text_input::{
+    TextInputBundle, TextInputPlugin, TextInputSettings, TextInputSubmitEvent, TextInputSystem,
+};
+
+use crate::smiles::process_smiles;
 
 #[derive(Event, Default, Debug)]
 pub struct UiInputsEvent {
-    pub carbon_count: String,
+    pub carbon_count: u32,
     pub carbon_count_changed: bool,
+}
+
+#[derive(Resource)]
+pub struct UiInputs {
+    pub carbon_count: u32,
+    pub smiles: String,
 }
 
 #[derive(Resource)]
 pub struct UiInputEntities {
     pub carbon_count: Entity,
+    pub smiles: Entity,
 }
 
 #[derive(Component, Debug, Clone, Copy)]
@@ -34,10 +46,18 @@ pub struct RotYLabelMarker;
 #[derive(Component, Default)]
 pub struct RotZLabelMarker;
 
+#[derive(Component, Default)]
+pub struct SmilesInputMarker;
+
 pub fn add_ui(app: &mut App) {
-    app.add_event::<UiInputsEvent>()
+    app.add_plugins(TextInputPlugin)
+        .add_event::<UiInputsEvent>()
         .add_event::<PlusMinusInputEvent>()
         .insert_resource(PlusMinusInput::Plus)
+        .insert_resource(UiInputs {
+            carbon_count: 0,
+            smiles: "".to_string(),
+        })
         .add_systems(
             Update,
             (
@@ -51,7 +71,8 @@ pub fn add_ui(app: &mut App) {
                 rot_z_button_handler,
             ),
         )
-        .add_systems(Startup, (setup_ui, setup_info_labels));
+        .add_systems(Startup, (setup_ui, setup_info_labels))
+        .add_systems(Update, text_listener.after(TextInputSystem));
 }
 
 /// adds right column with ui elements to scene
@@ -87,16 +108,28 @@ pub fn setup_ui(
 
     add_spacer(&mut commands, root_id);
 
+    let smiles_input = generate_input_box(
+        &font,
+        root_id,
+        &mut commands,
+        "Smiles",
+        SmilesInputMarker,
+        "".to_string(),
+    );
+
+    add_spacer(&mut commands, root_id);
+
     add_header(&mut commands, root_id, &font, "Rotate");
     add_rotate_row(&mut commands, &font, root_id);
 
     commands.insert_resource(UiInputEntities {
         carbon_count: carbon_count_value_label,
+        smiles: smiles_input,
     });
 
     // trigger initial render
     my_events.send(UiInputsEvent {
-        carbon_count: init_carbon_count.0.to_string(),
+        carbon_count: init_carbon_count.0,
         carbon_count_changed: true,
     });
 }
@@ -317,15 +350,10 @@ pub fn listen_ui_inputs(
     carbon_count_query: Query<Entity, With<CarbonCount>>,
 ) {
     for input in events.read() {
-        match parse_i32(&input.carbon_count) {
-            Ok(i) => {
-                // ensure only 1 carbon count active at a time
-                despawn_all_entities(&mut commands, &carbon_count_query);
-                // spawn new level
-                commands.spawn(CarbonCount(i));
-            }
-            Err(err) => println!("error: {}", err),
-        }
+        // ensure only 1 carbon count active at a time
+        despawn_all_entities(&mut commands, &carbon_count_query);
+        // spawn new level
+        commands.spawn(CarbonCount(input.carbon_count));
     }
 }
 
@@ -442,7 +470,7 @@ pub fn listen_carbon_count_ui_inputs(
 
             // send a new event reflecting the update
             my_events.send(UiInputsEvent {
-                carbon_count: carbon_count.0.to_string(),
+                carbon_count: carbon_count.0,
                 carbon_count_changed: current != carbon_count.0,
             });
         }
@@ -587,5 +615,142 @@ fn generate_info_label(font: &Handle<Font>, label: &str, top: f32) -> TextBundle
             },
         ),
         ..default()
+    }
+}
+
+pub fn generate_input_box<T>(
+    font: &Handle<Font>,
+    root_id: Entity,
+    commands: &mut Commands,
+    label: &str,
+    marker: T,
+    value: String,
+) -> Entity
+where
+    T: Component,
+{
+    let label = generate_input_label(font, label);
+    let wrapper = generate_input_wrapper();
+    let text_input_bundle = generate_input(value);
+
+    let spawned_label = commands.spawn(label).id();
+    commands.entity(root_id).push_children(&[spawned_label]);
+
+    let spawned_wrapper = commands.spawn(wrapper).id();
+    commands.entity(root_id).push_children(&[spawned_wrapper]);
+
+    let spawned_text_input_bundle = commands.spawn((marker, text_input_bundle)).id();
+    commands
+        .entity(spawned_wrapper)
+        .push_children(&[spawned_text_input_bundle]);
+
+    spawned_text_input_bundle
+}
+pub fn generate_input_label(font: &Handle<Font>, label: &str) -> TextBundle {
+    generate_label(font, label)
+}
+
+pub fn generate_label(font: &Handle<Font>, label: &str) -> TextBundle {
+    TextBundle {
+        style: Style {
+            position_type: PositionType::Relative,
+            top: Val::Px(0.0),
+            left: Val::Px(0.0),
+            width: Val::Percent(100.0),
+            height: Val::Auto,
+            ..default()
+        },
+        text: Text::from_section(
+            label.to_string(),
+            TextStyle {
+                font: font.clone(),
+                font_size: 14.0,
+                color: Color::WHITE,
+            },
+        ),
+        ..default()
+    }
+}
+
+fn generate_input_wrapper() -> NodeBundle {
+    NodeBundle {
+        style: Style {
+            position_type: PositionType::Relative,
+            top: Val::Px(0.0),
+            left: Val::Px(0.0),
+            width: Val::Percent(100.0),
+            height: Val::Px(30.0),
+            margin: UiRect {
+                bottom: Val::Px(20.0),
+                ..default()
+            },
+            ..default()
+        },
+        ..default()
+    }
+}
+
+fn generate_input(value: String) -> (NodeBundle, TextInputBundle) {
+    let input = TextStyle {
+        font_size: 14.,
+        color: Color::WHITE,
+        ..default()
+    };
+
+    (
+        NodeBundle {
+            style: Style {
+                width: Val::Px(200.0),
+                border: UiRect::all(Val::Px(1.0)),
+                padding: UiRect::all(Val::Px(5.0)),
+                ..default()
+            },
+            border_color: GRAY.into(),
+            background_color: GRAY.into(),
+            ..default()
+        },
+        TextInputBundle::default()
+            .with_text_style(TextStyle {
+                font_size: 40.,
+                ..default()
+            })
+            // .with_inactive(true)
+            .with_value(value)
+            .with_settings(TextInputSettings {
+                retain_on_submit: true,
+                ..default()
+            })
+            .with_text_style(input),
+    )
+}
+
+pub fn text_listener(
+    mut events: EventReader<TextInputSubmitEvent>,
+    mut inputs: ResMut<UiInputs>,
+    mut carbon_count_query: Query<&CarbonCount>,
+    mut my_events: EventWriter<UiInputsEvent>,
+    input_entities: Res<UiInputEntities>,
+) {
+    for event in events.read() {
+        if event.entity == input_entities.carbon_count {
+            info!("submitted carbon count: {}", event.value);
+            match parse_i32(&event.value) {
+                Ok(i) => inputs.carbon_count = i,
+                Err(e) => println!("Couldn't parse string {} to int, error: {}", event.value, e),
+            }
+        } else if event.entity == input_entities.smiles {
+            println!("submitted smiles: {:?}", event.value);
+            inputs.smiles = event.value.clone();
+            // TODO decouple from UI: trigger a new event with the string
+            if let Err(e) = process_smiles(
+                &mut carbon_count_query,
+                &mut my_events,
+                inputs.smiles.clone(),
+            ) {
+                println!("Error processing smiles: {e}")
+            }
+        } else {
+            println!("unknown entity: {:?}", event.value);
+        }
     }
 }
