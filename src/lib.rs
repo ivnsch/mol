@@ -4,10 +4,12 @@ mod init_wasm_log;
 mod linear_alkane;
 mod rotator;
 mod system_3d;
+mod ui;
 
 use bevy::app::App;
 use linear_alkane::add_3d_scratch;
 use system_3d::add_3d_space;
+use ui::add_ui;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -32,6 +34,8 @@ pub fn init_sim() {
     // this causes a stack overflow error
     add_3d_scratch(app);
     log::info!("after adding 3d scratch");
+    // add_ui(app);
+    // log::info!("after adding everything");
 
     app.run();
 }
