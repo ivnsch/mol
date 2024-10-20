@@ -24,11 +24,15 @@ pub fn greet(name: &str) {
 
 #[wasm_bindgen]
 pub fn game123() {
+    log::info!("called start_sim");
     let app = &mut App::new();
+    log::info!("after app new");
 
     add_3d_space(app);
+    log::info!("after adding 3d space");
     add_3d_scratch(app);
     add_ui(app);
+    log::info!("after adding everything");
 
     app.run();
 }
