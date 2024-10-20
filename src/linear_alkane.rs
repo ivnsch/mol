@@ -10,26 +10,25 @@ use bevy_mod_picking::{
     DefaultPickingPlugins, PickableBundle,
 };
 
-use crate::ui::{despawn_all_entities, CarbonCount, UiInputsEvent};
-
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
     app.add_plugins(DefaultPickingPlugins)
         .add_systems(Startup, setup_molecule)
-        .add_systems(
-            Update,
-            setup_linear_alkane.run_if(run_if_carbon_count_changed),
-        );
+        .add_systems(PostStartup, setup_linear_alkane);
+    // .add_systems(
+    //     Update,
+    //     setup_linear_alkane.run_if(run_if_carbon_count_changed),
+    // );
 }
 
-fn run_if_carbon_count_changed(mut events: EventReader<UiInputsEvent>) -> bool {
-    for input in events.read() {
-        if input.carbon_count_changed {
-            return true;
-        }
-    }
-    false
-}
+// fn run_if_carbon_count_changed(mut events: EventReader<UiInputsEvent>) -> bool {
+//     for input in events.read() {
+//         if input.carbon_count_changed {
+//             return true;
+//         }
+//     }
+//     false
+// }
 
 /// Used to tint the mesh instead of simply replacing the mesh's material with a single color. See
 /// `tinted_highlight` for more details.
@@ -174,21 +173,22 @@ fn setup_linear_alkane(
     mut molecule: Query<Entity, With<MyMolecule>>,
     parents: Query<Entity, With<MyParent>>,
     inter_parent_bonds: Query<Entity, With<MyInterParentBond>>,
-    carbon_count_query: Query<&CarbonCount>,
+    // carbon_count_query: Query<&CarbonCount>,
 ) {
-    if let Ok(carbon_count) = carbon_count_query.get_single() {
-        despawn_all_entities(&mut commands, &parents);
-        despawn_all_entities(&mut commands, &inter_parent_bonds);
+    // if let Ok(carbon_count) = carbon_count_query.get_single() {
+    // despawn_all_entities(&mut commands, &parents);
+    // despawn_all_entities(&mut commands, &inter_parent_bonds);
 
-        add_linear_alkane(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-            &mut molecule,
-            Vec3::ZERO,
-            carbon_count.0,
-        )
-    }
+    add_linear_alkane(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut molecule,
+        Vec3::ZERO,
+        // carbon_count.0,
+        5,
+    )
+    // }
 }
 
 fn add_linear_alkane(
