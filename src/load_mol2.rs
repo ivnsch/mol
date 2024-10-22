@@ -6,7 +6,8 @@ use std::{
 };
 
 pub fn load_mol2() -> Result<Mol2Molecule> {
-    let file = File::open("assets/benzene.mol2")?;
+    // let file = File::open("assets/benzene.mol2")?;
+    let file = File::open("assets/117_ideal.mol2")?;
     let reader = BufReader::new(file);
 
     let mut parsing_atoms = false;
@@ -25,10 +26,7 @@ pub fn load_mol2() -> Result<Mol2Molecule> {
 
         let parts: Vec<&str> = line.split_whitespace().collect();
 
-        if parts.len() == 1 {
-            continue;
-        }
-        match parts[1] {
+        match parts[0] {
             "@<TRIPOS>ATOM" => {
                 parsing_atoms = true;
                 parsing_bonds = false;
@@ -44,7 +42,7 @@ pub fn load_mol2() -> Result<Mol2Molecule> {
             _ => {}
         }
         // the above headers
-        if parts.len() == 2 {
+        if parts.len() == 1 {
             continue;
         }
 
@@ -54,22 +52,22 @@ pub fn load_mol2() -> Result<Mol2Molecule> {
 
         if parsing_atoms {
             let atom = Mol2Atom {
-                id: parts[1].parse()?,
-                name: parts[2].to_string(),
-                x: parts[3].parse()?,
-                y: parts[4].parse()?,
-                z: parts[5].parse()?,
-                type_: parts[6].to_string(),
-                bond_count: parts[7].parse()?,
-                mol_name: parts[8].to_string(),
+                id: parts[0].parse()?,
+                name: parts[1].to_string(),
+                x: parts[2].parse()?,
+                y: parts[3].parse()?,
+                z: parts[4].parse()?,
+                type_: parts[5].to_string(),
+                bond_count: parts[6].parse()?,
+                mol_name: parts[7].to_string(),
             };
             atoms.push(atom);
         } else if parsing_bonds {
             let bond = Mol2Bond {
-                id: parts[1].parse()?,
-                atom1: parts[2].parse()?,
-                atom2: parts[3].parse()?,
-                type_: parts[4].to_string(),
+                id: parts[0].parse()?,
+                atom1: parts[1].parse()?,
+                atom2: parts[2].parse()?,
+                type_: parts[3].to_string(),
             };
             bonds.push(bond);
         }
