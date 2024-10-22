@@ -5,14 +5,14 @@ use bevy::{
     prelude::*,
 };
 use bevy_mod_picking::{
-    events::{Click, Pointer},
+    events::{Out, Over, Pointer},
     prelude::{Highlight, HighlightKind, On},
     DefaultPickingPlugins, PickableBundle,
 };
 
 use crate::{
     load_mol2::Mol2Atom,
-    ui::{add_tooltip, despawn_all_entities, LoadedMol2Event, UiInputsEvent},
+    ui::{add_tooltip, despawn_all_entities, LoadedMol2Event, TooltipMarker, UiInputsEvent},
 };
 
 #[allow(dead_code)]
@@ -225,13 +225,18 @@ fn add_atom(
             ..default()
         },
         PickableBundle::default(),
-        On::<Pointer<Click>>::commands_mut(move |click, target_commands| {
+        On::<Pointer<Over>>::commands_mut(move |click, target_commands| {
             add_tooltip(
                 target_commands,
                 click.pointer_location.position,
                 description_string.clone(),
             );
         }),
+        On::<Pointer<Out>>::run(
+            |mut commands: Commands, tooltips_query: Query<Entity, With<TooltipMarker>>| {
+                despawn_all_entities(&mut commands, &tooltips_query);
+            },
+        ),
         HIGHLIGHT_TINT.clone(),
         Shape,
     );

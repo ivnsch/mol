@@ -1,8 +1,8 @@
 use std::cmp;
 
 use bevy::{
-    color::palettes::css::{BLACK, GRAY, GREEN, RED, WHITE},
-    ecs::{query::QueryData, system::EntityCommands},
+    color::palettes::css::{BLACK, GRAY, GREEN, WHITE},
+    ecs::query::QueryData,
     prelude::*,
 };
 use bevy_simple_text_input::{
@@ -58,6 +58,9 @@ pub struct SmilesInputMarker;
 
 #[derive(Component, Default)]
 pub struct LoadMol2ButtonMarker;
+
+#[derive(Component, Default)]
+pub struct TooltipMarker;
 
 pub fn add_ui(app: &mut App) {
     app.add_plugins(TextInputPlugin)
@@ -304,23 +307,26 @@ pub fn generate_button_label(font: &Handle<Font>, label: &str) -> TextBundle {
 }
 
 pub fn add_tooltip(commands: &mut Commands, pos: Vec2, text: String) {
-    commands.spawn(TextBundle {
-        style: Style {
-            position_type: PositionType::Absolute,
-            left: Val::Px(pos.x),
-            top: Val::Px(pos.y),
-            ..default()
-        },
-        text: Text::from_section(
-            text,
-            TextStyle {
-                font_size: 12.0,
-                color: Color::WHITE,
+    commands.spawn((
+        TextBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                left: Val::Px(pos.x),
+                top: Val::Px(pos.y),
                 ..default()
             },
-        ),
-        ..default()
-    });
+            text: Text::from_section(
+                text,
+                TextStyle {
+                    font_size: 12.0,
+                    color: Color::WHITE,
+                    ..default()
+                },
+            ),
+            ..default()
+        },
+        TooltipMarker,
+    ));
 }
 
 /// adds header to container
