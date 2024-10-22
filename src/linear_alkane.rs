@@ -12,7 +12,9 @@ use bevy_mod_picking::{
 
 use crate::{
     load_mol2::Mol2Atom,
-    ui::{add_tooltip, despawn_all_entities, LoadedMol2Event, TooltipMarker, UiInputsEvent},
+    ui::{
+        add_tooltip, despawn_all_entities, LoadedMol2Event, TooltipMarker, UiCarbonCountInputEvent,
+    },
 };
 
 #[allow(dead_code)]
@@ -233,10 +235,10 @@ fn setup_linear_alkane(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     molecule: Query<Entity, With<MyMolecule>>,
-    mut events: EventReader<UiInputsEvent>,
+    mut events: EventReader<UiCarbonCountInputEvent>,
 ) {
     for input in events.read() {
-        println!("rebuilding scene for {} carbons", input.carbon_count);
+        println!("rebuilding scene for {} carbons", input.0);
 
         clear(&mut commands, &molecule);
         println!("after clear..");
@@ -246,7 +248,7 @@ fn setup_linear_alkane(
             &mut meshes,
             &mut materials,
             Vec3::ZERO,
-            input.carbon_count,
+            input.0,
         )
     }
 }

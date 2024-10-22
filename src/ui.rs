@@ -16,9 +16,7 @@ use crate::{
 };
 
 #[derive(Event, Default, Debug)]
-pub struct UiInputsEvent {
-    pub carbon_count: u32,
-}
+pub struct UiCarbonCountInputEvent(pub u32);
 
 #[derive(Resource)]
 pub struct UiInputSmiles(String);
@@ -60,7 +58,7 @@ pub struct TooltipMarker;
 
 pub fn add_ui(app: &mut App) {
     app.add_plugins(TextInputPlugin)
-        .add_event::<UiInputsEvent>()
+        .add_event::<UiCarbonCountInputEvent>()
         .add_event::<PlusMinusInputEvent>()
         .add_event::<LoadedMol2Event>()
         .insert_resource(PlusMinusInput::Plus)
@@ -87,7 +85,7 @@ pub fn add_ui(app: &mut App) {
 pub fn setup_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut my_events: EventWriter<UiInputsEvent>,
+    mut my_events: EventWriter<UiCarbonCountInputEvent>,
 ) {
     let font = asset_server.load("fonts/FiraMono-Medium.ttf");
 
@@ -144,9 +142,7 @@ pub fn setup_ui(
     });
 
     // trigger initial render
-    my_events.send(UiInputsEvent {
-        carbon_count: init_carbon_count.0,
-    });
+    my_events.send(UiCarbonCountInputEvent(init_carbon_count.0));
 }
 
 /// adds a generic vertical spacer element with fixed height
@@ -425,7 +421,7 @@ pub fn add_button<T>(
 // TODO error handling (show on ui)
 #[allow(clippy::too_many_arguments)]
 pub fn listen_ui_inputs(
-    mut events: EventReader<UiInputsEvent>,
+    mut events: EventReader<UiCarbonCountInputEvent>,
     mut commands: Commands,
     carbon_count_query: Query<Entity, With<CarbonCount>>,
 ) {
@@ -433,7 +429,7 @@ pub fn listen_ui_inputs(
         // ensure only 1 carbon count active at a time
         despawn_all_entities(&mut commands, &carbon_count_query);
         // spawn new level
-        commands.spawn(CarbonCount(input.carbon_count));
+        commands.spawn(CarbonCount(input.0));
     }
 }
 
@@ -519,7 +515,7 @@ pub fn listen_carbon_count_ui_inputs(
     mut commands: Commands,
     mut carbon_count_query: Query<&CarbonCount>,
     carbon_count_entity_query: Query<Entity, With<CarbonCount>>,
-    mut my_events: EventWriter<UiInputsEvent>,
+    mut my_events: EventWriter<UiCarbonCountInputEvent>,
 ) {
     for input in events.read() {
         for e in carbon_count_query.iter_mut() {
@@ -541,9 +537,7 @@ pub fn listen_carbon_count_ui_inputs(
             commands.spawn(carbon_count);
 
             // send a new event reflecting the update
-            my_events.send(UiInputsEvent {
-                carbon_count: carbon_count.0,
-            });
+            my_events.send(UiCarbonCountInputEvent(carbon_count.0));
         }
     }
 }
@@ -818,7 +812,7 @@ pub fn text_listener(
     mut events: EventReader<TextInputSubmitEvent>,
     mut input: ResMut<UiInputSmiles>,
     mut carbon_count_query: Query<&CarbonCount>,
-    mut my_events: EventWriter<UiInputsEvent>,
+    mut my_events: EventWriter<UiCarbonCountInputEvent>,
     input_entities: Res<UiInputEntities>,
 ) {
     for event in events.read() {
