@@ -10,7 +10,10 @@ use bevy_mod_picking::{
     DefaultPickingPlugins, PickableBundle,
 };
 
-use crate::ui::{despawn_all_entities, LoadedMol2Event, UiInputsEvent};
+use crate::{
+    load_mol2::Mol2Atom,
+    ui::{despawn_all_entities, LoadedMol2Event, UiInputsEvent},
+};
 
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
@@ -89,6 +92,17 @@ fn add_mol(commands: &mut Commands) -> Entity {
         .id()
 }
 
+fn tooltip_descr(atom: &Mol2Atom) -> String {
+    format!(
+        "Id: {}, name: {}, pos: {}, type: {}, mol name: {}",
+        atom.id,
+        atom.name,
+        atom.loc_vec3(),
+        atom.type_,
+        atom.mol_name
+    )
+}
+
 fn draw_mol2_mol(
     mut commands: Commands,
     molecule: Query<Entity, With<MyMolecule>>,
@@ -109,7 +123,7 @@ fn draw_mol2_mol(
                 mol,
                 atom.loc_vec3(),
                 BLACK.into(),
-                "C",
+                &tooltip_descr(&atom),
             );
             atom.x;
         }

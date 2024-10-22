@@ -55,22 +55,22 @@ pub fn load_mol2() -> Result<Mol2Molecule> {
 
         if parsing_atoms {
             let atom = Mol2Atom {
-                atom_id: parts[1].parse()?,
-                atom_symbol: parts[2].to_string(),
+                id: parts[1].parse()?,
+                name: parts[2].to_string(),
                 x: parts[3].parse()?,
                 y: parts[4].parse()?,
                 z: parts[5].parse()?,
-                atom_type: parts[6].to_string(),
+                type_: parts[6].to_string(),
                 bond_count: parts[7].parse()?,
-                molecule_name: parts[8].to_string(),
+                mol_name: parts[8].to_string(),
             };
             atoms.push(atom);
         } else if parsing_bonds {
             let bond = Mol2Bond {
-                bond_id: parts[1].parse()?,
+                id: parts[1].parse()?,
                 atom1: parts[2].parse()?,
                 atom2: parts[3].parse()?,
-                bond_type: parts[4].to_string(),
+                type_: parts[4].to_string(),
             };
             bonds.push(bond);
         }
@@ -90,14 +90,14 @@ pub struct Mol2Molecule {
 
 #[derive(Debug, Clone)]
 pub struct Mol2Atom {
-    pub atom_id: i32,
-    pub atom_symbol: String,
+    pub id: i32,
+    pub name: String,
     pub x: f32,
     pub y: f32,
     pub z: f32,
-    pub atom_type: String,
+    pub type_: String,
     pub bond_count: i32,
-    pub molecule_name: String,
+    pub mol_name: String,
 }
 
 impl Mol2Atom {
@@ -108,8 +108,8 @@ impl Mol2Atom {
 
 #[derive(Debug, Clone)]
 pub struct Mol2Bond {
-    pub bond_id: u32,
+    pub id: u32,
     pub atom1: usize,
     pub atom2: usize,
-    pub bond_type: String,
+    pub type_: String,
 }
