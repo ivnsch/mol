@@ -93,16 +93,22 @@ fn draw_mol2_mol(
     mut events: EventReader<LoadedMol2Event>,
 ) {
     for event in events.read() {
-        let parent = molecule.single_mut();
+        let mol = molecule.single_mut();
 
         clear_scene(&mut commands, &parents, &inter_parent_bonds);
+
+        // insert a parent to be able to clear scene
+        let dummy_parent = commands
+            .spawn((Name::new("parent"), MyParent, SpatialBundle { ..default() }))
+            .id();
+        commands.entity(mol).push_children(&[dummy_parent]);
 
         for atom in &event.0.atoms {
             add_atom(
                 &mut commands,
                 &mut meshes,
                 &mut materials,
-                parent,
+                dummy_parent,
                 atom.loc_vec3(),
                 BLACK.into(),
                 "C",
@@ -115,7 +121,7 @@ fn draw_mol2_mol(
                 &mut commands,
                 &mut meshes,
                 &mut materials,
-                parent,
+                dummy_parent,
                 // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
                 // this seems to be always the case in mol2 files
                 event.0.atoms[bond.atom1 - 1].loc_vec3(),
@@ -139,7 +145,7 @@ fn add_bond(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    molecule: Entity,
+    parent: Entity,
     atom1_loc: Vec3,
     atom2_loc: Vec3,
     is_inter_parent: bool,
@@ -157,7 +163,7 @@ fn add_bond(
         commands.spawn(bond)
     }
     .id();
-    commands.entity(molecule).push_children(&[entity]);
+    commands.entity(parent).push_children(&[entity]);
 }
 
 fn create_bond(
@@ -190,7 +196,7 @@ fn add_atom(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    molecule: Entity,
+    parent: Entity,
     position: Vec3,
     color: Color,
     description: &str,
@@ -220,7 +226,7 @@ fn add_atom(
     );
 
     let entity = commands.spawn(sphere).id();
-    commands.entity(molecule).push_children(&[entity]);
+    commands.entity(parent).push_children(&[entity]);
 }
 
 fn setup_molecule(mut commands: Commands) {
