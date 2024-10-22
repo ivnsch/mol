@@ -9,6 +9,8 @@ mod smiles;
 mod system_3d;
 mod ui;
 mod ui_comps;
+mod ui_events;
+mod ui_handlers;
 mod ui_helpers;
 
 use bevy::app::App;
