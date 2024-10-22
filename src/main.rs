@@ -8,6 +8,8 @@ mod rotator;
 mod smiles;
 mod system_3d;
 mod ui;
+mod ui_comps;
+mod ui_helpers;
 
 use bevy::app::App;
 use linear_alkane::add_3d_scratch;
