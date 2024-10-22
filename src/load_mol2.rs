@@ -19,10 +19,9 @@ pub fn load_mol2() -> Result<Mol2Molecule> {
         let line = res?;
         println!("{}", line);
 
-        // seems there's always a line number so commented for now
-        // if line.trim().is_empty() {
-        //     continue;
-        // }
+        if line.trim().is_empty() {
+            continue;
+        }
 
         let parts: Vec<&str> = line.split_whitespace().collect();
 
