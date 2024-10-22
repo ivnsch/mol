@@ -95,8 +95,7 @@ fn draw_mol2_mol(
     for event in events.read() {
         let parent = molecule.single_mut();
 
-        despawn_all_entities(&mut commands, &parents);
-        despawn_all_entities(&mut commands, &inter_parent_bonds);
+        clear_scene(&mut commands, &parents, &inter_parent_bonds);
 
         for atom in &event.0.atoms {
             add_atom(
@@ -125,6 +124,15 @@ fn draw_mol2_mol(
             );
         }
     }
+}
+
+fn clear_scene(
+    commands: &mut Commands,
+    parents: &Query<Entity, With<MyParent>>,
+    inter_parent_bonds: &Query<Entity, With<MyInterParentBond>>,
+) {
+    despawn_all_entities(commands, parents);
+    despawn_all_entities(commands, inter_parent_bonds);
 }
 
 fn add_bond(
@@ -235,8 +243,7 @@ fn setup_linear_alkane(
     for input in events.read() {
         println!("rebuilding scene for {} carbons", input.carbon_count);
 
-        despawn_all_entities(&mut commands, &parents);
-        despawn_all_entities(&mut commands, &inter_parent_bonds);
+        clear_scene(&mut commands, &parents, &inter_parent_bonds);
 
         add_linear_alkane(
             &mut commands,
