@@ -5,7 +5,7 @@ use gamma::graph::Graph;
 
 pub fn process_smiles(
     carbon_count_query: &mut Query<&CarbonCount>,
-    my_events: &mut EventWriter<UiCarbonCountInputEvent>,
+    event_writer: &mut EventWriter<UiCarbonCountInputEvent>,
     str: String,
 ) -> Result<(), String> {
     let carbon_count = carbon_count_query.single_mut();
@@ -18,7 +18,7 @@ pub fn process_smiles(
                 carbon_count.0,
                 current != carbon_count.0
             );
-            my_events.send(UiCarbonCountInputEvent(carbon_count.0));
+            event_writer.send(UiCarbonCountInputEvent(carbon_count.0));
             Ok(())
         }
 

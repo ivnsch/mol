@@ -85,7 +85,7 @@ pub fn add_ui(app: &mut App) {
 pub fn setup_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut my_events: EventWriter<UiCarbonCountInputEvent>,
+    mut event_writer: EventWriter<UiCarbonCountInputEvent>,
 ) {
     let font = asset_server.load("fonts/FiraMono-Medium.ttf");
 
@@ -142,7 +142,7 @@ pub fn setup_ui(
     });
 
     // trigger initial render
-    my_events.send(UiCarbonCountInputEvent(init_carbon_count.0));
+    event_writer.send(UiCarbonCountInputEvent(init_carbon_count.0));
 }
 
 /// adds a generic vertical spacer element with fixed height
@@ -421,11 +421,11 @@ pub fn add_button<T>(
 // TODO error handling (show on ui)
 #[allow(clippy::too_many_arguments)]
 pub fn listen_ui_inputs(
-    mut events: EventReader<UiCarbonCountInputEvent>,
+    mut event: EventReader<UiCarbonCountInputEvent>,
     mut commands: Commands,
     carbon_count_query: Query<Entity, With<CarbonCount>>,
 ) {
-    for input in events.read() {
+    for input in event.read() {
         // ensure only 1 carbon count active at a time
         despawn_all_entities(&mut commands, &carbon_count_query);
         // spawn new level
@@ -452,12 +452,12 @@ pub fn plus_button_handler(
         (&Interaction, &mut BackgroundColor, &mut BorderColor),
         (Changed<Interaction>, With<CarbonCountPlusMarker>),
     >,
-    mut my_events: EventWriter<PlusMinusInputEvent>,
+    mut event_writer: EventWriter<PlusMinusInputEvent>,
 ) {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         plus_minus_button_handler(
             (interaction, &mut color, &mut border_color),
-            &mut my_events,
+            &mut event_writer,
             PlusMinusInput::Plus,
         );
     }
@@ -471,12 +471,12 @@ pub fn minus_button_handler(
         (&Interaction, &mut BackgroundColor, &mut BorderColor),
         (Changed<Interaction>, With<CarbonCountMinusMarker>),
     >,
-    mut my_events: EventWriter<PlusMinusInputEvent>,
+    mut event_writer: EventWriter<PlusMinusInputEvent>,
 ) {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         plus_minus_button_handler(
             (interaction, &mut color, &mut border_color),
-            &mut my_events,
+            &mut event_writer,
             PlusMinusInput::Minus,
         );
     }
@@ -486,7 +486,7 @@ pub fn minus_button_handler(
 /// it updates the button's appearance and sends an event
 fn plus_minus_button_handler(
     interaction: (&Interaction, &mut BackgroundColor, &mut BorderColor),
-    my_events: &mut EventWriter<PlusMinusInputEvent>,
+    event_writer: &mut EventWriter<PlusMinusInputEvent>,
     plus_minus: PlusMinusInput,
 ) {
     let (interaction, color, border_color) = interaction;
@@ -495,7 +495,7 @@ fn plus_minus_button_handler(
             *color = GREEN.into();
             border_color.0 = GREEN.into();
             println!("sending plus minus event: {:?}", plus_minus);
-            my_events.send(PlusMinusInputEvent { plus_minus });
+            event_writer.send(PlusMinusInputEvent { plus_minus });
         }
         Interaction::Hovered => {}
         Interaction::None => {
@@ -515,7 +515,7 @@ pub fn listen_carbon_count_ui_inputs(
     mut commands: Commands,
     mut carbon_count_query: Query<&CarbonCount>,
     carbon_count_entity_query: Query<Entity, With<CarbonCount>>,
-    mut my_events: EventWriter<UiCarbonCountInputEvent>,
+    mut event_writer: EventWriter<UiCarbonCountInputEvent>,
 ) {
     for input in events.read() {
         for e in carbon_count_query.iter_mut() {
@@ -537,7 +537,7 @@ pub fn listen_carbon_count_ui_inputs(
             commands.spawn(carbon_count);
 
             // send a new event reflecting the update
-            my_events.send(UiCarbonCountInputEvent(carbon_count.0));
+            event_writer.send(UiCarbonCountInputEvent(carbon_count.0));
         }
     }
 }
@@ -580,13 +580,13 @@ pub struct PlusMinusInputEvent {
 #[allow(clippy::type_complexity)]
 pub fn load_file_button_handler(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<LoadMol2ButtonMarker>)>,
-    mut my_events: EventWriter<LoadedMol2Event>,
+    mut event_writer: EventWriter<LoadedMol2Event>,
 ) {
     for interaction in &mut interaction_query {
         if interaction == &Interaction::Pressed {
             match load_mol2() {
                 Ok(mol) => {
-                    my_events.send(LoadedMol2Event(mol));
+                    event_writer.send(LoadedMol2Event(mol));
                 }
                 Err(e) => {
                     println!("Error loading file: {:?}", e);
@@ -812,20 +812,21 @@ pub fn text_listener(
     mut events: EventReader<TextInputSubmitEvent>,
     mut input: ResMut<UiInputSmiles>,
     mut carbon_count_query: Query<&CarbonCount>,
-    mut my_events: EventWriter<UiCarbonCountInputEvent>,
+    mut event_writer: EventWriter<UiCarbonCountInputEvent>,
     input_entities: Res<UiInputEntities>,
 ) {
-    for event in events.read() {
-        if event.entity == input_entities.smiles {
-            println!("submitted smiles: {:?}", event.value);
-            input.0 = event.value.clone();
+    for text_input in events.read() {
+        if text_input.entity == input_entities.smiles {
+            println!("submitted smiles: {:?}", text_input.value);
+            input.0 = text_input.value.clone();
             // TODO decouple from UI: trigger a new event with the string
-            if let Err(e) = process_smiles(&mut carbon_count_query, &mut my_events, input.0.clone())
+            if let Err(e) =
+                process_smiles(&mut carbon_count_query, &mut event_writer, input.0.clone())
             {
                 println!("Error processing smiles: {e}")
             }
         } else {
-            println!("unknown entity: {:?}", event.value);
+            println!("unknown entity: {:?}", text_input.value);
         }
     }
 }

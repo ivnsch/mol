@@ -86,14 +86,14 @@ fn draw_mol2_mol(
     molecule: Query<Entity, With<MyMolecule>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut events: EventReader<LoadedMol2Event>,
+    mut event: EventReader<LoadedMol2Event>,
 ) {
-    for event in events.read() {
+    for loaded_mol in event.read() {
         clear(&mut commands, &molecule);
 
         let mol = add_mol(&mut commands);
 
-        for atom in &event.0.atoms {
+        for atom in &loaded_mol.0.atoms {
             add_atom(
                 &mut commands,
                 &mut meshes,
@@ -105,7 +105,7 @@ fn draw_mol2_mol(
             );
         }
 
-        for bond in &event.0.bonds {
+        for bond in &loaded_mol.0.bonds {
             add_bond(
                 &mut commands,
                 &mut meshes,
@@ -113,8 +113,8 @@ fn draw_mol2_mol(
                 mol,
                 // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
                 // this seems to be always the case in mol2 files
-                event.0.atoms[bond.atom1 - 1].loc_vec3(),
-                event.0.atoms[bond.atom2 - 1].loc_vec3(),
+                loaded_mol.0.atoms[bond.atom1 - 1].loc_vec3(),
+                loaded_mol.0.atoms[bond.atom2 - 1].loc_vec3(),
                 true,
             );
         }
