@@ -8,8 +8,12 @@ use bevy::{
 use bevy_simple_text_input::{
     TextInputBundle, TextInputPlugin, TextInputSettings, TextInputSubmitEvent, TextInputSystem,
 };
+use load_mol2::load_mol2;
 
-use crate::smiles::process_smiles;
+use crate::{
+    load_mol2::{self, Mol2Molecule},
+    smiles::process_smiles,
+};
 
 #[derive(Event, Default, Debug)]
 pub struct UiInputsEvent {
@@ -22,6 +26,9 @@ pub struct UiInputs {
     pub carbon_count: u32,
     pub smiles: String,
 }
+
+#[derive(Event, Default, Debug, Clone)]
+pub struct LoadedMol2Event(pub Mol2Molecule);
 
 #[derive(Resource)]
 pub struct UiInputEntities {
@@ -49,10 +56,14 @@ pub struct RotZLabelMarker;
 #[derive(Component, Default)]
 pub struct SmilesInputMarker;
 
+#[derive(Component, Default)]
+pub struct LoadMol2ButtonMarker;
+
 pub fn add_ui(app: &mut App) {
     app.add_plugins(TextInputPlugin)
         .add_event::<UiInputsEvent>()
         .add_event::<PlusMinusInputEvent>()
+        .add_event::<LoadedMol2Event>()
         .insert_resource(PlusMinusInput::Plus)
         .insert_resource(UiInputs {
             carbon_count: 0,
@@ -69,6 +80,7 @@ pub fn add_ui(app: &mut App) {
                 rot_x_button_handler,
                 rot_y_button_handler,
                 rot_z_button_handler,
+                load_file_button_handler,
             ),
         )
         .add_systems(Startup, (setup_ui, setup_info_labels))
@@ -121,6 +133,14 @@ pub fn setup_ui(
 
     add_header(&mut commands, root_id, &font, "Rotate");
     add_rotate_row(&mut commands, &font, root_id);
+
+    add_button(
+        &mut commands,
+        root_id,
+        &font,
+        "Load mol2",
+        LoadMol2ButtonMarker,
+    );
 
     commands.insert_resource(UiInputEntities {
         carbon_count: carbon_count_value_label,
@@ -340,6 +360,48 @@ pub fn add_square_button<T>(
     commands.entity(container_id).push_children(&[button]);
 }
 
+// TODO refactor UI..
+pub fn add_button<T>(
+    commands: &mut Commands,
+    container_id: Entity,
+    font: &Handle<Font>,
+    label: &str,
+    marker: T,
+) where
+    T: Component,
+{
+    let button = commands
+        .spawn((
+            marker,
+            ButtonBundle {
+                style: Style {
+                    top: Val::Px(0.0),
+                    width: Val::Percent(100.0),
+                    height: Val::Px(30.0),
+                    align_items: AlignItems::Center,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        ))
+        .with_children(|parent| {
+            parent.spawn(TextBundle {
+                text: Text::from_section(
+                    label.to_string(),
+                    TextStyle {
+                        font: font.clone(),
+                        font_size: 14.0,
+                        color: WHITE.into(),
+                    }
+                    .clone(),
+                ),
+                ..Default::default()
+            });
+        })
+        .id();
+    commands.entity(container_id).push_children(&[button]);
+}
+
 /// processes the ui events
 /// basically, maps events to state
 // TODO error handling (show on ui)
@@ -510,6 +572,25 @@ pub enum PlusMinusInput {
 #[derive(Event, Default, Debug)]
 pub struct PlusMinusInputEvent {
     pub plus_minus: PlusMinusInput,
+}
+
+#[allow(clippy::type_complexity)]
+pub fn load_file_button_handler(
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<LoadMol2ButtonMarker>)>,
+    mut my_events: EventWriter<LoadedMol2Event>,
+) {
+    for interaction in &mut interaction_query {
+        if interaction == &Interaction::Pressed {
+            match load_mol2() {
+                Ok(mol) => {
+                    my_events.send(LoadedMol2Event(mol));
+                }
+                Err(e) => {
+                    println!("Error loading file: {:?}", e);
+                }
+            }
+        }
+    }
 }
 
 #[allow(clippy::type_complexity)]

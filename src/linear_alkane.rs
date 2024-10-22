@@ -10,7 +10,7 @@ use bevy_mod_picking::{
     DefaultPickingPlugins, PickableBundle,
 };
 
-use crate::ui::{despawn_all_entities, UiInputsEvent};
+use crate::ui::{despawn_all_entities, LoadedMol2Event, UiInputsEvent};
 
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
@@ -18,10 +18,14 @@ pub fn add_3d_scratch(app: &mut App) {
         .add_systems(Startup, setup_molecule)
         .add_systems(
             Update,
-            setup_linear_alkane.run_if(run_if_carbon_count_changed),
+            (
+                setup_linear_alkane.run_if(run_if_carbon_count_changed),
+                draw_mol2_mol.run_if(run_if_mol_loaded),
+            ),
         );
 }
 
+// TODO is count changed check still needed? parameter is an event now
 fn run_if_carbon_count_changed(mut events: EventReader<UiInputsEvent>) -> bool {
     for input in events.read() {
         println!("run_if_carbon_count_changed got an input: {:?}", input);
@@ -30,6 +34,13 @@ fn run_if_carbon_count_changed(mut events: EventReader<UiInputsEvent>) -> bool {
         }
     }
     false
+}
+
+fn run_if_mol_loaded(mut events: EventReader<LoadedMol2Event>) -> bool {
+    for _ in events.read() {
+        return true;
+    }
+    return false;
 }
 
 /// Used to tint the mesh instead of simply replacing the mesh's material with a single color. See
@@ -71,6 +82,50 @@ pub struct MyInterParentBond;
 const ATOM_SCALE: f32 = 0.4;
 const BOND_LENGTH: f32 = 1.0;
 const BOND_DIAM: f32 = 0.01;
+
+fn draw_mol2_mol(
+    mut commands: Commands,
+    parents: Query<Entity, With<MyParent>>,
+    inter_parent_bonds: Query<Entity, With<MyInterParentBond>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut molecule: Query<Entity, With<MyMolecule>>,
+    mut events: EventReader<LoadedMol2Event>,
+) {
+    for event in events.read() {
+        let parent = molecule.single_mut();
+
+        despawn_all_entities(&mut commands, &parents);
+        despawn_all_entities(&mut commands, &inter_parent_bonds);
+
+        for atom in &event.0.atoms {
+            add_atom(
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+                parent,
+                atom.loc_vec3(),
+                BLACK.into(),
+                "C",
+            );
+            atom.x;
+        }
+
+        for bond in &event.0.bonds {
+            add_bond(
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+                parent,
+                // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
+                // this seems to be always the case in mol2 files
+                event.0.atoms[bond.atom1 - 1].loc_vec3(),
+                event.0.atoms[bond.atom2 - 1].loc_vec3(),
+                true,
+            );
+        }
+    }
+}
 
 fn add_bond(
     commands: &mut Commands,

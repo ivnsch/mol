@@ -173,6 +173,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.90"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37bf3594c4c988a53154954629820791dde498571819ae4ca50ca811e060cc95"
+
+[[package]]
 name = "approx"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1514,6 +1520,7 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 name = "chem"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bevy",
  "bevy_mod_picking",
  "bevy_simple_text_input",
