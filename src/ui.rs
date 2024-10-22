@@ -21,10 +21,7 @@ pub struct UiInputsEvent {
 }
 
 #[derive(Resource)]
-pub struct UiInputs {
-    pub carbon_count: u32,
-    pub smiles: String,
-}
+pub struct UiInputSmiles(String);
 
 #[derive(Event, Default, Debug, Clone)]
 pub struct LoadedMol2Event(pub Mol2Molecule);
@@ -67,10 +64,7 @@ pub fn add_ui(app: &mut App) {
         .add_event::<PlusMinusInputEvent>()
         .add_event::<LoadedMol2Event>()
         .insert_resource(PlusMinusInput::Plus)
-        .insert_resource(UiInputs {
-            carbon_count: 0,
-            smiles: "".to_string(),
-        })
+        .insert_resource(UiInputSmiles("".to_string()))
         .add_systems(
             Update,
             (
@@ -440,14 +434,6 @@ pub fn listen_ui_inputs(
         despawn_all_entities(&mut commands, &carbon_count_query);
         // spawn new level
         commands.spawn(CarbonCount(input.carbon_count));
-    }
-}
-
-pub fn parse_i32(str: &str) -> Result<u32, String> {
-    let f = str.parse::<u32>();
-    match f {
-        Ok(i) => Ok(i),
-        Err(e) => Err(format!("Failed to parse u32: {}", e)),
     }
 }
 
@@ -830,27 +816,18 @@ fn generate_input(value: String) -> (NodeBundle, TextInputBundle) {
 
 pub fn text_listener(
     mut events: EventReader<TextInputSubmitEvent>,
-    mut inputs: ResMut<UiInputs>,
+    mut input: ResMut<UiInputSmiles>,
     mut carbon_count_query: Query<&CarbonCount>,
     mut my_events: EventWriter<UiInputsEvent>,
     input_entities: Res<UiInputEntities>,
 ) {
     for event in events.read() {
-        if event.entity == input_entities.carbon_count {
-            info!("submitted carbon count: {}", event.value);
-            match parse_i32(&event.value) {
-                Ok(i) => inputs.carbon_count = i,
-                Err(e) => println!("Couldn't parse string {} to int, error: {}", event.value, e),
-            }
-        } else if event.entity == input_entities.smiles {
+        if event.entity == input_entities.smiles {
             println!("submitted smiles: {:?}", event.value);
-            inputs.smiles = event.value.clone();
+            input.0 = event.value.clone();
             // TODO decouple from UI: trigger a new event with the string
-            if let Err(e) = process_smiles(
-                &mut carbon_count_query,
-                &mut my_events,
-                inputs.smiles.clone(),
-            ) {
+            if let Err(e) = process_smiles(&mut carbon_count_query, &mut my_events, input.0.clone())
+            {
                 println!("Error processing smiles: {e}")
             }
         } else {
