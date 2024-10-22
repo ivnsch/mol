@@ -83,32 +83,30 @@ const ATOM_SCALE: f32 = 0.4;
 const BOND_LENGTH: f32 = 1.0;
 const BOND_DIAM: f32 = 0.01;
 
+fn add_mol(commands: &mut Commands) -> Entity {
+    commands
+        .spawn((Name::new("mol"), MyMolecule, SpatialBundle { ..default() }))
+        .id()
+}
+
 fn draw_mol2_mol(
     mut commands: Commands,
-    parents: Query<Entity, With<MyParent>>,
-    inter_parent_bonds: Query<Entity, With<MyInterParentBond>>,
+    molecule: Query<Entity, With<MyMolecule>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut molecule: Query<Entity, With<MyMolecule>>,
     mut events: EventReader<LoadedMol2Event>,
 ) {
     for event in events.read() {
-        let mol = molecule.single_mut();
+        clear(&mut commands, &molecule);
 
-        clear_scene(&mut commands, &parents, &inter_parent_bonds);
-
-        // insert a parent to be able to clear scene
-        let dummy_parent = commands
-            .spawn((Name::new("parent"), MyParent, SpatialBundle { ..default() }))
-            .id();
-        commands.entity(mol).push_children(&[dummy_parent]);
+        let mol = add_mol(&mut commands);
 
         for atom in &event.0.atoms {
             add_atom(
                 &mut commands,
                 &mut meshes,
                 &mut materials,
-                dummy_parent,
+                mol,
                 atom.loc_vec3(),
                 BLACK.into(),
                 "C",
@@ -121,7 +119,7 @@ fn draw_mol2_mol(
                 &mut commands,
                 &mut meshes,
                 &mut materials,
-                dummy_parent,
+                mol,
                 // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
                 // this seems to be always the case in mol2 files
                 event.0.atoms[bond.atom1 - 1].loc_vec3(),
@@ -132,13 +130,8 @@ fn draw_mol2_mol(
     }
 }
 
-fn clear_scene(
-    commands: &mut Commands,
-    parents: &Query<Entity, With<MyParent>>,
-    inter_parent_bonds: &Query<Entity, With<MyInterParentBond>>,
-) {
-    despawn_all_entities(commands, parents);
-    despawn_all_entities(commands, inter_parent_bonds);
+fn clear(commands: &mut Commands, mol_query: &Query<Entity, With<MyMolecule>>) {
+    despawn_all_entities(commands, mol_query);
 }
 
 fn add_bond(
@@ -242,14 +235,13 @@ fn setup_linear_alkane(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut molecule: Query<Entity, With<MyMolecule>>,
-    parents: Query<Entity, With<MyParent>>,
-    inter_parent_bonds: Query<Entity, With<MyInterParentBond>>,
     mut events: EventReader<UiInputsEvent>,
 ) {
     for input in events.read() {
         println!("rebuilding scene for {} carbons", input.carbon_count);
 
-        clear_scene(&mut commands, &parents, &inter_parent_bonds);
+        clear(&mut commands, &molecule);
+        println!("after clear..");
 
         add_linear_alkane(
             &mut commands,
@@ -257,7 +249,6 @@ fn setup_linear_alkane(
             &mut materials,
             &mut molecule,
             Vec3::ZERO,
-            // carbon_count.0,
             input.carbon_count,
         )
     }
@@ -267,7 +258,7 @@ fn add_linear_alkane(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    molecule: &mut Query<Entity, With<MyMolecule>>,
+    mol_query: &mut Query<Entity, With<MyMolecule>>,
     center_first_carbon: Vec3,
     carbons: u32,
 ) {
@@ -276,153 +267,158 @@ fn add_linear_alkane(
         return;
     }
 
-    if let Ok(molecule) = molecule.get_single_mut() {
-        let single = carbons == 1;
-        let first_parent_rotation = Quat::from_rotation_z(if single {
-            0.0_f32.to_radians()
-        } else {
-            -45.0_f32.to_radians()
-        });
+    let mol = add_mol(commands);
 
-        // add parent wrapper entities to transform as a group
-        let first_parent_trans = Vec3::new(0.0, 0.0, 0.0);
-        let first_parent = commands
-            .spawn((
-                Name::new("first_parent"),
-                SpatialBundle {
-                    transform: Transform {
-                        rotation: first_parent_rotation,
-                        translation: first_parent_trans,
-                        ..Default::default()
-                    },
-                    ..default()
+    add_linear_alkane_with_mol(
+        commands,
+        meshes,
+        materials,
+        mol,
+        center_first_carbon,
+        carbons,
+    )
+}
+
+fn add_linear_alkane_with_mol(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    molecule: Entity,
+    center_first_carbon: Vec3,
+    carbons: u32,
+) {
+    let single = carbons == 1;
+    let first_parent_rotation = Quat::from_rotation_z(if single {
+        0.0_f32.to_radians()
+    } else {
+        -45.0_f32.to_radians()
+    });
+
+    // add parent wrapper entities to transform as a group
+    let first_parent_trans = Vec3::new(0.0, 0.0, 0.0);
+    let first_parent = commands
+        .spawn((
+            Name::new("first_parent"),
+            SpatialBundle {
+                transform: Transform {
+                    rotation: first_parent_rotation,
+                    translation: first_parent_trans,
+                    ..Default::default()
                 },
-                MyParent,
-            ))
-            .id();
-        commands.entity(molecule).push_children(&[first_parent]);
-        add_outer_carbon(
+                ..default()
+            },
+            MyParent,
+        ))
+        .id();
+    println!("before suspect");
+    commands.entity(molecule).push_children(&[first_parent]);
+    println!("after suspect");
+    add_outer_carbon(
+        commands,
+        meshes,
+        materials,
+        first_parent,
+        center_first_carbon,
+        single,
+    );
+    if single {
+        return;
+    }
+
+    assert!(
+        carbons >= 2,
+        "programmatic error: should exit early if n < 2"
+    );
+    let inner_carbons = carbons - 2;
+
+    let (last_parent_y, last_parent_z_rot) = if inner_carbons % 2 == 0 {
+        (BOND_LENGTH, 135.0_f32.to_radians())
+    } else {
+        (0.0, 45.0_f32.to_radians())
+    };
+    let last_parent_trans = Vec3::new((inner_carbons + 1) as f32 * BOND_LENGTH, last_parent_y, 0.0);
+    let last_parent = commands
+        .spawn((
+            Name::new("last_parent"),
+            SpatialBundle {
+                transform: Transform {
+                    rotation: Quat::from_rotation_z(last_parent_z_rot),
+                    translation: last_parent_trans,
+                    ..Default::default()
+                },
+                ..default()
+            },
+            MyParent,
+        ))
+        .id();
+
+    commands.entity(molecule).push_children(&[last_parent]);
+    add_outer_carbon(
+        commands,
+        meshes,
+        materials,
+        last_parent,
+        center_first_carbon,
+        false,
+    );
+
+    if inner_carbons == 0 {
+        add_bond(
             commands,
             meshes,
             materials,
-            first_parent,
-            center_first_carbon,
-            single,
+            molecule,
+            last_parent_trans,
+            first_parent_trans,
+            true,
         );
-        if single {
-            return;
-        }
+        return;
+    }
 
-        assert!(
-            carbons >= 2,
-            "programmatic error: should exit early if n < 2"
-        );
-        let inner_carbons = carbons - 2;
+    let mut previous_inner_parent_trans = None;
 
-        let (last_parent_y, last_parent_z_rot) = if inner_carbons % 2 == 0 {
-            (BOND_LENGTH, 135.0_f32.to_radians())
-        } else {
-            (0.0, 45.0_f32.to_radians())
-        };
-        let last_parent_trans =
-            Vec3::new((inner_carbons + 1) as f32 * BOND_LENGTH, last_parent_y, 0.0);
-        let last_parent = commands
-            .spawn((
-                Name::new("last_parent"),
-                SpatialBundle {
-                    transform: Transform {
-                        rotation: Quat::from_rotation_z(last_parent_z_rot),
-                        translation: last_parent_trans,
-                        ..Default::default()
-                    },
-                    ..default()
-                },
-                MyParent,
-            ))
-            .id();
-
-        commands.entity(molecule).push_children(&[last_parent]);
-        add_outer_carbon(
-            commands,
-            meshes,
-            materials,
-            last_parent,
-            center_first_carbon,
-            false,
-        );
-
-        if inner_carbons == 0 {
+    for i in 0..inner_carbons {
+        let even = i % 2 == 0;
+        let inner_parent_y = if even { BOND_LENGTH } else { 0.0 };
+        let inner_parent_trans =
+            Vec3::new(BOND_LENGTH * i as f32 + BOND_LENGTH, inner_parent_y, 0.0);
+        if i == 0 {
             add_bond(
                 commands,
                 meshes,
                 materials,
                 molecule,
-                last_parent_trans,
                 first_parent_trans,
+                inner_parent_trans,
                 true,
             );
-            return;
         }
-
-        let mut previous_inner_parent_trans = None;
-
-        for i in 0..inner_carbons {
-            let even = i % 2 == 0;
-            let inner_parent_y = if even { BOND_LENGTH } else { 0.0 };
-            let inner_parent_trans =
-                Vec3::new(BOND_LENGTH * i as f32 + BOND_LENGTH, inner_parent_y, 0.0);
-            if i == 0 {
-                add_bond(
-                    commands,
-                    meshes,
-                    materials,
-                    molecule,
-                    first_parent_trans,
-                    inner_parent_trans,
-                    true,
-                );
-            }
-            let inner_parent = commands
-                .spawn((
-                    Name::new(format!("inner_parent_{i}")),
-                    SpatialBundle {
-                        transform: Transform {
-                            rotation: if even {
-                                Quat::from_euler(EulerRot::XYZ, PI, -PI / 4.0, 0.0)
-                            } else {
-                                Quat::from_euler(EulerRot::XYZ, 0.0, 135.0_f32.to_radians(), 0.0)
-                            },
-                            translation: inner_parent_trans,
-                            ..Default::default()
+        let inner_parent = commands
+            .spawn((
+                Name::new(format!("inner_parent_{i}")),
+                SpatialBundle {
+                    transform: Transform {
+                        rotation: if even {
+                            Quat::from_euler(EulerRot::XYZ, PI, -PI / 4.0, 0.0)
+                        } else {
+                            Quat::from_euler(EulerRot::XYZ, 0.0, 135.0_f32.to_radians(), 0.0)
                         },
-                        ..default()
+                        translation: inner_parent_trans,
+                        ..Default::default()
                     },
-                    MyParent,
-                ))
-                .id();
-            commands.entity(molecule).push_children(&[inner_parent]);
-            add_inner_carbon(
-                commands,
-                meshes,
-                materials,
-                inner_parent,
-                center_first_carbon,
-            );
-
-            if let Some(previous_trans) = previous_inner_parent_trans {
-                add_bond(
-                    commands,
-                    meshes,
-                    materials,
-                    molecule,
-                    inner_parent_trans,
-                    previous_trans,
-                    true,
-                );
-            }
-
-            previous_inner_parent_trans = Some(inner_parent_trans);
-        }
+                    ..default()
+                },
+                MyParent,
+            ))
+            .id();
+        commands.entity(molecule).push_children(&[inner_parent]);
+        add_inner_carbon(
+            commands,
+            meshes,
+            materials,
+            inner_parent,
+            center_first_carbon,
+        );
 
         if let Some(previous_trans) = previous_inner_parent_trans {
             add_bond(
@@ -430,14 +426,28 @@ fn add_linear_alkane(
                 meshes,
                 materials,
                 molecule,
-                last_parent_trans,
+                inner_parent_trans,
                 previous_trans,
                 true,
             );
         }
-    } else {
-        println!("couldn't get molecule entity");
+
+        previous_inner_parent_trans = Some(inner_parent_trans);
     }
+
+    if let Some(previous_trans) = previous_inner_parent_trans {
+        add_bond(
+            commands,
+            meshes,
+            materials,
+            molecule,
+            last_parent_trans,
+            previous_trans,
+            true,
+        );
+    }
+
+    println!("end of fn");
 }
 
 /// the first or last carbon of the chain
