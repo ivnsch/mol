@@ -85,6 +85,7 @@ pub struct Mol2Molecule {
     pub bonds: Vec<Mol2Bond>,
 }
 
+#[allow(unused)]
 #[derive(Debug, Clone)]
 pub struct Mol2Atom {
     pub id: i32,
@@ -103,6 +104,7 @@ impl Mol2Atom {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug, Clone)]
 pub struct Mol2Bond {
     pub id: u32,

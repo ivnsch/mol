@@ -233,7 +233,7 @@ fn setup_linear_alkane(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut molecule: Query<Entity, With<MyMolecule>>,
+    molecule: Query<Entity, With<MyMolecule>>,
     mut events: EventReader<UiInputsEvent>,
 ) {
     for input in events.read() {
@@ -246,7 +246,6 @@ fn setup_linear_alkane(
             &mut commands,
             &mut meshes,
             &mut materials,
-            &mut molecule,
             Vec3::ZERO,
             input.carbon_count,
         )
@@ -257,7 +256,6 @@ fn add_linear_alkane(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    mol_query: &mut Query<Entity, With<MyMolecule>>,
     center_first_carbon: Vec3,
     carbons: u32,
 ) {
