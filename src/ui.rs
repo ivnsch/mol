@@ -18,7 +18,6 @@ use crate::{
 #[derive(Event, Default, Debug)]
 pub struct UiInputsEvent {
     pub carbon_count: u32,
-    pub carbon_count_changed: bool,
 }
 
 #[derive(Resource)]
@@ -153,7 +152,6 @@ pub fn setup_ui(
     // trigger initial render
     my_events.send(UiInputsEvent {
         carbon_count: init_carbon_count.0,
-        carbon_count_changed: true,
     });
 }
 
@@ -559,7 +557,6 @@ pub fn listen_carbon_count_ui_inputs(
             // send a new event reflecting the update
             my_events.send(UiInputsEvent {
                 carbon_count: carbon_count.0,
-                carbon_count_changed: current != carbon_count.0,
             });
         }
     }

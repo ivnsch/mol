@@ -20,7 +20,6 @@ pub fn process_smiles(
                 );
                 my_events.send(UiInputsEvent {
                     carbon_count: carbon_count.0,
-                    carbon_count_changed: current != carbon_count.0,
                 });
                 return Ok(());
             }

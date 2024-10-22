@@ -19,31 +19,7 @@ use crate::{
 pub fn add_3d_scratch(app: &mut App) {
     app.add_plugins(DefaultPickingPlugins)
         .add_systems(Startup, setup_molecule)
-        .add_systems(
-            Update,
-            (
-                setup_linear_alkane.run_if(run_if_carbon_count_changed),
-                draw_mol2_mol.run_if(run_if_mol_loaded),
-            ),
-        );
-}
-
-// TODO is count changed check still needed? parameter is an event now
-fn run_if_carbon_count_changed(mut events: EventReader<UiInputsEvent>) -> bool {
-    for input in events.read() {
-        println!("run_if_carbon_count_changed got an input: {:?}", input);
-        if input.carbon_count_changed {
-            return true;
-        }
-    }
-    false
-}
-
-fn run_if_mol_loaded(mut events: EventReader<LoadedMol2Event>) -> bool {
-    for _ in events.read() {
-        return true;
-    }
-    return false;
+        .add_systems(Update, (setup_linear_alkane, draw_mol2_mol));
 }
 
 /// Used to tint the mesh instead of simply replacing the mesh's material with a single color. See
