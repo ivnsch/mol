@@ -12,7 +12,7 @@ use crate::{
 };
 use bevy::prelude::*;
 
-use super::setup::CarbonCount;
+use super::resource::CarbonCount;
 
 /// adds a generic vertical spacer element with fixed height
 pub fn add_spacer(commands: &mut Commands, root_id: Entity) {

@@ -1,15 +1,12 @@
-use crate::ui::{event::UiCarbonCountInputEvent, setup::CarbonCount};
-use bevy::prelude::{EventWriter, Query};
+use crate::ui::{event::UiCarbonCountInputEvent, resource::CarbonCount};
+use bevy::prelude::EventWriter;
 use chemcore::daylight::read_smiles;
 use gamma::graph::Graph;
 
 pub fn process_smiles(
-    carbon_count_query: &mut Query<&CarbonCount>,
     event_writer: &mut EventWriter<UiCarbonCountInputEvent>,
     str: String,
 ) -> Result<(), String> {
-    let carbon_count = carbon_count_query.single_mut();
-    println!("Current carbon count: {}", carbon_count.0);
     match parse_smiles(str) {
         Ok(carbon_count) => {
             let current = carbon_count.0;

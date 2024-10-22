@@ -18,24 +18,7 @@ use bevy::{
 use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
 use load_mol2::load_mol2;
 
-use super::setup::CarbonCount;
-
-/// processes the ui events
-/// basically, maps events to state
-// TODO error handling (show on ui)
-#[allow(clippy::too_many_arguments)]
-pub fn listen_ui_inputs(
-    mut event: EventReader<UiCarbonCountInputEvent>,
-    mut commands: Commands,
-    carbon_count_query: Query<Entity, With<CarbonCount>>,
-) {
-    for input in event.read() {
-        // ensure only 1 carbon count active at a time
-        despawn_all_entities(&mut commands, &carbon_count_query);
-        // spawn new level
-        commands.spawn(CarbonCount(input.0));
-    }
-}
+use super::resource::UiInputCarbonCount;
 
 /// removes all entities matching a query (1 filter)
 pub fn despawn_all_entities<T>(commands: &mut Commands, query: &Query<Entity, With<T>>)
@@ -116,52 +99,39 @@ fn plus_minus_button_handler(
 #[allow(clippy::too_many_arguments)]
 pub fn listen_carbon_count_ui_inputs(
     mut events: EventReader<PlusMinusInputEvent>,
-    mut commands: Commands,
-    mut carbon_count_query: Query<&CarbonCount>,
-    carbon_count_entity_query: Query<Entity, With<CarbonCount>>,
+    mut carbon_count: ResMut<UiInputCarbonCount>,
     mut event_writer: EventWriter<UiCarbonCountInputEvent>,
 ) {
     for input in events.read() {
-        for e in carbon_count_query.iter_mut() {
-            // println!("got carbon count: {:?}", e);
-            // update
-            let current = e.0;
-            let increment: i32 = match input.plus_minus {
-                PlusMinusInput::Plus => 1,
-                PlusMinusInput::Minus => -1,
-            };
-            let new_i = current as i32 + increment;
-            // pressing "-" at 0 stays at 0
-            let new = cmp::max(0, new_i) as u32;
+        // update
+        let current = carbon_count.0 .0;
+        let increment: i32 = match input.plus_minus {
+            PlusMinusInput::Plus => 1,
+            PlusMinusInput::Minus => -1,
+        };
+        let new_i = current as i32 + increment;
+        // pressing "-" at 0 stays at 0
+        let new = cmp::max(0, new_i) as u32;
+        carbon_count.0 .0 = new;
 
-            // ensure only one carbon count at a time
-            despawn_all_entities(&mut commands, &carbon_count_entity_query);
-            // spawn updated carbon count
-            let carbon_count = CarbonCount(new);
-            commands.spawn(carbon_count);
-
-            // send a new event reflecting the update
-            event_writer.send(UiCarbonCountInputEvent(carbon_count.0));
-        }
+        // send a new event reflecting the update
+        event_writer.send(UiCarbonCountInputEvent(carbon_count.0 .0));
     }
 }
 
 /// updates the UI carbon count to reflect the current system entity
 pub fn update_carbon_count_label(
     mut commands: Commands,
-    carbon_count_query: Query<&CarbonCount>,
+    carbon_count: Res<UiInputCarbonCount>,
     input_entities: Res<UiInputEntities>,
     mut label_query: Query<(Entity, &mut Text), With<CarbonCountLabelMarker>>,
 ) {
-    // current carbon count
-    for carbon_count in carbon_count_query.iter() {
-        // find the UI label
-        let entity_id = commands.entity(input_entities.carbon_count).id();
-        for (entity, mut text) in label_query.iter_mut() {
-            if entity == entity_id {
-                // update value
-                text.sections[0].value = carbon_count.0.to_string();
-            }
+    // find the UI label
+    let entity_id = commands.entity(input_entities.carbon_count).id();
+    for (entity, mut text) in label_query.iter_mut() {
+        if entity == entity_id {
+            // update value
+            text.sections[0].value = carbon_count.0 .0.to_string();
         }
     }
 }
@@ -250,7 +220,6 @@ pub fn setup_info_labels(commands: Commands, asset_server: Res<AssetServer>) {
 pub fn text_listener(
     mut events: EventReader<TextInputSubmitEvent>,
     mut input: ResMut<UiInputSmiles>,
-    mut carbon_count_query: Query<&CarbonCount>,
     mut event_writer: EventWriter<UiCarbonCountInputEvent>,
     input_entities: Res<UiInputEntities>,
 ) {
@@ -259,9 +228,7 @@ pub fn text_listener(
             println!("submitted smiles: {:?}", text_input.value);
             input.0 = text_input.value.clone();
             // TODO decouple from UI: trigger a new event with the string
-            if let Err(e) =
-                process_smiles(&mut carbon_count_query, &mut event_writer, input.0.clone())
-            {
+            if let Err(e) = process_smiles(&mut event_writer, input.0.clone()) {
                 println!("Error processing smiles: {e}")
             }
         } else {

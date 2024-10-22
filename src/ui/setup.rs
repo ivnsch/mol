@@ -1,10 +1,14 @@
+use super::{
+    handler::focus,
+    resource::{CarbonCount, UiInputCarbonCount},
+};
 use crate::{
     ui::comp::generate_input_box,
     ui::event::{LoadedMol2Event, PlusMinusInputEvent, UiCarbonCountInputEvent},
     ui::handler::{
-        listen_carbon_count_ui_inputs, listen_ui_inputs, load_file_button_handler,
-        minus_button_handler, plus_button_handler, rot_x_button_handler, rot_y_button_handler,
-        rot_z_button_handler, setup_info_labels, text_listener, update_carbon_count_label,
+        listen_carbon_count_ui_inputs, load_file_button_handler, minus_button_handler,
+        plus_button_handler, rot_x_button_handler, rot_y_button_handler, rot_z_button_handler,
+        setup_info_labels, text_listener, update_carbon_count_label,
     },
     ui::helper::{add_button, add_carbons_value_row, add_header, add_rotate_row, add_spacer},
     ui::marker::{LoadMol2ButtonMarker, SmilesInputMarker},
@@ -12,10 +16,6 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_simple_text_input::{TextInputPlugin, TextInputSystem};
-use super::handler::focus;
-
-#[derive(Component, Debug, Clone, Copy)]
-pub struct CarbonCount(pub u32);
 
 pub fn add_ui(app: &mut App) {
     app.add_plugins(TextInputPlugin)
@@ -23,10 +23,10 @@ pub fn add_ui(app: &mut App) {
         .add_event::<PlusMinusInputEvent>()
         .add_event::<LoadedMol2Event>()
         .insert_resource(UiInputSmiles("".to_string()))
+        .insert_resource(UiInputCarbonCount(CarbonCount(5)))
         .add_systems(
             Update,
             (
-                listen_ui_inputs,
                 update_carbon_count_label,
                 plus_button_handler,
                 minus_button_handler,
@@ -46,7 +46,8 @@ pub fn add_ui(app: &mut App) {
 pub fn setup_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut event_writer: EventWriter<UiCarbonCountInputEvent>,
+    carbon_count: Res<UiInputCarbonCount>,
+    mut carbon_count_event_writer: EventWriter<UiCarbonCountInputEvent>,
 ) {
     let font = asset_server.load("fonts/FiraMono-Medium.ttf");
 
@@ -68,10 +69,8 @@ pub fn setup_ui(
 
     add_header(&mut commands, root_id, &font, "Carbon count:");
 
-    let init_carbon_count = CarbonCount(5);
     let carbon_count_value_label =
-        add_carbons_value_row(&mut commands, &font, root_id, init_carbon_count);
-    commands.spawn(init_carbon_count);
+        add_carbons_value_row(&mut commands, &font, root_id, carbon_count.0);
 
     add_spacer(&mut commands, root_id);
 
@@ -102,6 +101,5 @@ pub fn setup_ui(
         smiles: smiles_input,
     });
 
-    // trigger initial render
-    event_writer.send(UiCarbonCountInputEvent(init_carbon_count.0));
+    carbon_count_event_writer.send(UiCarbonCountInputEvent(carbon_count.0 .0));
 }
