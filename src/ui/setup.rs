@@ -1,14 +1,14 @@
 use crate::{
-    ui_comps::generate_input_box,
-    ui_events::{LoadedMol2Event, PlusMinusInput, PlusMinusInputEvent, UiCarbonCountInputEvent},
-    ui_handlers::{
+    ui::comp::generate_input_box,
+    ui::event::{LoadedMol2Event, PlusMinusInput, PlusMinusInputEvent, UiCarbonCountInputEvent},
+    ui::handler::{
         listen_carbon_count_ui_inputs, listen_ui_inputs, load_file_button_handler,
         minus_button_handler, plus_button_handler, rot_x_button_handler, rot_y_button_handler,
         rot_z_button_handler, setup_info_labels, text_listener, update_carbon_count_label,
     },
-    ui_helpers::{add_button, add_carbons_value_row, add_header, add_rotate_row, add_spacer},
-    ui_markers::{LoadMol2ButtonMarker, SmilesInputMarker},
-    ui_resources::{UiInputEntities, UiInputSmiles},
+    ui::helper::{add_button, add_carbons_value_row, add_header, add_rotate_row, add_spacer},
+    ui::marker::{LoadMol2ButtonMarker, SmilesInputMarker},
+    ui::resource::{UiInputEntities, UiInputSmiles},
 };
 use bevy::prelude::*;
 use bevy_simple_text_input::{TextInputPlugin, TextInputSystem};

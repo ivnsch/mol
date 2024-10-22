@@ -1,17 +1,18 @@
 use bevy::prelude::Commands;
 
 use crate::{
-    ui::CarbonCount,
-    ui_comps::{
+    ui::comp::{
         button_bg, button_text, generate_button_label, generate_header, generate_info_label, row,
         spacer, square_button_bg, square_button_text, tooltip,
     },
-    ui_markers::{
+    ui::marker::{
         CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker, RotXLabelMarker,
         RotYLabelMarker, RotZLabelMarker, TooltipMarker,
     },
 };
 use bevy::prelude::*;
+
+use super::setup::CarbonCount;
 
 /// adds a generic vertical spacer element with fixed height
 pub fn add_spacer(commands: &mut Commands, root_id: Entity) {

@@ -3,14 +3,13 @@ use std::cmp;
 use crate::{
     load_mol2,
     smiles::process_smiles,
-    ui::CarbonCount,
-    ui_events::{LoadedMol2Event, PlusMinusInput, PlusMinusInputEvent, UiCarbonCountInputEvent},
-    ui_helpers::add_info_labels,
-    ui_markers::{
+    ui::event::{LoadedMol2Event, PlusMinusInput, PlusMinusInputEvent, UiCarbonCountInputEvent},
+    ui::helper::add_info_labels,
+    ui::marker::{
         CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
         LoadMol2ButtonMarker, RotXLabelMarker, RotYLabelMarker, RotZLabelMarker,
     },
-    ui_resources::{UiInputEntities, UiInputSmiles},
+    ui::resource::{UiInputEntities, UiInputSmiles},
 };
 use bevy::{
     color::palettes::css::{BLACK, GREEN},
@@ -18,6 +17,8 @@ use bevy::{
 };
 use bevy_simple_text_input::TextInputSubmitEvent;
 use load_mol2::load_mol2;
+
+use super::setup::CarbonCount;
 
 /// processes the ui events
 /// basically, maps events to state

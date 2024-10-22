@@ -1,4 +1,4 @@
-use crate::{ui::CarbonCount, ui_events::UiCarbonCountInputEvent};
+use crate::ui::{event::UiCarbonCountInputEvent, setup::CarbonCount};
 use bevy::prelude::{EventWriter, Query};
 use chemcore::daylight::read_smiles;
 use gamma::graph::Graph;
