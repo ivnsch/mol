@@ -12,10 +12,10 @@ use crate::{
     ui::resource::{UiInputEntities, UiInputSmiles},
 };
 use bevy::{
-    color::palettes::css::{BLACK, GREEN},
+    color::palettes::css::{BLACK, BLUE, GRAY, GREEN},
     prelude::*,
 };
-use bevy_simple_text_input::TextInputSubmitEvent;
+use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
 use load_mol2::load_mol2;
 
 use super::setup::CarbonCount;
@@ -266,6 +266,25 @@ pub fn text_listener(
             }
         } else {
             println!("unknown entity: {:?}", text_input.value);
+        }
+    }
+}
+
+pub fn focus(
+    query: Query<(Entity, &Interaction), Changed<Interaction>>,
+    mut text_input_query: Query<(Entity, &mut TextInputInactive, &mut BorderColor)>,
+) {
+    for (interaction_entity, interaction) in &query {
+        if *interaction == Interaction::Pressed {
+            for (entity, mut inactive, mut border_color) in &mut text_input_query {
+                if entity == interaction_entity {
+                    inactive.0 = false;
+                    *border_color = BLUE.into();
+                } else {
+                    inactive.0 = true;
+                    *border_color = GRAY.into();
+                }
+            }
         }
     }
 }

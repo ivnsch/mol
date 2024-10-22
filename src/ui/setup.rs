@@ -12,6 +12,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_simple_text_input::{TextInputPlugin, TextInputSystem};
+use super::handler::focus;
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct CarbonCount(pub u32);
@@ -37,7 +38,8 @@ pub fn add_ui(app: &mut App) {
             ),
         )
         .add_systems(Startup, (setup_ui, setup_info_labels))
-        .add_systems(Update, text_listener.after(TextInputSystem));
+        .add_systems(Update, text_listener.after(TextInputSystem))
+        .add_systems(Update, focus.before(TextInputSystem));
 }
 
 /// adds right column with ui elements to scene

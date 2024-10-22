@@ -281,7 +281,7 @@ pub fn generate_input(value: String) -> (NodeBundle, TextInputBundle) {
                 font_size: 40.,
                 ..default()
             })
-            // .with_inactive(true)
+            .with_inactive(true)
             .with_value(value)
             .with_settings(TextInputSettings {
                 retain_on_submit: true,
