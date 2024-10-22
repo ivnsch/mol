@@ -1,6 +1,6 @@
 use crate::{
     ui::comp::generate_input_box,
-    ui::event::{LoadedMol2Event, PlusMinusInput, PlusMinusInputEvent, UiCarbonCountInputEvent},
+    ui::event::{LoadedMol2Event, PlusMinusInputEvent, UiCarbonCountInputEvent},
     ui::handler::{
         listen_carbon_count_ui_inputs, listen_ui_inputs, load_file_button_handler,
         minus_button_handler, plus_button_handler, rot_x_button_handler, rot_y_button_handler,
@@ -21,7 +21,6 @@ pub fn add_ui(app: &mut App) {
         .add_event::<UiCarbonCountInputEvent>()
         .add_event::<PlusMinusInputEvent>()
         .add_event::<LoadedMol2Event>()
-        .insert_resource(PlusMinusInput::Plus)
         .insert_resource(UiInputSmiles("".to_string()))
         .add_systems(
             Update,
