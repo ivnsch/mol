@@ -4,7 +4,31 @@
 
 A minimal visualizer of linear alkanes, allows to set any number of carbons, and some interactions.
 
-### Instructions
+## Instructions
+
+#### Library
+
 ```
-cargo run
+mol = { git = "https://github.com/ivnsch/mol.git" }
+
+```
+
+```rust
+mol::init_sim();
+```
+
+#### WASM
+
+```
+wasm-pack build --out-dir /<root_dir_of_next_app>/wasm --release
+```
+
+`--release` currently mandatory
+https://github.com/bevyengine/bevy/issues/16030
+
+Next.js app (for now separate):
+https://github.com/ivnsch/mol_next_app_tmp
+
+```
+npm run dev
 ```
