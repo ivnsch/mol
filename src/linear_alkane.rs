@@ -12,7 +12,7 @@ use bevy_mod_picking::{
 
 use crate::{
     load_mol2::Mol2Atom,
-    ui::{despawn_all_entities, LoadedMol2Event, UiInputsEvent},
+    ui::{add_tooltip, despawn_all_entities, LoadedMol2Event, UiInputsEvent},
 };
 
 #[allow(dead_code)]
@@ -94,7 +94,7 @@ fn add_mol(commands: &mut Commands) -> Entity {
 
 fn tooltip_descr(atom: &Mol2Atom) -> String {
     format!(
-        "Id: {}, name: {}, pos: {}, type: {}, mol name: {}",
+        "Id: {},\nname: {},\npos: {},\ntype: {},\nmol name: {}",
         atom.id,
         atom.name,
         atom.loc_vec3(),
@@ -225,8 +225,12 @@ fn add_atom(
             ..default()
         },
         PickableBundle::default(),
-        On::<Pointer<Click>>::target_commands_mut(move |_click, _target_commands| {
-            println!("clicked! {description_string}")
+        On::<Pointer<Click>>::commands_mut(move |click, target_commands| {
+            add_tooltip(
+                target_commands,
+                click.pointer_location.position,
+                description_string.clone(),
+            );
         }),
         HIGHLIGHT_TINT.clone(),
         Shape,

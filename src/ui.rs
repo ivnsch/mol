@@ -1,8 +1,8 @@
 use std::cmp;
 
 use bevy::{
-    color::palettes::css::{BLACK, GRAY, GREEN, WHITE},
-    ecs::query::QueryData,
+    color::palettes::css::{BLACK, GRAY, GREEN, RED, WHITE},
+    ecs::{query::QueryData, system::EntityCommands},
     prelude::*,
 };
 use bevy_simple_text_input::{
@@ -301,6 +301,26 @@ pub fn generate_button_label(font: &Handle<Font>, label: &str) -> TextBundle {
         ),
         ..default()
     }
+}
+
+pub fn add_tooltip(commands: &mut Commands, pos: Vec2, text: String) {
+    commands.spawn(TextBundle {
+        style: Style {
+            position_type: PositionType::Absolute,
+            left: Val::Px(pos.x),
+            top: Val::Px(pos.y),
+            ..default()
+        },
+        text: Text::from_section(
+            text,
+            TextStyle {
+                font_size: 12.0,
+                color: Color::WHITE,
+                ..default()
+            },
+        ),
+        ..default()
+    });
 }
 
 /// adds header to container
