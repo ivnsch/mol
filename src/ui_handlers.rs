@@ -3,13 +3,14 @@ use std::cmp;
 use crate::{
     load_mol2,
     smiles::process_smiles,
-    ui::{
-        CarbonCount, CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
-        LoadMol2ButtonMarker, RotXLabelMarker, RotYLabelMarker, RotZLabelMarker, UiInputEntities,
-        UiInputSmiles,
-    },
+    ui::CarbonCount,
     ui_events::{LoadedMol2Event, PlusMinusInput, PlusMinusInputEvent, UiCarbonCountInputEvent},
     ui_helpers::add_info_labels,
+    ui_markers::{
+        CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
+        LoadMol2ButtonMarker, RotXLabelMarker, RotYLabelMarker, RotZLabelMarker,
+    },
+    ui_resources::{UiInputEntities, UiInputSmiles},
 };
 use bevy::{
     color::palettes::css::{BLACK, GREEN},

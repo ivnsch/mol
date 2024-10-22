@@ -1,13 +1,14 @@
 use bevy::prelude::Commands;
 
 use crate::{
-    ui::{
-        CarbonCount, CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
-        RotXLabelMarker, RotYLabelMarker, RotZLabelMarker, TooltipMarker,
-    },
+    ui::CarbonCount,
     ui_comps::{
         button_bg, button_text, generate_button_label, generate_header, generate_info_label, row,
         spacer, square_button_bg, square_button_text, tooltip,
+    },
+    ui_markers::{
+        CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker, RotXLabelMarker,
+        RotYLabelMarker, RotZLabelMarker, TooltipMarker,
     },
 };
 use bevy::prelude::*;

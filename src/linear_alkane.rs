@@ -12,10 +12,10 @@ use bevy_mod_picking::{
 
 use crate::{
     load_mol2::Mol2Atom,
-    ui::TooltipMarker,
     ui_events::{LoadedMol2Event, UiCarbonCountInputEvent},
     ui_handlers::despawn_all_entities,
     ui_helpers::add_tooltip,
+    ui_markers::TooltipMarker,
 };
 
 #[allow(dead_code)]

@@ -7,44 +7,14 @@ use crate::{
         rot_z_button_handler, setup_info_labels, text_listener, update_carbon_count_label,
     },
     ui_helpers::{add_button, add_carbons_value_row, add_header, add_rotate_row, add_spacer},
+    ui_markers::{LoadMol2ButtonMarker, SmilesInputMarker},
+    ui_resources::{UiInputEntities, UiInputSmiles},
 };
-use bevy::{ecs::query::QueryData, prelude::*};
+use bevy::prelude::*;
 use bevy_simple_text_input::{TextInputPlugin, TextInputSystem};
-
-#[derive(Resource)]
-pub struct UiInputSmiles(pub String);
-
-#[derive(Resource)]
-pub struct UiInputEntities {
-    pub carbon_count: Entity,
-    pub smiles: Entity,
-}
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct CarbonCount(pub u32);
-
-#[derive(Component, Default, QueryData)]
-pub struct CarbonCountLabelMarker;
-#[derive(Component, Default)]
-pub struct CarbonCountPlusMarker;
-#[derive(Component, Default)]
-pub struct CarbonCountMinusMarker;
-
-#[derive(Component, Default, QueryData)]
-pub struct RotXLabelMarker;
-#[derive(Component, Default)]
-pub struct RotYLabelMarker;
-#[derive(Component, Default)]
-pub struct RotZLabelMarker;
-
-#[derive(Component, Default)]
-pub struct SmilesInputMarker;
-
-#[derive(Component, Default)]
-pub struct LoadMol2ButtonMarker;
-
-#[derive(Component, Default)]
-pub struct TooltipMarker;
 
 pub fn add_ui(app: &mut App) {
     app.add_plugins(TextInputPlugin)

@@ -12,6 +12,8 @@ mod ui_comps;
 mod ui_events;
 mod ui_handlers;
 mod ui_helpers;
+mod ui_markers;
+mod ui_resources;
 
 use bevy::app::App;
 use linear_alkane::add_3d_scratch;
