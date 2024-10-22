@@ -8,26 +8,24 @@ pub fn process_smiles(
     my_events: &mut EventWriter<UiInputsEvent>,
     str: String,
 ) -> Result<(), String> {
-    for e in carbon_count_query.iter_mut() {
-        println!("Current carbon count: {}", e.0);
-        match parse_smiles(str) {
-            Ok(carbon_count) => {
-                let current = e.0;
-                println!(
-                    "Parsed carbon count: {}, changed: {}",
-                    carbon_count.0,
-                    current != carbon_count.0
-                );
-                my_events.send(UiInputsEvent {
-                    carbon_count: carbon_count.0,
-                });
-                return Ok(());
-            }
-
-            Err(e) => return Err(e),
+    let carbon_count = carbon_count_query.single_mut();
+    println!("Current carbon count: {}", carbon_count.0);
+    match parse_smiles(str) {
+        Ok(carbon_count) => {
+            let current = carbon_count.0;
+            println!(
+                "Parsed carbon count: {}, changed: {}",
+                carbon_count.0,
+                current != carbon_count.0
+            );
+            my_events.send(UiInputsEvent {
+                carbon_count: carbon_count.0,
+            });
+            Ok(())
         }
+
+        Err(e) => Err(e),
     }
-    Ok(())
 }
 
 pub fn parse_smiles(str: String) -> Result<CarbonCount, String> {

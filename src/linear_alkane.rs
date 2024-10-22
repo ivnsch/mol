@@ -99,9 +99,8 @@ fn draw_mol2_mol(
                 mol,
                 atom.loc_vec3(),
                 BLACK.into(),
-                &tooltip_descr(&atom),
+                &tooltip_descr(atom),
             );
-            atom.x;
         }
 
         for bond in &event.0.bonds {
