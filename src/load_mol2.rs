@@ -18,7 +18,7 @@ pub fn load_mol2() -> Result<Mol2Molecule> {
 
     for res in reader.lines() {
         let line = res?;
-        println!("{}", line);
+        // println!("{}", line);
 
         if line.trim().is_empty() {
             continue;
