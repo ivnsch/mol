@@ -17,13 +17,15 @@ use crate::{
 
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
-    app.add_plugins(DefaultPickingPlugins)
+    app.add_event::<NewBoundsEvent>()
+        .add_plugins(DefaultPickingPlugins)
         .add_systems(Startup, setup_molecule)
         .add_systems(
             Update,
             (
                 setup_linear_alkane.run_if(run_if_carbon_count_changed),
                 draw_mol2_mol.run_if(run_if_mol_loaded),
+                adjust_zoom,
             ),
         );
 }
@@ -82,6 +84,9 @@ pub struct MyParent;
 #[derive(Component, Default)]
 pub struct MyInterParentBond;
 
+#[derive(Event, Debug)]
+struct NewBoundsEvent(MolBounds);
+
 const ATOM_SCALE: f32 = 0.4;
 const BOND_LENGTH: f32 = 1.0;
 const BOND_DIAM: f32 = 0.01;
@@ -109,13 +114,15 @@ fn draw_mol2_mol(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut events: EventReader<LoadedMol2Event>,
+    mut event_writer: EventWriter<NewBoundsEvent>,
 ) {
     for event in events.read() {
         clear(&mut commands, &molecule);
 
         let mol = add_mol(&mut commands);
+        let atoms = &event.0.atoms;
 
-        for atom in &event.0.atoms {
+        for atom in atoms {
             add_atom(
                 &mut commands,
                 &mut meshes,
@@ -127,6 +134,9 @@ fn draw_mol2_mol(
             );
             atom.x;
         }
+
+        let bounds = get_bounds(atoms);
+        event_writer.send(NewBoundsEvent(bounds));
 
         for bond in &event.0.bonds {
             add_bond(
@@ -141,6 +151,79 @@ fn draw_mol2_mol(
                 true,
             );
         }
+    }
+}
+
+fn adjust_zoom(
+    mut camera_query: Query<&mut Transform, With<Camera>>,
+    mut events: EventReader<NewBoundsEvent>,
+) {
+    for _ in events.read() {
+        if let Ok(mut transform) = camera_query.get_single_mut() {
+            println!("zooming out");
+            transform.translation.z += 8.0;
+        }
+    }
+}
+
+fn get_bounds(atoms: &[Mol2Atom]) -> MolBounds {
+    let mut x_min = 0.0;
+    let mut x_max = 0.0;
+    let mut y_min = 0.0;
+    let mut y_max = 0.0;
+    let mut z_min = 0.0;
+    let mut z_max = 0.0;
+
+    for atom in atoms {
+        if atom.x < x_min {
+            x_min = atom.x;
+        }
+        if atom.x > x_max {
+            x_max = atom.x;
+        }
+        if atom.y < y_min {
+            y_min = atom.y;
+        }
+        if atom.y > y_max {
+            y_max = atom.y;
+        }
+        if atom.z < z_min {
+            z_min = atom.z;
+        }
+        if atom.z > z_max {
+            z_max = atom.z;
+        }
+    }
+
+    MolBounds {
+        x_min,
+        x_max,
+        y_min,
+        y_max,
+        z_min,
+        z_max,
+    }
+}
+
+#[derive(Event, Debug)]
+struct MolBounds {
+    x_min: f32,
+    x_max: f32,
+    y_min: f32,
+    y_max: f32,
+    z_min: f32,
+    z_max: f32,
+}
+
+impl MolBounds {
+    fn x_len(&self) -> f32 {
+        self.x_max - self.x_min
+    }
+    fn y_len(&self) -> f32 {
+        self.y_max - self.y_min
+    }
+    fn z_len(&self) -> f32 {
+        self.z_max - self.z_min
     }
 }
 
