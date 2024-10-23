@@ -200,15 +200,15 @@ where
     let text_input_bundle = generate_input(value);
 
     let spawned_label = commands.spawn(label).id();
-    commands.entity(root_id).push_children(&[spawned_label]);
+    commands.entity(root_id).add_child(spawned_label);
 
     let spawned_wrapper = commands.spawn(wrapper).id();
-    commands.entity(root_id).push_children(&[spawned_wrapper]);
+    commands.entity(root_id).add_child(spawned_wrapper);
 
     let spawned_text_input_bundle = commands.spawn((marker, text_input_bundle)).id();
     commands
         .entity(spawned_wrapper)
-        .push_children(&[spawned_text_input_bundle]);
+        .add_child(spawned_text_input_bundle);
 
     spawned_text_input_bundle
 }

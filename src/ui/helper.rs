@@ -17,7 +17,7 @@ use super::resource::CarbonCount;
 /// adds a generic vertical spacer element with fixed height
 pub fn add_spacer(commands: &mut Commands, root_id: Entity) {
     let spacer_id = commands.spawn(spacer()).id();
-    commands.entity(root_id).push_children(&[spacer_id]);
+    commands.entity(root_id).add_child(spacer_id);
 }
 
 /// adds component to set carbon count
@@ -30,7 +30,7 @@ pub fn add_carbons_value_row(
 ) -> Entity {
     let row = row();
     let row_id = commands.spawn(row).id();
-    commands.entity(root_id).push_children(&[row_id]);
+    commands.entity(root_id).add_child(row_id);
 
     let carbon_count_value_entity = add_button_label_with_marker(
         commands,
@@ -50,7 +50,7 @@ pub fn add_rotate_row(commands: &mut Commands, font: &Handle<Font>, root_id: Ent
     let row = row();
 
     let row_id = commands.spawn(row).id();
-    commands.entity(root_id).push_children(&[row_id]);
+    commands.entity(root_id).add_child(row_id);
 
     add_square_button(commands, row_id, font, "x", RotXLabelMarker);
     add_square_button(commands, row_id, font, "y", RotYLabelMarker);
@@ -72,7 +72,7 @@ where
 {
     let label = generate_button_label(font, label);
     let spawned_label = commands.spawn((marker, label)).id();
-    commands.entity(row_id).push_children(&[spawned_label]);
+    commands.entity(row_id).add_child(spawned_label);
     spawned_label
 }
 
@@ -85,9 +85,7 @@ pub fn add_header(
 ) -> Entity {
     let label = generate_header(font, label);
     let spawned_label = commands.spawn(label).id();
-    commands
-        .entity(container_id)
-        .push_children(&[spawned_label]);
+    commands.entity(container_id).add_child(spawned_label);
     spawned_label
 }
 
@@ -107,7 +105,7 @@ pub fn add_square_button<T>(
             parent.spawn(square_button_text(font, label));
         })
         .id();
-    commands.entity(container_id).push_children(&[button]);
+    commands.entity(container_id).add_child(button);
 }
 
 pub fn add_tooltip(commands: &mut Commands, pos: Vec2, text: String) {
@@ -129,7 +127,7 @@ pub fn add_button<T>(
             parent.spawn(button_text(font, label));
         })
         .id();
-    commands.entity(container_id).push_children(&[button]);
+    commands.entity(container_id).add_child(button);
 }
 
 pub fn add_info_labels(mut commands: Commands, font: &Handle<Font>) {

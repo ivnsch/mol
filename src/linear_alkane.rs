@@ -148,7 +148,7 @@ fn add_bond(
         commands.spawn(bond)
     }
     .id();
-    commands.entity(parent).push_children(&[entity]);
+    commands.entity(parent).add_child(entity);
 }
 
 fn create_bond(
@@ -220,7 +220,7 @@ fn add_atom(
     );
 
     let entity = commands.spawn(sphere).id();
-    commands.entity(parent).push_children(&[entity]);
+    commands.entity(parent).add_child(entity);
 }
 
 fn setup_molecule(mut commands: Commands) {
@@ -310,7 +310,7 @@ fn add_linear_alkane_with_mol(
         ))
         .id();
     println!("before suspect");
-    commands.entity(molecule).push_children(&[first_parent]);
+    commands.entity(molecule).add_child(first_parent);
     println!("after suspect");
     add_outer_carbon(
         commands,
@@ -351,7 +351,7 @@ fn add_linear_alkane_with_mol(
         ))
         .id();
 
-    commands.entity(molecule).push_children(&[last_parent]);
+    commands.entity(molecule).add_child(last_parent);
     add_outer_carbon(
         commands,
         meshes,
@@ -410,7 +410,7 @@ fn add_linear_alkane_with_mol(
                 MyParent,
             ))
             .id();
-        commands.entity(molecule).push_children(&[inner_parent]);
+        commands.entity(molecule).add_child(inner_parent);
         add_inner_carbon(
             commands,
             meshes,
