@@ -38,74 +38,108 @@ impl AssetLoader for Mol2AssetLoader {
 
         let mut lines = buffered_reader.lines();
 
-        // let mut line = String::new();
-        println!("will start processing lines");
         while let Some(line) = lines.next().await {
             let line = line?;
-            // while buffered_reader.read_line(&mut line).await? > 0 {
-            // println!("{}", line);
 
-            if line.trim().is_empty() {
-                continue;
-            }
-
-            let parts: Vec<&str> = line.split_whitespace().collect();
-
-            match parts[0] {
-                "@<TRIPOS>ATOM" => {
-                    parsing_atoms = true;
-                    parsing_bonds = false;
-                }
-                "@<TRIPOS>BOND" => {
-                    parsing_bonds = true;
-                    parsing_atoms = false;
-                }
-                "@<TRIPOS>SUBSTRUCTURE" => {
+            match parse_mol2_line(&line) {
+                ProcessMol2LineResult::Empty => continue,
+                ProcessMol2LineResult::Header(header) => match header {
+                    Header::Atom => {
+                        parsing_atoms = true;
+                        parsing_bonds = false;
+                    }
+                    Header::Bond => {
+                        parsing_bonds = true;
+                        parsing_atoms = false;
+                    }
                     // we don't use this yet so just finish
-                    break;
+                    Header::Other => break,
+                },
+                ProcessMol2LineResult::OneToken => continue,
+                ProcessMol2LineResult::Entity { parts } => {
+                    if parsing_atoms {
+                        let atom = parse_atom_line(&parts)?;
+                        atoms.push(atom);
+                    } else if parsing_bonds {
+                        let bond = parse_bond_line(&parts)?;
+                        bonds.push(bond);
+                    }
                 }
-                _ => {}
-            }
-            // the above headers
-            if parts.len() == 1 {
-                continue;
-            }
-
-            // println!("parts length: {}", parts.length());
-
-            // parts[0] is the line number, we'll ignore that
-
-            if parsing_atoms {
-                let atom = Mol2Atom {
-                    id: parts[0].parse()?,
-                    name: parts[1].to_string(),
-                    x: parts[2].parse()?,
-                    y: parts[3].parse()?,
-                    z: parts[4].parse()?,
-                    type_: parts[5].to_string(),
-                    bond_count: parts[6].parse()?,
-                    mol_name: parts[7].to_string(),
-                };
-                atoms.push(atom);
-            } else if parsing_bonds {
-                let bond = Mol2Bond {
-                    id: parts[0].parse()?,
-                    atom1: parts[1].parse()?,
-                    atom2: parts[2].parse()?,
-                    type_: parts[3].to_string(),
-                };
-                bonds.push(bond);
             }
         }
 
         println!(
-            "finished parsing mol: atoms: {}, bonds: {}",
+            "finished parsing mol2 file: atoms: {}, bonds: {}",
             atoms.len(),
             bonds.len()
         );
         let mol = Mol2Molecule { atoms, bonds };
         Ok(mol)
     }
+}
+
+enum ProcessMol2LineResult<'a> {
+    Empty,
+    Header(Header),
+    OneToken, // for now not interpreting these
+    Entity { parts: Vec<&'a str> },
+}
+
+enum Header {
+    Atom,
+    Bond,
+    Other, // for now just ignoring these
+}
+
+fn parse_mol2_line(line: &str) -> ProcessMol2LineResult {
+    // println!("{}", line);
+
+    if line.trim().is_empty() {
+        return ProcessMol2LineResult::Empty;
+    }
+
+    let parts: Vec<&str> = line.split_whitespace().collect();
+
+    match parts[0] {
+        "@<TRIPOS>ATOM" => {
+            return ProcessMol2LineResult::Header(Header::Atom);
+        }
+        "@<TRIPOS>BOND" => {
+            return ProcessMol2LineResult::Header(Header::Bond);
+        }
+        "@<TRIPOS>SUBSTRUCTURE" => {
+            return ProcessMol2LineResult::Header(Header::Other);
+        }
+        _ => {}
+    }
+
+    if parts.len() == 1 {
+        return ProcessMol2LineResult::OneToken;
+    }
+
+    ProcessMol2LineResult::Entity { parts }
+}
+
+fn parse_atom_line(parts: &[&str]) -> Result<Mol2Atom> {
+    Ok(Mol2Atom {
+        id: parts[0].parse()?,
+        name: parts[1].to_string(),
+        x: parts[2].parse()?,
+        y: parts[3].parse()?,
+        z: parts[4].parse()?,
+        type_: parts[5].to_string(),
+        bond_count: parts[6].parse()?,
+        mol_name: parts[7].to_string(),
+    })
+}
+
+fn parse_bond_line(parts: &[&str]) -> Result<Mol2Bond> {
+    Ok(Mol2Bond {
+        id: parts[0].parse()?,
+        atom1: parts[1].parse()?,
+        atom2: parts[2].parse()?,
+        type_: parts[3].to_string(),
+    })
 }
 
 // TODO performance: remove clone from these
