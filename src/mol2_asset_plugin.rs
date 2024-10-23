@@ -52,8 +52,9 @@ impl AssetLoader for Mol2AssetLoader {
                         parsing_bonds = true;
                         parsing_atoms = false;
                     }
-                    // we don't use this yet so just finish
-                    Header::Other => break,
+                    // we don't use this yet, ignore
+                    // entries belonging to section will also be consequently ignored
+                    Header::Other => continue,
                 },
                 ProcessMol2LineResult::OneToken => continue,
                 ProcessMol2LineResult::Entity { parts } => {
