@@ -2,6 +2,7 @@ mod camera_controller;
 #[cfg(test)]
 mod chemcore_exploration_tests;
 mod defocus;
+mod element;
 mod embedded_asset_plugin;
 mod init_wasm_log;
 mod linear_alkane;

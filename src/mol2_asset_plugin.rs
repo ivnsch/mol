@@ -1,10 +1,12 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use bevy::app::{App, Plugin};
 use bevy::asset::io::Reader;
 use bevy::asset::{Asset, AssetApp, AssetLoader, LoadContext};
 use bevy::tasks::futures_lite::io::BufReader;
 use bevy::tasks::futures_lite::{AsyncBufReadExt, StreamExt};
 use bevy::{math::Vec3, reflect::TypePath};
+
+use crate::element::Element;
 
 pub struct Mol2AssetPlugin;
 
@@ -122,16 +124,40 @@ fn parse_mol2_line(line: &str) -> ProcessMol2LineResult {
 }
 
 fn parse_atom_line(parts: &[&str]) -> Result<Mol2Atom> {
+    let type_ = parts[5];
     Ok(Mol2Atom {
         id: parts[0].parse()?,
         name: parts[1].to_string(),
+        element: parse_element_from_type(type_)?,
         x: parts[2].parse()?,
         y: parts[3].parse()?,
         z: parts[4].parse()?,
-        type_: parts[5].to_string(),
+        type_: type_.to_string(),
         bond_count: parts[6].parse()?,
         mol_name: parts[7].to_string(),
     })
+}
+
+fn parse_element_from_type(type_: &str) -> Result<Element> {
+    let parts: Vec<&str> = type_.split(".").collect();
+    if parts.is_empty() {
+        return Err(anyhow!("Invalid element type entry: {}", type_));
+    }
+    parse_element(parts[0])
+}
+
+fn parse_element(element: &str) -> Result<Element> {
+    match element {
+        "H" => Ok(Element::H),
+        "C" => Ok(Element::C),
+        "N" => Ok(Element::N),
+        "O" => Ok(Element::O),
+        "F" => Ok(Element::F),
+        "P" => Ok(Element::P),
+        "S" => Ok(Element::S),
+        "S" => Ok(Element::S),
+        _ => Err(anyhow!("Not handled element str: {}", element)),
+    }
 }
 
 fn parse_bond_line(parts: &[&str]) -> Result<Mol2Bond> {
@@ -161,6 +187,7 @@ pub struct Mol2Atom {
     pub type_: String,
     pub bond_count: i32,
     pub mol_name: String,
+    pub element: Element,
 }
 
 impl Mol2Atom {

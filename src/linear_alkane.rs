@@ -1,7 +1,9 @@
 use std::f32::consts::PI;
 
 use bevy::{
-    color::palettes::css::{BLACK, DARK_GRAY, WHITE},
+    color::palettes::css::{
+        BLACK, DARK_CYAN, DARK_GRAY, GREEN, MAGENTA, ORANGE, RED, WHITE, YELLOW,
+    },
     prelude::*,
 };
 use bevy_mod_picking::{
@@ -11,6 +13,7 @@ use bevy_mod_picking::{
 };
 
 use crate::{
+    element::Element,
     mol2_asset_plugin::{Mol2Atom, Mol2Molecule},
     ui::{
         event::UiCarbonCountInputEvent, handler::despawn_all_entities, helper::add_tooltip,
@@ -108,7 +111,7 @@ fn draw_mol2_mol(
                     &mut materials,
                     mol,
                     atom.loc_vec3(),
-                    BLACK.into(),
+                    color_for_element(&atom.element),
                     &tooltip_descr(atom),
                 );
             }
@@ -189,17 +192,29 @@ fn create_bond(
     }
 }
 
+fn color_for_element(element: &Element) -> Srgba {
+    match element {
+        Element::H => WHITE,
+        Element::C => BLACK,
+        Element::N => GREEN,
+        Element::O => RED,
+        Element::F => MAGENTA,
+        Element::P => ORANGE,
+        Element::S => YELLOW,
+    }
+}
+
 fn add_atom(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     parent: Entity,
     position: Vec3,
-    color: Color,
+    color: Srgba,
     description: &str,
 ) {
     let debug_material: Handle<StandardMaterial> = materials.add(StandardMaterial {
-        base_color: color,
+        base_color: color.into(),
         ..default()
     });
 
@@ -472,7 +487,7 @@ fn add_outer_carbon(
         materials,
         parent,
         center,
-        BLACK.into(),
+        color_for_element(&Element::C),
         "C",
     );
 
@@ -499,11 +514,38 @@ fn add_outer_carbon(
     p3 += center;
     p4 += center;
 
-    add_atom(commands, meshes, materials, parent, p2, WHITE.into(), "H");
+    let h_descr = "H";
+    let h_color = color_for_element(&Element::H);
 
-    add_atom(commands, meshes, materials, parent, p3, WHITE.into(), "H");
+    add_atom(
+        commands,
+        meshes,
+        materials,
+        parent,
+        p2,
+        h_color.into(),
+        h_descr,
+    );
 
-    add_atom(commands, meshes, materials, parent, p4, WHITE.into(), "H");
+    add_atom(
+        commands,
+        meshes,
+        materials,
+        parent,
+        p3,
+        h_color.into(),
+        h_descr,
+    );
+
+    add_atom(
+        commands,
+        meshes,
+        materials,
+        parent,
+        p4,
+        h_color.into(),
+        h_descr,
+    );
 
     // add bonds connecting atoms
 
@@ -532,7 +574,7 @@ fn add_inner_carbon(
         materials,
         parent,
         center,
-        BLACK.into(),
+        color_for_element(&Element::C),
         "C",
     );
 
@@ -555,8 +597,11 @@ fn add_inner_carbon(
     p2 += center;
     p3 += center;
 
-    add_atom(commands, meshes, materials, parent, p2, WHITE.into(), "H");
-    add_atom(commands, meshes, materials, parent, p3, WHITE.into(), "H");
+    let h_descr = "H";
+    let h_color = color_for_element(&Element::H);
+
+    add_atom(commands, meshes, materials, parent, p2, h_color, &h_descr);
+    add_atom(commands, meshes, materials, parent, p3, h_color, &h_descr);
     add_bond(commands, meshes, materials, parent, center, p2, false);
     add_bond(commands, meshes, materials, parent, center, p3, false);
 }
