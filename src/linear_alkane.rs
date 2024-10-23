@@ -242,7 +242,6 @@ fn setup_linear_alkane(
         println!("rebuilding scene for {} carbons", input.0);
 
         clear(&mut commands, &molecule);
-        println!("after clear..");
 
         add_linear_alkane(
             &mut commands,
@@ -309,9 +308,7 @@ fn add_linear_alkane_with_mol(
             MyParent,
         ))
         .id();
-    println!("before suspect");
     commands.entity(molecule).add_child(first_parent);
-    println!("after suspect");
     add_outer_carbon(
         commands,
         meshes,
@@ -445,8 +442,6 @@ fn add_linear_alkane_with_mol(
             true,
         );
     }
-
-    println!("end of fn");
 }
 
 /// the first or last carbon of the chain
