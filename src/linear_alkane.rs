@@ -22,6 +22,11 @@ use crate::{
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
     app.add_plugins(DefaultPickingPlugins)
+        .insert_resource(MolStyle {
+            atom_scale: 0.3,
+            bond_len: 0.6,
+            bond_diam: 0.07,
+        })
         .add_systems(Startup, setup_molecule)
         .add_systems(Update, (setup_linear_alkane, draw_mol2_mol));
 }
@@ -62,9 +67,12 @@ pub struct MyParent;
 #[derive(Component, Default)]
 pub struct MyInterParentBond;
 
-const ATOM_SCALE: f32 = 0.3;
-const BOND_LENGTH: f32 = 0.6;
-const BOND_DIAM: f32 = 0.07;
+#[derive(Resource)]
+pub struct MolStyle {
+    atom_scale: f32,
+    bond_len: f32,
+    bond_diam: f32,
+}
 
 fn add_mol(commands: &mut Commands) -> Entity {
     commands
@@ -92,6 +100,7 @@ fn draw_mol2_mol(
     // mut event: EventReader<LoadedMol2Event>,
     mut mol2_mol: ResMut<Mol2MoleculeRes>,
     assets: Res<Assets<Mol2Molecule>>,
+    mol_style: Res<MolStyle>,
 ) {
     if let Some(handle) = mol2_mol.0.clone() {
         if let Some(loaded_mol) = assets.get(&handle) {
@@ -107,6 +116,7 @@ fn draw_mol2_mol(
                     &mut commands,
                     &mut meshes,
                     &mut materials,
+                    &mol_style,
                     mol,
                     atom.loc_vec3(),
                     color_for_element(&atom.element),
@@ -119,6 +129,7 @@ fn draw_mol2_mol(
                     &mut commands,
                     &mut meshes,
                     &mut materials,
+                    &mol_style,
                     mol,
                     // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
                     // this seems to be always the case in mol2 files
@@ -139,6 +150,7 @@ fn add_bond(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
+    mol_style: &Res<MolStyle>,
     parent: Entity,
     atom1_loc: Vec3,
     atom2_loc: Vec3,
@@ -149,7 +161,7 @@ fn add_bond(
         ..default()
     });
 
-    let bond = create_bond(meshes, &material, atom1_loc, atom2_loc);
+    let bond = create_bond(meshes, &material, mol_style, atom1_loc, atom2_loc);
 
     let entity = if is_inter_parent {
         commands.spawn((bond, MyInterParentBond))
@@ -163,6 +175,7 @@ fn add_bond(
 fn create_bond(
     meshes: &mut ResMut<Assets<Mesh>>,
     material: &Handle<StandardMaterial>,
+    mol_style: &Res<MolStyle>,
     p1: Vec3,
     p2: Vec3,
 ) -> PbrBundle {
@@ -173,7 +186,7 @@ fn create_bond(
     let rotation = Quat::from_rotation_arc(Vec3::Y, direction);
 
     let mesh: Handle<Mesh> = meshes.add(Capsule3d {
-        radius: BOND_DIAM,
+        radius: mol_style.bond_diam,
         half_length: distance / 2.0,
         ..default()
     });
@@ -206,6 +219,7 @@ fn add_atom(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
+    mol_style: &Res<MolStyle>,
     parent: Entity,
     position: Vec3,
     color: Srgba,
@@ -223,8 +237,11 @@ fn add_atom(
         PbrBundle {
             mesh,
             material: debug_material.clone(),
-            transform: Transform::from_translation(position)
-                .with_scale(Vec3::new(ATOM_SCALE, ATOM_SCALE, ATOM_SCALE)),
+            transform: Transform::from_translation(position).with_scale(Vec3::new(
+                mol_style.atom_scale,
+                mol_style.atom_scale,
+                mol_style.atom_scale,
+            )),
             ..default()
         },
         PickableBundle::default(),
@@ -262,6 +279,7 @@ fn setup_linear_alkane(
     mut materials: ResMut<Assets<StandardMaterial>>,
     molecule: Query<Entity, With<MyMolecule>>,
     mut events: EventReader<UiCarbonCountInputEvent>,
+    mol_style: Res<MolStyle>,
 ) {
     for input in events.read() {
         println!("rebuilding scene for {} carbons", input.0);
@@ -272,6 +290,7 @@ fn setup_linear_alkane(
             &mut commands,
             &mut meshes,
             &mut materials,
+            &mol_style,
             Vec3::ZERO,
             input.0,
         )
@@ -282,6 +301,7 @@ fn add_linear_alkane(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
+    mol_style: &Res<MolStyle>,
     center_first_carbon: Vec3,
     carbons: u32,
 ) {
@@ -296,6 +316,7 @@ fn add_linear_alkane(
         commands,
         meshes,
         materials,
+        mol_style,
         mol,
         center_first_carbon,
         carbons,
@@ -306,6 +327,7 @@ fn add_linear_alkane_with_mol(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
+    mol_style: &Res<MolStyle>,
     molecule: Entity,
     center_first_carbon: Vec3,
     carbons: u32,
@@ -338,6 +360,7 @@ fn add_linear_alkane_with_mol(
         commands,
         meshes,
         materials,
+        mol_style,
         first_parent,
         center_first_carbon,
         single,
@@ -353,11 +376,15 @@ fn add_linear_alkane_with_mol(
     let inner_carbons = carbons - 2;
 
     let (last_parent_y, last_parent_z_rot) = if inner_carbons % 2 == 0 {
-        (BOND_LENGTH, 135.0_f32.to_radians())
+        (mol_style.bond_len, 135.0_f32.to_radians())
     } else {
         (0.0, 45.0_f32.to_radians())
     };
-    let last_parent_trans = Vec3::new((inner_carbons + 1) as f32 * BOND_LENGTH, last_parent_y, 0.0);
+    let last_parent_trans = Vec3::new(
+        (inner_carbons + 1) as f32 * mol_style.bond_len,
+        last_parent_y,
+        0.0,
+    );
     let last_parent = commands
         .spawn((
             Name::new("last_parent"),
@@ -378,6 +405,7 @@ fn add_linear_alkane_with_mol(
         commands,
         meshes,
         materials,
+        mol_style,
         last_parent,
         center_first_carbon,
         false,
@@ -388,6 +416,7 @@ fn add_linear_alkane_with_mol(
             commands,
             meshes,
             materials,
+            mol_style,
             molecule,
             last_parent_trans,
             first_parent_trans,
@@ -400,14 +429,18 @@ fn add_linear_alkane_with_mol(
 
     for i in 0..inner_carbons {
         let even = i % 2 == 0;
-        let inner_parent_y = if even { BOND_LENGTH } else { 0.0 };
-        let inner_parent_trans =
-            Vec3::new(BOND_LENGTH * i as f32 + BOND_LENGTH, inner_parent_y, 0.0);
+        let inner_parent_y = if even { mol_style.bond_len } else { 0.0 };
+        let inner_parent_trans = Vec3::new(
+            mol_style.bond_len * i as f32 + mol_style.bond_len,
+            inner_parent_y,
+            0.0,
+        );
         if i == 0 {
             add_bond(
                 commands,
                 meshes,
                 materials,
+                mol_style,
                 molecule,
                 first_parent_trans,
                 inner_parent_trans,
@@ -437,6 +470,7 @@ fn add_linear_alkane_with_mol(
             commands,
             meshes,
             materials,
+            mol_style,
             inner_parent,
             center_first_carbon,
         );
@@ -446,6 +480,7 @@ fn add_linear_alkane_with_mol(
                 commands,
                 meshes,
                 materials,
+                mol_style,
                 molecule,
                 inner_parent_trans,
                 previous_trans,
@@ -461,6 +496,7 @@ fn add_linear_alkane_with_mol(
             commands,
             meshes,
             materials,
+            mol_style,
             molecule,
             last_parent_trans,
             previous_trans,
@@ -474,6 +510,7 @@ fn add_outer_carbon(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
+    mol_style: &Res<MolStyle>,
     parent: Entity,
     center: Vec3, // carbon center
     single: bool, // whether it's the only carbon in the molecule (methane)
@@ -483,6 +520,7 @@ fn add_outer_carbon(
         commands,
         meshes,
         materials,
+        mol_style,
         parent,
         center,
         color_for_element(&Element::C),
@@ -498,14 +536,14 @@ fn add_outer_carbon(
     let rot_y_angle = 120.0_f32.to_radians();
     let rot_y = Quat::from_rotation_y(rot_y_angle);
 
-    let mut p1 = Vec3::new(0.0, BOND_LENGTH, 0.0);
+    let mut p1 = Vec3::new(0.0, mol_style.bond_len, 0.0);
 
-    let mut p2 = (rot_y * rot_x * Vec3::Y) * BOND_LENGTH;
+    let mut p2 = (rot_y * rot_x * Vec3::Y) * mol_style.bond_len;
 
     let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
-    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * BOND_LENGTH;
+    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * mol_style.bond_len;
 
-    let mut p4 = rot_x * Vec3::Y * BOND_LENGTH;
+    let mut p4 = rot_x * Vec3::Y * mol_style.bond_len;
 
     p1 += center;
     p2 += center;
@@ -519,6 +557,7 @@ fn add_outer_carbon(
         commands,
         meshes,
         materials,
+        mol_style,
         parent,
         p2,
         h_color.into(),
@@ -529,6 +568,7 @@ fn add_outer_carbon(
         commands,
         meshes,
         materials,
+        mol_style,
         parent,
         p3,
         h_color.into(),
@@ -539,6 +579,7 @@ fn add_outer_carbon(
         commands,
         meshes,
         materials,
+        mol_style,
         parent,
         p4,
         h_color.into(),
@@ -547,14 +588,31 @@ fn add_outer_carbon(
 
     // add bonds connecting atoms
 
-    add_bond(commands, meshes, materials, parent, center, p2, false);
-    add_bond(commands, meshes, materials, parent, center, p3, false);
-    add_bond(commands, meshes, materials, parent, center, p4, false);
+    add_bond(
+        commands, meshes, materials, mol_style, parent, center, p2, false,
+    );
+    add_bond(
+        commands, meshes, materials, mol_style, parent, center, p3, false,
+    );
+    add_bond(
+        commands, meshes, materials, mol_style, parent, center, p4, false,
+    );
 
     if single {
         // p1 only shown when there's only 1 carbon, i.e. 4 bonds with hydrogen
-        add_atom(commands, meshes, materials, parent, p1, WHITE.into(), "H");
-        add_bond(commands, meshes, materials, parent, center, p1, false);
+        add_atom(
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            parent,
+            p1,
+            WHITE.into(),
+            "H",
+        );
+        add_bond(
+            commands, meshes, materials, mol_style, parent, center, p1, false,
+        );
     }
 }
 
@@ -562,6 +620,7 @@ fn add_inner_carbon(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
+    mol_style: &Res<MolStyle>,
     parent: Entity,
     center: Vec3,
 ) {
@@ -570,6 +629,7 @@ fn add_inner_carbon(
         commands,
         meshes,
         materials,
+        mol_style,
         parent,
         center,
         color_for_element(&Element::C),
@@ -586,11 +646,11 @@ fn add_inner_carbon(
     let rot_y = Quat::from_rotation_y(rot_y_angle);
 
     // first h
-    let mut p2 = (rot_y * rot_x * Vec3::Y) * BOND_LENGTH;
+    let mut p2 = (rot_y * rot_x * Vec3::Y) * mol_style.bond_len;
 
     // second h
     let rot_y_neg = Quat::from_rotation_y(-rot_y_angle);
-    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * BOND_LENGTH;
+    let mut p3 = (rot_y_neg * rot_x * Vec3::Y) * mol_style.bond_len;
 
     p2 += center;
     p3 += center;
@@ -598,10 +658,18 @@ fn add_inner_carbon(
     let h_descr = "H";
     let h_color = color_for_element(&Element::H);
 
-    add_atom(commands, meshes, materials, parent, p2, h_color, &h_descr);
-    add_atom(commands, meshes, materials, parent, p3, h_color, &h_descr);
-    add_bond(commands, meshes, materials, parent, center, p2, false);
-    add_bond(commands, meshes, materials, parent, center, p3, false);
+    add_atom(
+        commands, meshes, materials, mol_style, parent, p2, h_color, &h_descr,
+    );
+    add_atom(
+        commands, meshes, materials, mol_style, parent, p3, h_color, &h_descr,
+    );
+    add_bond(
+        commands, meshes, materials, mol_style, parent, center, p2, false,
+    );
+    add_bond(
+        commands, meshes, materials, mol_style, parent, center, p3, false,
+    );
 }
 #[derive(Component)]
 struct Shape;
