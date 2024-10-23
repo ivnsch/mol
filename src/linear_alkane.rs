@@ -27,6 +27,7 @@ pub fn add_3d_scratch(app: &mut App) {
             bond_len: 0.6,
             bond_diam: 0.07,
         })
+        .insert_resource(MolRender::BallStick)
         .add_systems(Startup, setup_molecule)
         .add_systems(Update, (setup_linear_alkane, draw_mol2_mol));
 }
@@ -74,6 +75,13 @@ pub struct MolStyle {
     bond_diam: f32,
 }
 
+#[derive(Resource, PartialEq, Eq)]
+pub enum MolRender {
+    BallStick,
+    #[allow(unused)]
+    Stick,
+}
+
 fn add_mol(commands: &mut Commands) -> Entity {
     commands
         .spawn((Name::new("mol"), MyMolecule, SpatialBundle { ..default() }))
@@ -101,6 +109,7 @@ fn draw_mol2_mol(
     mut mol2_mol: ResMut<Mol2MoleculeRes>,
     assets: Res<Assets<Mol2Molecule>>,
     mol_style: Res<MolStyle>,
+    mol_render: Res<MolRender>,
 ) {
     if let Some(handle) = mol2_mol.0.clone() {
         if let Some(loaded_mol) = assets.get(&handle) {
@@ -111,17 +120,19 @@ fn draw_mol2_mol(
 
             let mol = add_mol(&mut commands);
 
-            for atom in &loaded_mol.atoms {
-                add_atom(
-                    &mut commands,
-                    &mut meshes,
-                    &mut materials,
-                    &mol_style,
-                    mol,
-                    atom.loc_vec3(),
-                    color_for_element(&atom.element),
-                    &tooltip_descr(atom),
-                );
+            if mol_render.into_inner() == &MolRender::BallStick {
+                for atom in &loaded_mol.atoms {
+                    add_atom(
+                        &mut commands,
+                        &mut meshes,
+                        &mut materials,
+                        &mol_style,
+                        mol,
+                        atom.loc_vec3(),
+                        color_for_element(&atom.element),
+                        &tooltip_descr(atom),
+                    );
+                }
             }
 
             for bond in &loaded_mol.bonds {
@@ -280,6 +291,7 @@ fn setup_linear_alkane(
     molecule: Query<Entity, With<MyMolecule>>,
     mut events: EventReader<UiCarbonCountInputEvent>,
     mol_style: Res<MolStyle>,
+    mol_render: Res<MolRender>,
 ) {
     for input in events.read() {
         println!("rebuilding scene for {} carbons", input.0);
@@ -291,6 +303,7 @@ fn setup_linear_alkane(
             &mut meshes,
             &mut materials,
             &mol_style,
+            &mol_render,
             Vec3::ZERO,
             input.0,
         )
@@ -302,6 +315,7 @@ fn add_linear_alkane(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     mol_style: &Res<MolStyle>,
+    mol_render: &Res<MolRender>,
     center_first_carbon: Vec3,
     carbons: u32,
 ) {
@@ -317,6 +331,7 @@ fn add_linear_alkane(
         meshes,
         materials,
         mol_style,
+        mol_render,
         mol,
         center_first_carbon,
         carbons,
@@ -328,6 +343,7 @@ fn add_linear_alkane_with_mol(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     mol_style: &Res<MolStyle>,
+    mol_render: &Res<MolRender>,
     molecule: Entity,
     center_first_carbon: Vec3,
     carbons: u32,
@@ -361,6 +377,7 @@ fn add_linear_alkane_with_mol(
         meshes,
         materials,
         mol_style,
+        mol_render,
         first_parent,
         center_first_carbon,
         single,
@@ -406,6 +423,7 @@ fn add_linear_alkane_with_mol(
         meshes,
         materials,
         mol_style,
+        mol_render,
         last_parent,
         center_first_carbon,
         false,
@@ -471,6 +489,7 @@ fn add_linear_alkane_with_mol(
             meshes,
             materials,
             mol_style,
+            mol_render,
             inner_parent,
             center_first_carbon,
         );
@@ -511,21 +530,24 @@ fn add_outer_carbon(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     mol_style: &Res<MolStyle>,
+    mol_render: &Res<MolRender>,
     parent: Entity,
     center: Vec3, // carbon center
     single: bool, // whether it's the only carbon in the molecule (methane)
 ) {
-    // center carbon
-    add_atom(
-        commands,
-        meshes,
-        materials,
-        mol_style,
-        parent,
-        center,
-        color_for_element(&Element::C),
-        "C",
-    );
+    if **mol_render == MolRender::BallStick {
+        // center carbon
+        add_atom(
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            parent,
+            center,
+            color_for_element(&Element::C),
+            "C",
+        );
+    }
 
     // tetrahedral angle
     // note that this is used for the angles with the center of the molecule as vertex,
@@ -553,38 +575,40 @@ fn add_outer_carbon(
     let h_descr = "H";
     let h_color = color_for_element(&Element::H);
 
-    add_atom(
-        commands,
-        meshes,
-        materials,
-        mol_style,
-        parent,
-        p2,
-        h_color.into(),
-        h_descr,
-    );
+    if **mol_render == MolRender::BallStick {
+        add_atom(
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            parent,
+            p2,
+            h_color.into(),
+            h_descr,
+        );
 
-    add_atom(
-        commands,
-        meshes,
-        materials,
-        mol_style,
-        parent,
-        p3,
-        h_color.into(),
-        h_descr,
-    );
+        add_atom(
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            parent,
+            p3,
+            h_color.into(),
+            h_descr,
+        );
 
-    add_atom(
-        commands,
-        meshes,
-        materials,
-        mol_style,
-        parent,
-        p4,
-        h_color.into(),
-        h_descr,
-    );
+        add_atom(
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            parent,
+            p4,
+            h_color.into(),
+            h_descr,
+        );
+    }
 
     // add bonds connecting atoms
 
@@ -600,16 +624,18 @@ fn add_outer_carbon(
 
     if single {
         // p1 only shown when there's only 1 carbon, i.e. 4 bonds with hydrogen
-        add_atom(
-            commands,
-            meshes,
-            materials,
-            mol_style,
-            parent,
-            p1,
-            WHITE.into(),
-            "H",
-        );
+        if **mol_render == MolRender::BallStick {
+            add_atom(
+                commands,
+                meshes,
+                materials,
+                mol_style,
+                parent,
+                p1,
+                WHITE.into(),
+                "H",
+            );
+        }
         add_bond(
             commands, meshes, materials, mol_style, parent, center, p1, false,
         );
@@ -621,20 +647,23 @@ fn add_inner_carbon(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     mol_style: &Res<MolStyle>,
+    mol_render: &Res<MolRender>,
     parent: Entity,
     center: Vec3,
 ) {
-    // center carbon
-    add_atom(
-        commands,
-        meshes,
-        materials,
-        mol_style,
-        parent,
-        center,
-        color_for_element(&Element::C),
-        "C",
-    );
+    if **mol_render == MolRender::BallStick {
+        // center carbon
+        add_atom(
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            parent,
+            center,
+            color_for_element(&Element::C),
+            "C",
+        );
+    }
 
     // tetrahedral angle
     // note that this is used for the angles with the center of the molecule as vertex,
@@ -658,18 +687,20 @@ fn add_inner_carbon(
     let h_descr = "H";
     let h_color = color_for_element(&Element::H);
 
-    add_atom(
-        commands, meshes, materials, mol_style, parent, p2, h_color, &h_descr,
-    );
-    add_atom(
-        commands, meshes, materials, mol_style, parent, p3, h_color, &h_descr,
-    );
-    add_bond(
-        commands, meshes, materials, mol_style, parent, center, p2, false,
-    );
-    add_bond(
-        commands, meshes, materials, mol_style, parent, center, p3, false,
-    );
+    if **mol_render == MolRender::BallStick {
+        add_atom(
+            commands, meshes, materials, mol_style, parent, p2, h_color, &h_descr,
+        );
+        add_atom(
+            commands, meshes, materials, mol_style, parent, p3, h_color, &h_descr,
+        );
+        add_bond(
+            commands, meshes, materials, mol_style, parent, center, p2, false,
+        );
+        add_bond(
+            commands, meshes, materials, mol_style, parent, center, p3, false,
+        );
+    }
 }
 #[derive(Component)]
 struct Shape;
