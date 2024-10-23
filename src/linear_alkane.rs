@@ -147,7 +147,7 @@ fn add_bond(
     is_inter_parent: bool,
 ) {
     let material: Handle<StandardMaterial> = materials.add(StandardMaterial {
-        base_color: DARK_GRAY.into(),
+        base_color: Srgba::new(0.4, 0.4, 0.4, 1.0).into(),
         ..default()
     });
 
