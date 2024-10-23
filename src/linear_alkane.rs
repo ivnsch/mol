@@ -1,9 +1,7 @@
 use std::f32::consts::PI;
 
 use bevy::{
-    color::palettes::css::{
-        BLACK, DARK_CYAN, DARK_GRAY, GREEN, MAGENTA, ORANGE, RED, WHITE, YELLOW,
-    },
+    color::palettes::css::{BLACK, GREEN, MAGENTA, ORANGE, RED, WHITE, YELLOW},
     prelude::*,
 };
 use bevy_mod_picking::{

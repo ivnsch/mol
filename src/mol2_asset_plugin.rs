@@ -155,7 +155,6 @@ fn parse_element(element: &str) -> Result<Element> {
         "F" => Ok(Element::F),
         "P" => Ok(Element::P),
         "S" => Ok(Element::S),
-        "S" => Ok(Element::S),
         _ => Err(anyhow!("Not handled element str: {}", element)),
     }
 }
