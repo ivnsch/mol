@@ -61,9 +61,9 @@ pub struct MyParent;
 #[derive(Component, Default)]
 pub struct MyInterParentBond;
 
-const ATOM_SCALE: f32 = 0.4;
-const BOND_LENGTH: f32 = 1.0;
-const BOND_DIAM: f32 = 0.01;
+const ATOM_SCALE: f32 = 0.3;
+const BOND_LENGTH: f32 = 0.6;
+const BOND_DIAM: f32 = 0.07;
 
 fn add_mol(commands: &mut Commands) -> Entity {
     commands
@@ -165,21 +165,25 @@ fn create_bond(
     p1: Vec3,
     p2: Vec3,
 ) -> PbrBundle {
-    let cuboid: Handle<Mesh> = meshes.add(Cuboid::default());
-
     let midpoint = (p1 + p2) / 2.0;
 
     let distance = p1.distance(p2);
     let direction = (p2 - p1).normalize();
     let rotation = Quat::from_rotation_arc(Vec3::Y, direction);
 
+    let mesh: Handle<Mesh> = meshes.add(Capsule3d {
+        radius: BOND_DIAM,
+        half_length: distance / 2.0,
+        ..default()
+    });
+
     PbrBundle {
-        mesh: cuboid.clone(),
+        mesh: mesh.clone(),
         material: material.clone(),
         transform: Transform {
             translation: midpoint,
             rotation,
-            scale: Vec3::new(BOND_DIAM, distance, BOND_DIAM),
+            ..default()
         },
         ..default()
     }
