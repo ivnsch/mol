@@ -23,7 +23,7 @@ use crate::{
 pub fn add_3d_scratch(app: &mut App) {
     app.add_plugins(DefaultPickingPlugins)
         .insert_resource(MolStyle {
-            atom_scale: 0.3,
+            atom_scale_ball_stick: 0.3,
             bond_len: 0.6,
             bond_diam: 0.07,
         })
@@ -70,7 +70,7 @@ pub struct MyInterParentBond;
 
 #[derive(Resource)]
 pub struct MolStyle {
-    atom_scale: f32,
+    atom_scale_ball_stick: f32,
     bond_len: f32,
     bond_diam: f32,
 }
@@ -249,9 +249,9 @@ fn add_atom(
             mesh,
             material: debug_material.clone(),
             transform: Transform::from_translation(position).with_scale(Vec3::new(
-                mol_style.atom_scale,
-                mol_style.atom_scale,
-                mol_style.atom_scale,
+                mol_style.atom_scale_ball_stick,
+                mol_style.atom_scale_ball_stick,
+                mol_style.atom_scale_ball_stick,
             )),
             ..default()
         },
