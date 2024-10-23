@@ -1,24 +1,25 @@
 use std::cmp;
 
 use crate::{
-    load_mol2,
+    mol2_asset_plugin::Mol2Molecule,
     smiles::process_smiles,
-    ui::event::{LoadedMol2Event, PlusMinusInput, PlusMinusInputEvent, UiCarbonCountInputEvent},
-    ui::helper::add_info_labels,
-    ui::marker::{
-        CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
-        LoadMol2ButtonMarker, RotXLabelMarker, RotYLabelMarker, RotZLabelMarker,
+    ui::{
+        event::{PlusMinusInput, PlusMinusInputEvent, UiCarbonCountInputEvent},
+        helper::add_info_labels,
+        marker::{
+            CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
+            LoadMol2ButtonMarker, RotXLabelMarker, RotYLabelMarker, RotZLabelMarker,
+        },
+        resource::{UiInputEntities, UiInputSmiles},
     },
-    ui::resource::{UiInputEntities, UiInputSmiles},
 };
 use bevy::{
     color::palettes::css::{BLACK, BLUE, GRAY, GREEN},
     prelude::*,
 };
 use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
-use load_mol2::load_mol2;
 
-use super::resource::UiInputCarbonCount;
+use super::resource::{Mol2MoleculeRes, UiInputCarbonCount};
 
 /// removes all entities matching a query (1 filter)
 pub fn despawn_all_entities<T>(commands: &mut Commands, query: &Query<Entity, With<T>>)
@@ -138,18 +139,50 @@ pub fn update_carbon_count_label(
 
 #[allow(clippy::type_complexity)]
 pub fn load_file_button_handler(
+    mut commands: Commands,
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<LoadMol2ButtonMarker>)>,
-    mut event_writer: EventWriter<LoadedMol2Event>,
+    asset_server: Res<AssetServer>,
 ) {
     for interaction in &mut interaction_query {
         if interaction == &Interaction::Pressed {
-            match load_mol2() {
-                Ok(mol) => {
-                    event_writer.send(LoadedMol2Event(mol));
+            // let path = "embedded://mol/asset/benzene.mol2";
+            let path = "embedded://mol/asset/117_ideal.mol2";
+            let handle: Handle<Mol2Molecule> = asset_server.load(path);
+
+            // could be replaced with handle_mol2_file_events if it worked
+            commands.insert_resource(Mol2MoleculeRes(Some(handle)));
+        }
+    }
+}
+
+// TODO fix or remove
+// this doesn't work, assets.get(id) always None
+// adapted from here https://bevy-cheatbook.github.io/assets/assetevent.html
+// (adapted because it seems outdated for bevy 0.14)
+// so what I'm doing now is just setting a resource, reading with a query and setting to None when not None, essentially
+pub fn handle_mol2_file_events(
+    mut ev_asset: EventReader<AssetEvent<Mol2Molecule>>,
+    mut assets: ResMut<Assets<Mol2Molecule>>,
+    // mut event_writer: EventWriter<LoadedMol2Event>,
+) {
+    for ev in ev_asset.read() {
+        match ev {
+            AssetEvent::Added { id } => {
+                if let Some(_mol) = assets.get_mut(*id) {
+                    // event_writer.send(LoadedMol2Event(mol.clone()));
+                } else {
+                    println!("got asset event added but the asset was None");
                 }
-                Err(e) => {
-                    println!("Error loading file: {:?}", e);
+            }
+            AssetEvent::LoadedWithDependencies { id } => {
+                if let Some(_mol) = assets.get_mut(*id) {
+                    // event_writer.send(LoadedMol2Event(mol.clone()));
+                } else {
+                    println!("got asset event added with dependencies but the asset was None");
                 }
+            }
+            _ => {
+                println!("received other asset event: {:?}", ev);
             }
         }
     }
@@ -213,7 +246,7 @@ pub fn rot_z_button_handler(
 }
 
 pub fn setup_info_labels(commands: Commands, asset_server: Res<AssetServer>) {
-    let font = asset_server.load("fonts/FiraMono-Medium.ttf");
+    let font = asset_server.load("embedded://mol/asset/fonts/FiraMono-Medium.ttf");
     add_info_labels(commands, &font);
 }
 

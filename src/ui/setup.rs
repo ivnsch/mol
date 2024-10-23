@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     ui::comp::generate_input_box,
-    ui::event::{LoadedMol2Event, PlusMinusInputEvent, UiCarbonCountInputEvent},
+    ui::event::{PlusMinusInputEvent, UiCarbonCountInputEvent},
     ui::handler::{
         listen_carbon_count_ui_inputs, load_file_button_handler, minus_button_handler,
         plus_button_handler, rot_x_button_handler, rot_y_button_handler, rot_z_button_handler,
@@ -21,7 +21,7 @@ pub fn add_ui(app: &mut App) {
     app.add_plugins(TextInputPlugin)
         .add_event::<UiCarbonCountInputEvent>()
         .add_event::<PlusMinusInputEvent>()
-        .add_event::<LoadedMol2Event>()
+        // .add_event::<LoadedMol2Event>()
         .insert_resource(UiInputSmiles("".to_string()))
         .insert_resource(UiInputCarbonCount(CarbonCount(5)))
         .add_systems(
@@ -35,6 +35,7 @@ pub fn add_ui(app: &mut App) {
                 rot_y_button_handler,
                 rot_z_button_handler,
                 load_file_button_handler,
+                // handle_mol2_file_events, // see comment on fn
             ),
         )
         .add_systems(Startup, (setup_ui, setup_info_labels))
@@ -49,7 +50,9 @@ pub fn setup_ui(
     carbon_count: Res<UiInputCarbonCount>,
     mut carbon_count_event_writer: EventWriter<UiCarbonCountInputEvent>,
 ) {
-    let font = asset_server.load("fonts/FiraMono-Medium.ttf");
+    let font = asset_server.load("embedded://mol/asset/fonts/FiraMono-Medium.ttf");
+    println!("loaded from embedded..");
+    // let shader = asset_server.load::<Shader>("embedded://bevy_rock/render/rock.wgsl");
 
     let root = commands.spawn(NodeBundle {
         style: Style {

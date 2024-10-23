@@ -11,11 +11,11 @@ use bevy_mod_picking::{
 };
 
 use crate::{
-    load_mol2::Mol2Atom,
-    ui::event::{LoadedMol2Event, UiCarbonCountInputEvent},
-    ui::handler::despawn_all_entities,
-    ui::helper::add_tooltip,
-    ui::marker::TooltipMarker,
+    mol2_asset_plugin::{Mol2Atom, Mol2Molecule},
+    ui::{
+        event::UiCarbonCountInputEvent, handler::despawn_all_entities, helper::add_tooltip,
+        marker::TooltipMarker, resource::Mol2MoleculeRes,
+    },
 };
 
 #[allow(dead_code)]
@@ -87,37 +87,45 @@ fn draw_mol2_mol(
     molecule: Query<Entity, With<MyMolecule>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut event: EventReader<LoadedMol2Event>,
+    // see note on handle_mol2_file_events
+    // mut event: EventReader<LoadedMol2Event>,
+    mut mol2_mol: ResMut<Mol2MoleculeRes>,
+    assets: Res<Assets<Mol2Molecule>>,
 ) {
-    for loaded_mol in event.read() {
-        clear(&mut commands, &molecule);
+    if let Some(handle) = mol2_mol.0.clone() {
+        if let Some(loaded_mol) = assets.get(&handle) {
+            mol2_mol.0 = None;
 
-        let mol = add_mol(&mut commands);
+            println!("received loaded mol event, will rebuild");
+            clear(&mut commands, &molecule);
 
-        for atom in &loaded_mol.0.atoms {
-            add_atom(
-                &mut commands,
-                &mut meshes,
-                &mut materials,
-                mol,
-                atom.loc_vec3(),
-                BLACK.into(),
-                &tooltip_descr(atom),
-            );
-        }
+            let mol = add_mol(&mut commands);
 
-        for bond in &loaded_mol.0.bonds {
-            add_bond(
-                &mut commands,
-                &mut meshes,
-                &mut materials,
-                mol,
-                // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
-                // this seems to be always the case in mol2 files
-                loaded_mol.0.atoms[bond.atom1 - 1].loc_vec3(),
-                loaded_mol.0.atoms[bond.atom2 - 1].loc_vec3(),
-                true,
-            );
+            for atom in &loaded_mol.atoms {
+                add_atom(
+                    &mut commands,
+                    &mut meshes,
+                    &mut materials,
+                    mol,
+                    atom.loc_vec3(),
+                    BLACK.into(),
+                    &tooltip_descr(atom),
+                );
+            }
+
+            for bond in &loaded_mol.bonds {
+                add_bond(
+                    &mut commands,
+                    &mut meshes,
+                    &mut materials,
+                    mol,
+                    // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
+                    // this seems to be always the case in mol2 files
+                    loaded_mol.atoms[bond.atom1 - 1].loc_vec3(),
+                    loaded_mol.atoms[bond.atom2 - 1].loc_vec3(),
+                    true,
+                );
+            }
         }
     }
 }
