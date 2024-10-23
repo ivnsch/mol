@@ -26,6 +26,7 @@ pub fn add_3d_scratch(app: &mut App) {
             atom_scale_ball_stick: 0.3,
             bond_len: 0.6,
             bond_diam: 0.07,
+            atom_scale_ball: 1.8,
         })
         .insert_resource(MolRender::BallStick)
         .add_systems(Startup, setup_molecule)
@@ -73,6 +74,7 @@ pub struct MolStyle {
     atom_scale_ball_stick: f32,
     bond_len: f32,
     bond_diam: f32,
+    atom_scale_ball: f32,
 }
 
 #[derive(Resource, PartialEq, Eq)]
@@ -80,6 +82,9 @@ pub enum MolRender {
     BallStick,
     #[allow(unused)]
     Stick,
+    #[allow(unused)]
+    // just a quick experiment - larger sphere scale
+    Ball,
 }
 
 fn add_mol(commands: &mut Commands) -> Entity {
@@ -120,13 +125,14 @@ fn draw_mol2_mol(
 
             let mol = add_mol(&mut commands);
 
-            if mol_render.into_inner() == &MolRender::BallStick {
+            if *mol_render != MolRender::Stick {
                 for atom in &loaded_mol.atoms {
                     add_atom(
                         &mut commands,
                         &mut meshes,
                         &mut materials,
                         &mol_style,
+                        &mol_render,
                         mol,
                         atom.loc_vec3(),
                         color_for_element(&atom.element),
@@ -231,6 +237,7 @@ fn add_atom(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     mol_style: &Res<MolStyle>,
+    mol_render: &Res<MolRender>,
     parent: Entity,
     position: Vec3,
     color: Srgba,
@@ -244,15 +251,18 @@ fn add_atom(
     let mesh = meshes.add(Sphere { ..default() }.mesh().uv(32, 18));
 
     let description_string = description.to_string();
+    let scale = match **mol_render {
+        MolRender::BallStick => mol_style.atom_scale_ball_stick,
+        MolRender::Ball => mol_style.atom_scale_ball,
+        MolRender::Stick => mol_style.atom_scale_ball_stick, // sphere not added to scene - arbitrary
+    };
+
     let sphere = (
         PbrBundle {
             mesh,
             material: debug_material.clone(),
-            transform: Transform::from_translation(position).with_scale(Vec3::new(
-                mol_style.atom_scale_ball_stick,
-                mol_style.atom_scale_ball_stick,
-                mol_style.atom_scale_ball_stick,
-            )),
+            transform: Transform::from_translation(position)
+                .with_scale(Vec3::new(scale, scale, scale)),
             ..default()
         },
         PickableBundle::default(),
@@ -535,13 +545,14 @@ fn add_outer_carbon(
     center: Vec3, // carbon center
     single: bool, // whether it's the only carbon in the molecule (methane)
 ) {
-    if **mol_render == MolRender::BallStick {
+    if **mol_render != MolRender::Stick {
         // center carbon
         add_atom(
             commands,
             meshes,
             materials,
             mol_style,
+            mol_render,
             parent,
             center,
             color_for_element(&Element::C),
@@ -575,12 +586,13 @@ fn add_outer_carbon(
     let h_descr = "H";
     let h_color = color_for_element(&Element::H);
 
-    if **mol_render == MolRender::BallStick {
+    if **mol_render != MolRender::Stick {
         add_atom(
             commands,
             meshes,
             materials,
             mol_style,
+            mol_render,
             parent,
             p2,
             h_color.into(),
@@ -592,6 +604,7 @@ fn add_outer_carbon(
             meshes,
             materials,
             mol_style,
+            mol_render,
             parent,
             p3,
             h_color.into(),
@@ -603,6 +616,7 @@ fn add_outer_carbon(
             meshes,
             materials,
             mol_style,
+            mol_render,
             parent,
             p4,
             h_color.into(),
@@ -624,12 +638,13 @@ fn add_outer_carbon(
 
     if single {
         // p1 only shown when there's only 1 carbon, i.e. 4 bonds with hydrogen
-        if **mol_render == MolRender::BallStick {
+        if **mol_render != MolRender::Stick {
             add_atom(
                 commands,
                 meshes,
                 materials,
                 mol_style,
+                mol_render,
                 parent,
                 p1,
                 WHITE.into(),
@@ -651,13 +666,14 @@ fn add_inner_carbon(
     parent: Entity,
     center: Vec3,
 ) {
-    if **mol_render == MolRender::BallStick {
+    if **mol_render != MolRender::Stick {
         // center carbon
         add_atom(
             commands,
             meshes,
             materials,
             mol_style,
+            mol_render,
             parent,
             center,
             color_for_element(&Element::C),
@@ -687,12 +703,12 @@ fn add_inner_carbon(
     let h_descr = "H";
     let h_color = color_for_element(&Element::H);
 
-    if **mol_render == MolRender::BallStick {
+    if **mol_render != MolRender::Stick {
         add_atom(
-            commands, meshes, materials, mol_style, parent, p2, h_color, &h_descr,
+            commands, meshes, materials, mol_style, mol_render, parent, p2, h_color, &h_descr,
         );
         add_atom(
-            commands, meshes, materials, mol_style, parent, p3, h_color, &h_descr,
+            commands, meshes, materials, mol_style, mol_render, parent, p3, h_color, &h_descr,
         );
         add_bond(
             commands, meshes, materials, mol_style, parent, center, p2, false,
