@@ -7,7 +7,7 @@
     "install:rust": "CARGO_HOME=./cargo RUSTUP_HOME=./rustup curl https://sh.rustup.rs -sSf | sh -s -- -y",
     "build:vercel": "CARGO_HOME=./cargo RUSTUP_HOME=./rustup npm run install:rust && npm run build:wasm && next build",
     "dev": "next dev",
-    "build": "npm run build:wasm && next build",
+    "build": "rustup default stable && npm run build:wasm && next build",
     "start": "next start",
     "lint": "next lint"
   },
