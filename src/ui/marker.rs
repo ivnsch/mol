@@ -22,3 +22,10 @@ pub struct LoadMol2ButtonMarker;
 
 #[derive(Component, Default)]
 pub struct TooltipMarker;
+
+#[derive(Component, Default)]
+pub struct StyleBallStickMarker;
+#[derive(Component, Default)]
+pub struct StyleBallMarker;
+#[derive(Component, Default)]
+pub struct StyleStickMarker;

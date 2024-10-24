@@ -1,4 +1,5 @@
 use crate::{
+    linear_alkane::MolRender,
     mol2_asset_plugin::Mol2Molecule,
     scene::{MolScene, MolSceneContent},
     smiles::process_smiles,
@@ -19,7 +20,11 @@ use bevy::{
 use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
 use std::cmp;
 
-use super::{event::UpdateSceneEvent, resource::CarbonCount};
+use super::{
+    event::UpdateSceneEvent,
+    marker::{StyleBallMarker, StyleBallStickMarker, StyleStickMarker},
+    resource::CarbonCount,
+};
 
 /// removes all entities matching a query (1 filter)
 pub fn despawn_all_entities<T>(commands: &mut Commands, query: &Query<Entity, With<T>>)
@@ -221,6 +226,51 @@ pub fn rot_z_button_handler(
                     Quat::from_euler(EulerRot::XYZ, 0.0, 0.0, rotation),
                 );
             }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn style_ball_stick_button_handler(
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<StyleBallStickMarker>)>,
+    mut scene: ResMut<MolScene>,
+    mut event_writer: EventWriter<UpdateSceneEvent>,
+) {
+    for interaction in &mut interaction_query {
+        if interaction == &Interaction::Pressed {
+            println!("setting render to ball stick");
+            scene.render = MolRender::BallStick;
+            event_writer.send(UpdateSceneEvent);
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn style_stick_button_handler(
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<StyleStickMarker>)>,
+    mut scene: ResMut<MolScene>,
+    mut event_writer: EventWriter<UpdateSceneEvent>,
+) {
+    for interaction in &mut interaction_query {
+        if interaction == &Interaction::Pressed {
+            println!("setting render to stick");
+            scene.render = MolRender::Stick;
+            event_writer.send(UpdateSceneEvent);
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn style_ball_button_handler(
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<StyleBallMarker>)>,
+    mut scene: ResMut<MolScene>,
+    mut event_writer: EventWriter<UpdateSceneEvent>,
+) {
+    for interaction in &mut interaction_query {
+        if interaction == &Interaction::Pressed {
+            println!("setting render to ball");
+            scene.render = MolRender::Ball;
+            event_writer.send(UpdateSceneEvent);
         }
     }
 }

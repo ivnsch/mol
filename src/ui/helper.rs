@@ -12,6 +12,8 @@ use crate::{
 };
 use bevy::prelude::*;
 
+use super::marker::{StyleBallMarker, StyleBallStickMarker, StyleStickMarker};
+
 /// adds a generic vertical spacer element with fixed height
 pub fn add_spacer(commands: &mut Commands, root_id: Entity) {
     let spacer_id = commands.spawn(spacer()).id();
@@ -36,6 +38,17 @@ pub fn add_carbons_value_row(
     add_square_button(commands, row_id, font, "+", CarbonCountPlusMarker);
 
     carbon_count_value_entity
+}
+
+pub fn add_style_row(commands: &mut Commands, font: &Handle<Font>, root_id: Entity) {
+    let row = row();
+
+    let row_id = commands.spawn(row).id();
+    commands.entity(root_id).add_child(row_id);
+
+    add_square_button(commands, row_id, font, "BS", StyleBallStickMarker);
+    add_square_button(commands, row_id, font, "S", StyleStickMarker);
+    add_square_button(commands, row_id, font, "B", StyleBallMarker);
 }
 
 pub fn add_rotate_row(commands: &mut Commands, font: &Handle<Font>, root_id: Entity) {
