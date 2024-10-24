@@ -36,10 +36,7 @@ pub fn add_3d_scratch(app: &mut App) {
         .add_event::<UpdateSceneEvent>()
         .add_systems(Startup, setup_molecule)
         .add_systems(PostStartup, (trigger_init_scene_event,)) // TODO maybe it works in startup? test
-        .add_systems(
-            Update,
-            (handle_update_scene_event, handle_update_file_handler_event),
-        );
+        .add_systems(Update, (handle_update_scene_event, check_file_loaded));
 }
 
 /// Used to tint the mesh instead of simply replacing the mesh's material with a single color. See
@@ -119,7 +116,8 @@ fn handle_update_scene_event(
     molecule: Query<Entity, With<MyMolecule>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    scene: Res<MolScene>,
+    mut scene: ResMut<MolScene>,
+    assets: Res<Assets<Mol2Molecule>>,
 ) {
     for _ in event.read() {
         println!("got an update scene event!");
@@ -128,12 +126,13 @@ fn handle_update_scene_event(
             &molecule,
             &mut meshes,
             &mut materials,
-            &scene,
+            &mut scene,
+            &assets,
         );
     }
 }
 
-fn handle_update_file_handler_event(
+fn check_file_loaded(
     mut commands: Commands,
     mol_query: Query<Entity, With<MyMolecule>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -141,45 +140,80 @@ fn handle_update_file_handler_event(
     assets: Res<Assets<Mol2Molecule>>,
     mut scene: ResMut<MolScene>,
 ) {
-    if let MolSceneContent::Mol2(Some(handler)) = &scene.content {
-        if let Some(mol) = assets.get(handler) {
-            // got the molecule - set file to None so this is not called again
-            scene.content = MolSceneContent::Mol2(None);
+    if let MolSceneContent::Mol2 {
+        handle,
+        waiting_for_async_handle,
+    } = &scene.content
+    {
+        if *waiting_for_async_handle {
+            if let Some(mol) = assets.get(handle) {
+                // got the molecule - set flag to false so this is not called again
+                scene.content = MolSceneContent::Mol2 {
+                    handle: handle.clone(),
+                    waiting_for_async_handle: false,
+                };
 
-            println!("received loaded mol event, will rebuild");
-            clear(&mut commands, &mol_query);
+                println!("received loaded mol event, will rebuild");
+                clear(&mut commands, &mol_query);
 
-            draw_mol2_mol(
-                // TODO replace parameter mol2_mol resource (remove resource) with mol2_molecule, and rename in mol2_mol
-                &mut commands,
-                &mut meshes,
-                &mut materials,
-                mol,
-                &scene.style,
-                &scene.render,
-            );
+                draw_mol2_mol(
+                    &mut commands,
+                    &mut meshes,
+                    &mut materials,
+                    mol,
+                    &scene.style,
+                    &scene.render,
+                );
+            }
         }
     }
 }
 
 fn update_scene(
     commands: &mut Commands,
-    molecule: &Query<Entity, With<MyMolecule>>,
+    mol_query: &Query<Entity, With<MyMolecule>>,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    scene: &Res<MolScene>,
+    scene: &mut ResMut<MolScene>,
+    assets: &Res<Assets<Mol2Molecule>>,
 ) {
-    if let MolSceneContent::Generated(carbon_count) = scene.content {
-        add_linear_alkane(
-            commands,
-            meshes,
-            materials,
-            &scene.style,
-            &scene.render,
-            molecule,
-            Vec3::ZERO,
-            carbon_count.0,
-        );
+    println!("will update scene");
+    match &scene.content {
+        MolSceneContent::Generated(carbon_count) => {
+            println!("scene render: {:?}", scene.render);
+            add_linear_alkane(
+                commands,
+                meshes,
+                materials,
+                &scene.style,
+                &scene.render,
+                mol_query,
+                Vec3::ZERO,
+                carbon_count.0,
+            );
+        }
+        MolSceneContent::Mol2 { handle, .. } => {
+            if let Some(mol) = assets.get(handle) {
+                println!("received loaded mol event, will rebuild");
+                clear(commands, &mol_query);
+
+                draw_mol2_mol(
+                    // TODO replace parameter mol2_mol resource (remove resource) with mol2_molecule, and rename in mol2_mol
+                    commands,
+                    meshes,
+                    materials,
+                    mol,
+                    &scene.style,
+                    &scene.render,
+                );
+            } else {
+                // when the user loads a file, there's *no* scene update event, so we shouldn't be here
+                // this is for things like changing the rendering type: normally the file is already loaded
+                println!(
+                    "Warn: got update scene event of type Mol2 but file is not loaded (yet?)."
+                );
+            }
+        }
     }
 }
 

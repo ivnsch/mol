@@ -113,7 +113,7 @@ pub fn listen_carbon_count_ui_inputs(
         let current = match scene.content {
             MolSceneContent::Generated(carbon_count) => carbon_count,
             // if currently not displaying the generator, start a new one with 5 (just some number) carbons
-            MolSceneContent::Mol2(_) => CarbonCount(5),
+            MolSceneContent::Mol2 { .. } => CarbonCount(5),
         };
         let increment: i32 = match input.plus_minus {
             PlusMinusInput::Plus => 1,
@@ -146,7 +146,7 @@ pub fn update_carbon_count_label(
             // update value
             text.sections[0].value = match &scene.content {
                 MolSceneContent::Generated(carbon_count) => carbon_count.0.to_string(),
-                MolSceneContent::Mol2(_) => "".to_string(),
+                MolSceneContent::Mol2 { .. } => "".to_string(),
             };
         }
     }
@@ -157,7 +157,6 @@ pub fn load_file_button_handler(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<LoadMol2ButtonMarker>)>,
     asset_server: Res<AssetServer>,
     mut scene: ResMut<MolScene>,
-    mut events: EventWriter<UpdateSceneEvent>,
 ) {
     for interaction in &mut interaction_query {
         if interaction == &Interaction::Pressed {
@@ -165,10 +164,15 @@ pub fn load_file_button_handler(
             let path = "embedded://mol/asset/117_ideal.mol2";
             let handle: Handle<Mol2Molecule> = asset_server.load(path);
 
-            scene.content = MolSceneContent::Mol2(Some(handle));
-            // could be replaced with handle_mol2_file_events if it worked
-            // commands.insert_resource(Mol2MoleculeRes(Some(handle)));
-            events.send(UpdateSceneEvent);
+            scene.content = MolSceneContent::Mol2 {
+                handle,
+                // don't trigger update scene as the file may not be ready
+                // an Update system polls the handle instead
+                // this flag is set back to false when the file is ready
+                // the file stays in the scene state to be available for other re-building events
+                // (like changing the mol rendering type)
+                waiting_for_async_handle: true,
+            };
         }
     }
 }

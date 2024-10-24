@@ -16,5 +16,8 @@ pub struct MolScene {
 #[derive(Debug)]
 pub enum MolSceneContent {
     Generated(CarbonCount),
-    Mol2(Option<Handle<Mol2Molecule>>),
+    Mol2 {
+        handle: Handle<Mol2Molecule>,
+        waiting_for_async_handle: bool,
+    },
 }
