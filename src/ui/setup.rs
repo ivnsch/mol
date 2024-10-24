@@ -30,7 +30,6 @@ pub fn add_ui(app: &mut App) {
                 rot_y_button_handler,
                 rot_z_button_handler,
                 load_file_button_handler,
-                // handle_mol2_file_events, // see comment on fn
             ),
         )
         .add_systems(Startup, (setup_ui, setup_info_labels))

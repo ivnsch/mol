@@ -168,39 +168,6 @@ pub fn load_file_button_handler(
     }
 }
 
-// TODO fix or remove
-// this doesn't work, assets.get(id) always None
-// adapted from here https://bevy-cheatbook.github.io/assets/assetevent.html
-// (adapted because it seems outdated for bevy 0.14)
-// so what I'm doing now is just setting a resource, reading with a query and setting to None when not None, essentially
-pub fn handle_mol2_file_events(
-    mut ev_asset: EventReader<AssetEvent<Mol2Molecule>>,
-    mut assets: ResMut<Assets<Mol2Molecule>>,
-    // mut event_writer: EventWriter<LoadedMol2Event>,
-) {
-    for ev in ev_asset.read() {
-        match ev {
-            AssetEvent::Added { id } => {
-                if let Some(_mol) = assets.get_mut(*id) {
-                    // event_writer.send(LoadedMol2Event(mol.clone()));
-                } else {
-                    println!("got asset event added but the asset was None");
-                }
-            }
-            AssetEvent::LoadedWithDependencies { id } => {
-                if let Some(_mol) = assets.get_mut(*id) {
-                    // event_writer.send(LoadedMol2Event(mol.clone()));
-                } else {
-                    println!("got asset event added with dependencies but the asset was None");
-                }
-            }
-            _ => {
-                println!("received other asset event: {:?}", ev);
-            }
-        }
-    }
-}
-
 #[allow(clippy::type_complexity)]
 pub fn rot_x_button_handler(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<RotXLabelMarker>)>,
