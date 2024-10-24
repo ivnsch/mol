@@ -141,29 +141,24 @@ fn handle_update_file_handler_event(
     assets: Res<Assets<Mol2Molecule>>,
     mut scene: ResMut<MolScene>,
 ) {
-    match &scene.content {
-        MolSceneContent::Mol2(mol2_molecule) => {
-            if let Some(handler) = mol2_molecule {
-                if let Some(mol) = assets.get(handler) {
-                    // got the molecule - set file to None so this is not called again
-                    scene.content = MolSceneContent::Mol2(None);
+    if let MolSceneContent::Mol2(Some(handler)) = &scene.content {
+        if let Some(mol) = assets.get(handler) {
+            // got the molecule - set file to None so this is not called again
+            scene.content = MolSceneContent::Mol2(None);
 
-                    println!("received loaded mol event, will rebuild");
-                    clear(&mut commands, &mol_query);
+            println!("received loaded mol event, will rebuild");
+            clear(&mut commands, &mol_query);
 
-                    draw_mol2_mol(
-                        // TODO replace parameter mol2_mol resource (remove resource) with mol2_molecule, and rename in mol2_mol
-                        &mut commands,
-                        &mut meshes,
-                        &mut materials,
-                        mol,
-                        &scene.style,
-                        &scene.render,
-                    );
-                }
-            }
+            draw_mol2_mol(
+                // TODO replace parameter mol2_mol resource (remove resource) with mol2_molecule, and rename in mol2_mol
+                &mut commands,
+                &mut meshes,
+                &mut materials,
+                mol,
+                &scene.style,
+                &scene.render,
+            );
         }
-        _ => {}
     }
 }
 
@@ -174,20 +169,17 @@ fn update_scene(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     scene: &Res<MolScene>,
 ) {
-    match &scene.content {
-        MolSceneContent::Generated(carbon_count) => {
-            add_linear_alkane(
-                commands,
-                meshes,
-                materials,
-                &scene.style,
-                &scene.render,
-                molecule,
-                Vec3::ZERO,
-                carbon_count.0,
-            );
-        }
-        _ => {}
+    if let MolSceneContent::Generated(carbon_count) = scene.content {
+        add_linear_alkane(
+            commands,
+            meshes,
+            materials,
+            &scene.style,
+            &scene.render,
+            molecule,
+            Vec3::ZERO,
+            carbon_count.0,
+        );
     }
 }
 
@@ -207,8 +199,8 @@ fn draw_mol2_mol(
                 commands,
                 meshes,
                 materials,
-                &mol_style,
-                &mol_render,
+                mol_style,
+                mol_render,
                 mol_entity,
                 atom.loc_vec3(),
                 color_for_element(&atom.element),
@@ -222,7 +214,7 @@ fn draw_mol2_mol(
             commands,
             meshes,
             materials,
-            &mol_style,
+            mol_style,
             mol_entity,
             // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
             // this seems to be always the case in mol2 files
@@ -237,6 +229,7 @@ fn clear(commands: &mut Commands, mol_query: &Query<Entity, With<MyMolecule>>) {
     despawn_all_entities(commands, mol_query);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_bond(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -279,7 +272,6 @@ fn create_bond(
     let mesh: Handle<Mesh> = meshes.add(Capsule3d {
         radius: mol_style.bond_diam,
         half_length: distance / 2.0,
-        ..default()
     });
 
     PbrBundle {
@@ -306,6 +298,7 @@ fn color_for_element(element: &Element) -> Srgba {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_atom(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -372,6 +365,7 @@ fn trigger_init_scene_event(mut event: EventWriter<UpdateSceneEvent>) {
     event.send(UpdateSceneEvent);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_linear_alkane(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -382,7 +376,7 @@ fn add_linear_alkane(
     center_first_carbon: Vec3,
     carbons: u32,
 ) {
-    clear(commands, &mol_query);
+    clear(commands, mol_query);
 
     if carbons == 0 {
         println!("n == 0, nothing to draw");
@@ -403,6 +397,7 @@ fn add_linear_alkane(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_linear_alkane_with_mol(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -589,6 +584,7 @@ fn add_linear_alkane_with_mol(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 /// the first or last carbon of the chain
 fn add_outer_carbon(
     commands: &mut Commands,
@@ -643,39 +639,15 @@ fn add_outer_carbon(
 
     if *mol_render != MolRender::Stick {
         add_atom(
-            commands,
-            meshes,
-            materials,
-            mol_style,
-            mol_render,
-            parent,
-            p2,
-            h_color.into(),
-            h_descr,
+            commands, meshes, materials, mol_style, mol_render, parent, p2, h_color, h_descr,
         );
 
         add_atom(
-            commands,
-            meshes,
-            materials,
-            mol_style,
-            mol_render,
-            parent,
-            p3,
-            h_color.into(),
-            h_descr,
+            commands, meshes, materials, mol_style, mol_render, parent, p3, h_color, h_descr,
         );
 
         add_atom(
-            commands,
-            meshes,
-            materials,
-            mol_style,
-            mol_render,
-            parent,
-            p4,
-            h_color.into(),
-            h_descr,
+            commands, meshes, materials, mol_style, mol_render, parent, p4, h_color, h_descr,
         );
     }
 
@@ -695,15 +667,7 @@ fn add_outer_carbon(
         // p1 only shown when there's only 1 carbon, i.e. 4 bonds with hydrogen
         if *mol_render != MolRender::Stick {
             add_atom(
-                commands,
-                meshes,
-                materials,
-                mol_style,
-                mol_render,
-                parent,
-                p1,
-                WHITE.into(),
-                "H",
+                commands, meshes, materials, mol_style, mol_render, parent, p1, WHITE, "H",
             );
         }
         add_bond(
@@ -760,10 +724,10 @@ fn add_inner_carbon(
 
     if *mol_render != MolRender::Stick {
         add_atom(
-            commands, meshes, materials, mol_style, mol_render, parent, p2, h_color, &h_descr,
+            commands, meshes, materials, mol_style, mol_render, parent, p2, h_color, h_descr,
         );
         add_atom(
-            commands, meshes, materials, mol_style, mol_render, parent, p3, h_color, &h_descr,
+            commands, meshes, materials, mol_style, mol_render, parent, p3, h_color, h_descr,
         );
         add_bond(
             commands, meshes, materials, mol_style, parent, center, p2, false,
