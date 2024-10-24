@@ -12,8 +12,6 @@ use crate::{
 };
 use bevy::prelude::*;
 
-use super::resource::CarbonCount;
-
 /// adds a generic vertical spacer element with fixed height
 pub fn add_spacer(commands: &mut Commands, root_id: Entity) {
     let spacer_id = commands.spawn(spacer()).id();
@@ -26,19 +24,13 @@ pub fn add_carbons_value_row(
     commands: &mut Commands,
     font: &Handle<Font>,
     root_id: Entity,
-    init_carbon_count: CarbonCount,
 ) -> Entity {
     let row = row();
     let row_id = commands.spawn(row).id();
     commands.entity(root_id).add_child(row_id);
 
-    let carbon_count_value_entity = add_button_label_with_marker(
-        commands,
-        row_id,
-        font,
-        &init_carbon_count.0.to_string(),
-        CarbonCountLabelMarker,
-    );
+    let carbon_count_value_entity =
+        add_button_label_with_marker(commands, row_id, font, "", CarbonCountLabelMarker);
 
     add_square_button(commands, row_id, font, "-", CarbonCountMinusMarker);
     add_square_button(commands, row_id, font, "+", CarbonCountPlusMarker);

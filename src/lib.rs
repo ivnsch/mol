@@ -11,6 +11,7 @@ mod rotator;
 mod smiles;
 mod system_3d;
 mod ui;
+mod scene;
 
 use bevy::app::App;
 use linear_alkane::add_3d_scratch;

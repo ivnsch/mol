@@ -1,29 +1,24 @@
-use super::{
-    handler::focus,
-    resource::{CarbonCount, UiInputCarbonCount},
-};
-use crate::{
-    ui::comp::generate_input_box,
-    ui::event::{PlusMinusInputEvent, UiCarbonCountInputEvent},
-    ui::handler::{
+use super::handler::focus;
+use crate::ui::{
+    comp::generate_input_box,
+    event::PlusMinusInputEvent,
+    handler::{
         listen_carbon_count_ui_inputs, load_file_button_handler, minus_button_handler,
         plus_button_handler, rot_x_button_handler, rot_y_button_handler, rot_z_button_handler,
         setup_info_labels, text_listener, update_carbon_count_label,
     },
-    ui::helper::{add_button, add_carbons_value_row, add_header, add_rotate_row, add_spacer},
-    ui::marker::{LoadMol2ButtonMarker, SmilesInputMarker},
-    ui::resource::{UiInputEntities, UiInputSmiles},
+    helper::{add_button, add_carbons_value_row, add_header, add_rotate_row, add_spacer},
+    marker::{LoadMol2ButtonMarker, SmilesInputMarker},
+    resource::{UiInputEntities, UiInputSmiles},
 };
 use bevy::prelude::*;
 use bevy_simple_text_input::{TextInputPlugin, TextInputSystem};
 
 pub fn add_ui(app: &mut App) {
     app.add_plugins(TextInputPlugin)
-        .add_event::<UiCarbonCountInputEvent>()
         .add_event::<PlusMinusInputEvent>()
         // .add_event::<LoadedMol2Event>()
         .insert_resource(UiInputSmiles("".to_string()))
-        .insert_resource(UiInputCarbonCount(CarbonCount(5)))
         .add_systems(
             Update,
             (
@@ -44,16 +39,8 @@ pub fn add_ui(app: &mut App) {
 }
 
 /// adds right column with ui elements to scene
-pub fn setup_ui(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    carbon_count: Res<UiInputCarbonCount>,
-    mut carbon_count_event_writer: EventWriter<UiCarbonCountInputEvent>,
-) {
+pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("embedded://mol/asset/fonts/FiraMono-Medium.ttf");
-    println!("loaded from embedded..");
-    // let shader = asset_server.load::<Shader>("embedded://bevy_rock/render/rock.wgsl");
-
     let root = commands.spawn(NodeBundle {
         style: Style {
             position_type: PositionType::Absolute,
@@ -72,8 +59,7 @@ pub fn setup_ui(
 
     add_header(&mut commands, root_id, &font, "Carbon count:");
 
-    let carbon_count_value_label =
-        add_carbons_value_row(&mut commands, &font, root_id, carbon_count.0);
+    let carbon_count_value_label = add_carbons_value_row(&mut commands, &font, root_id);
 
     add_spacer(&mut commands, root_id);
 
@@ -104,5 +90,6 @@ pub fn setup_ui(
         smiles: smiles_input,
     });
 
-    carbon_count_event_writer.send(UiCarbonCountInputEvent(carbon_count.0 .0));
+    // shouldn't be necessary with the new trigger_init_scene_event - TODO confirm and delete this
+    // carbon_count_event_writer.send(UiCarbonCountInputEvent(carbon_count.0 .0));
 }

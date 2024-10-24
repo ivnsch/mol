@@ -10,9 +10,6 @@ pub struct PlusMinusInputEvent {
 // #[derive(Event, Default, Debug, Clone)]
 // pub struct LoadedMol2Event(pub Mol2Molecule);
 
-#[derive(Event, Default, Debug)]
-pub struct UiCarbonCountInputEvent(pub u32);
-
 /// carried in the "clicked + or -" event
 #[derive(Debug, Default, Clone, Copy)]
 pub enum PlusMinusInput {
@@ -20,3 +17,6 @@ pub enum PlusMinusInput {
     Plus,
     Minus,
 }
+
+#[derive(Event, Debug)]
+pub struct UpdateSceneEvent;

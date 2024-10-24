@@ -1,10 +1,9 @@
-use std::cmp;
-
 use crate::{
     mol2_asset_plugin::Mol2Molecule,
+    scene::{MolScene, MolSceneContent},
     smiles::process_smiles,
     ui::{
-        event::{PlusMinusInput, PlusMinusInputEvent, UiCarbonCountInputEvent},
+        event::{PlusMinusInput, PlusMinusInputEvent},
         helper::add_info_labels,
         marker::{
             CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
@@ -18,8 +17,9 @@ use bevy::{
     prelude::*,
 };
 use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
+use std::cmp;
 
-use super::resource::{Mol2MoleculeRes, UiInputCarbonCount};
+use super::{event::UpdateSceneEvent, resource::CarbonCount};
 
 /// removes all entities matching a query (1 filter)
 pub fn despawn_all_entities<T>(commands: &mut Commands, query: &Query<Entity, With<T>>)
@@ -95,53 +95,64 @@ fn plus_minus_button_handler(
 
 /// handles carbon count inputs
 /// basically, we listen to clicks on the +/- buttons
-/// then query the current carbon count, update it, and spawn the new value.
+/// then update the scene accordingly
 // TODO error handling (show on ui)
 #[allow(clippy::too_many_arguments)]
 pub fn listen_carbon_count_ui_inputs(
     mut events: EventReader<PlusMinusInputEvent>,
-    mut carbon_count: ResMut<UiInputCarbonCount>,
-    mut event_writer: EventWriter<UiCarbonCountInputEvent>,
+    mut event_writer: EventWriter<UpdateSceneEvent>,
+    mut scene: ResMut<MolScene>,
 ) {
     for input in events.read() {
         // update
-        let current = carbon_count.0 .0;
+        let current = match scene.content {
+            MolSceneContent::Generated(carbon_count) => carbon_count,
+            // if currently not displaying the generator, start a new one with 5 (just some number) carbons
+            MolSceneContent::Mol2(_) => CarbonCount(5),
+        };
         let increment: i32 = match input.plus_minus {
             PlusMinusInput::Plus => 1,
             PlusMinusInput::Minus => -1,
         };
-        let new_i = current as i32 + increment;
+
+        // TODO replace this with update the scene and send rebuild scene event!
+
+        let new_i = current.0 as i32 + increment;
         // pressing "-" at 0 stays at 0
         let new = cmp::max(0, new_i) as u32;
-        carbon_count.0 .0 = new;
 
-        // send a new event reflecting the update
-        event_writer.send(UiCarbonCountInputEvent(carbon_count.0 .0));
+        // we generate a new scene with the new carbon count
+        let scene_content = MolSceneContent::Generated(CarbonCount(new));
+        scene.content = scene_content;
+        event_writer.send(UpdateSceneEvent);
     }
 }
 
-/// updates the UI carbon count to reflect the current system entity
+/// Updates carbon count label to reflect scene state
 pub fn update_carbon_count_label(
     mut commands: Commands,
-    carbon_count: Res<UiInputCarbonCount>,
     input_entities: Res<UiInputEntities>,
     mut label_query: Query<(Entity, &mut Text), With<CarbonCountLabelMarker>>,
+    scene: Res<MolScene>,
 ) {
-    // find the UI label
     let entity_id = commands.entity(input_entities.carbon_count).id();
     for (entity, mut text) in label_query.iter_mut() {
         if entity == entity_id {
             // update value
-            text.sections[0].value = carbon_count.0 .0.to_string();
+            text.sections[0].value = match &scene.content {
+                MolSceneContent::Generated(carbon_count) => carbon_count.0.to_string(),
+                MolSceneContent::Mol2(_) => "".to_string(),
+            };
         }
     }
 }
 
 #[allow(clippy::type_complexity)]
 pub fn load_file_button_handler(
-    mut commands: Commands,
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<LoadMol2ButtonMarker>)>,
     asset_server: Res<AssetServer>,
+    mut scene: ResMut<MolScene>,
+    mut events: EventWriter<UpdateSceneEvent>,
 ) {
     for interaction in &mut interaction_query {
         if interaction == &Interaction::Pressed {
@@ -149,8 +160,10 @@ pub fn load_file_button_handler(
             let path = "embedded://mol/asset/117_ideal.mol2";
             let handle: Handle<Mol2Molecule> = asset_server.load(path);
 
+            scene.content = MolSceneContent::Mol2(Some(handle));
             // could be replaced with handle_mol2_file_events if it worked
-            commands.insert_resource(Mol2MoleculeRes(Some(handle)));
+            // commands.insert_resource(Mol2MoleculeRes(Some(handle)));
+            events.send(UpdateSceneEvent);
         }
     }
 }
@@ -253,16 +266,23 @@ pub fn setup_info_labels(commands: Commands, asset_server: Res<AssetServer>) {
 pub fn text_listener(
     mut events: EventReader<TextInputSubmitEvent>,
     mut input: ResMut<UiInputSmiles>,
-    mut event_writer: EventWriter<UiCarbonCountInputEvent>,
+    mut event_writer: EventWriter<UpdateSceneEvent>,
+    mut scene: ResMut<MolScene>,
     input_entities: Res<UiInputEntities>,
 ) {
     for text_input in events.read() {
         if text_input.entity == input_entities.smiles {
             println!("submitted smiles: {:?}", text_input.value);
             input.0 = text_input.value.clone();
-            // TODO decouple from UI: trigger a new event with the string
-            if let Err(e) = process_smiles(&mut event_writer, input.0.clone()) {
-                println!("Error processing smiles: {e}")
+            match process_smiles(input.0.clone()) {
+                Ok(carbon_count) => {
+                    let scene_content = MolSceneContent::Generated(carbon_count);
+                    scene.content = scene_content;
+                    event_writer.send(UpdateSceneEvent);
+                }
+                Err(e) => {
+                    println!("Error processing smiles: {e}")
+                }
             }
         } else {
             println!("unknown entity: {:?}", text_input.value);

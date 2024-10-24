@@ -13,24 +13,33 @@ use bevy_mod_picking::{
 use crate::{
     element::Element,
     mol2_asset_plugin::{Mol2Atom, Mol2Molecule},
+    scene::{MolScene, MolSceneContent},
     ui::{
-        event::UiCarbonCountInputEvent, handler::despawn_all_entities, helper::add_tooltip,
-        marker::TooltipMarker, resource::Mol2MoleculeRes,
+        event::UpdateSceneEvent, handler::despawn_all_entities, helper::add_tooltip,
+        marker::TooltipMarker, resource::CarbonCount,
     },
 };
 
 #[allow(dead_code)]
 pub fn add_3d_scratch(app: &mut App) {
     app.add_plugins(DefaultPickingPlugins)
-        .insert_resource(MolStyle {
-            atom_scale_ball_stick: 0.3,
-            bond_len: 0.6,
-            bond_diam: 0.07,
-            atom_scale_ball: 1.8,
+        .insert_resource(MolScene {
+            content: MolSceneContent::Generated(CarbonCount(5)),
+            style: MolStyle {
+                atom_scale_ball_stick: 0.3,
+                bond_len: 0.6,
+                bond_diam: 0.07,
+                atom_scale_ball: 1.8,
+            },
+            render: MolRender::BallStick,
         })
-        .insert_resource(MolRender::BallStick)
+        .add_event::<UpdateSceneEvent>()
         .add_systems(Startup, setup_molecule)
-        .add_systems(Update, (setup_linear_alkane, draw_mol2_mol));
+        .add_systems(PostStartup, (trigger_init_scene_event,)) // TODO maybe it works in startup? test
+        .add_systems(
+            Update,
+            (handle_update_scene_event, handle_update_file_handler_event),
+        );
 }
 
 /// Used to tint the mesh instead of simply replacing the mesh's material with a single color. See
@@ -69,7 +78,7 @@ pub struct MyParent;
 #[derive(Component, Default)]
 pub struct MyInterParentBond;
 
-#[derive(Resource)]
+#[derive(Resource, Debug)]
 pub struct MolStyle {
     atom_scale_ball_stick: f32,
     bond_len: f32,
@@ -77,7 +86,7 @@ pub struct MolStyle {
     atom_scale_ball: f32,
 }
 
-#[derive(Resource, PartialEq, Eq)]
+#[derive(Resource, PartialEq, Eq, Debug)]
 pub enum MolRender {
     BallStick,
     #[allow(unused)]
@@ -104,58 +113,123 @@ fn tooltip_descr(atom: &Mol2Atom) -> String {
     )
 }
 
-fn draw_mol2_mol(
+fn handle_update_scene_event(
+    mut event: EventReader<UpdateSceneEvent>,
     mut commands: Commands,
     molecule: Query<Entity, With<MyMolecule>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    // see note on handle_mol2_file_events
-    // mut event: EventReader<LoadedMol2Event>,
-    mut mol2_mol: ResMut<Mol2MoleculeRes>,
-    assets: Res<Assets<Mol2Molecule>>,
-    mol_style: Res<MolStyle>,
-    mol_render: Res<MolRender>,
+    scene: Res<MolScene>,
 ) {
-    if let Some(handle) = mol2_mol.0.clone() {
-        if let Some(loaded_mol) = assets.get(&handle) {
-            mol2_mol.0 = None;
+    for _ in event.read() {
+        println!("got an update scene event!");
+        update_scene(
+            &mut commands,
+            &molecule,
+            &mut meshes,
+            &mut materials,
+            &scene,
+        );
+    }
+}
 
-            println!("received loaded mol event, will rebuild");
-            clear(&mut commands, &molecule);
+fn handle_update_file_handler_event(
+    mut commands: Commands,
+    mol_query: Query<Entity, With<MyMolecule>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    assets: Res<Assets<Mol2Molecule>>,
+    mut scene: ResMut<MolScene>,
+) {
+    match &scene.content {
+        MolSceneContent::Mol2(mol2_molecule) => {
+            if let Some(handler) = mol2_molecule {
+                if let Some(mol) = assets.get(handler) {
+                    // got the molecule - set file to None so this is not called again
+                    scene.content = MolSceneContent::Mol2(None);
 
-            let mol = add_mol(&mut commands);
+                    println!("received loaded mol event, will rebuild");
+                    clear(&mut commands, &mol_query);
 
-            if *mol_render != MolRender::Stick {
-                for atom in &loaded_mol.atoms {
-                    add_atom(
+                    draw_mol2_mol(
+                        // TODO replace parameter mol2_mol resource (remove resource) with mol2_molecule, and rename in mol2_mol
                         &mut commands,
                         &mut meshes,
                         &mut materials,
-                        &mol_style,
-                        &mol_render,
                         mol,
-                        atom.loc_vec3(),
-                        color_for_element(&atom.element),
-                        &tooltip_descr(atom),
+                        &scene.style,
+                        &scene.render,
                     );
                 }
             }
-
-            for bond in &loaded_mol.bonds {
-                add_bond(
-                    &mut commands,
-                    &mut meshes,
-                    &mut materials,
-                    &mol_style,
-                    mol,
-                    // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
-                    // this seems to be always the case in mol2 files
-                    loaded_mol.atoms[bond.atom1 - 1].loc_vec3(),
-                    loaded_mol.atoms[bond.atom2 - 1].loc_vec3(),
-                    true,
-                );
-            }
         }
+        _ => {}
+    }
+}
+
+fn update_scene(
+    commands: &mut Commands,
+    molecule: &Query<Entity, With<MyMolecule>>,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    scene: &Res<MolScene>,
+) {
+    match &scene.content {
+        MolSceneContent::Generated(carbon_count) => {
+            add_linear_alkane(
+                commands,
+                meshes,
+                materials,
+                &scene.style,
+                &scene.render,
+                molecule,
+                Vec3::ZERO,
+                carbon_count.0,
+            );
+        }
+        _ => {}
+    }
+}
+
+fn draw_mol2_mol(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    mol: &Mol2Molecule,
+    mol_style: &MolStyle,
+    mol_render: &MolRender,
+) {
+    let mol_entity = add_mol(commands);
+
+    if *mol_render != MolRender::Stick {
+        for atom in &mol.atoms {
+            add_atom(
+                commands,
+                meshes,
+                materials,
+                &mol_style,
+                &mol_render,
+                mol_entity,
+                atom.loc_vec3(),
+                color_for_element(&atom.element),
+                &tooltip_descr(atom),
+            );
+        }
+    }
+
+    for bond in &mol.bonds {
+        add_bond(
+            commands,
+            meshes,
+            materials,
+            &mol_style,
+            mol_entity,
+            // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
+            // this seems to be always the case in mol2 files
+            mol.atoms[bond.atom1 - 1].loc_vec3(),
+            mol.atoms[bond.atom2 - 1].loc_vec3(),
+            true,
+        );
     }
 }
 
@@ -167,7 +241,7 @@ fn add_bond(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    mol_style: &Res<MolStyle>,
+    mol_style: &MolStyle,
     parent: Entity,
     atom1_loc: Vec3,
     atom2_loc: Vec3,
@@ -192,7 +266,7 @@ fn add_bond(
 fn create_bond(
     meshes: &mut ResMut<Assets<Mesh>>,
     material: &Handle<StandardMaterial>,
-    mol_style: &Res<MolStyle>,
+    mol_style: &MolStyle,
     p1: Vec3,
     p2: Vec3,
 ) -> PbrBundle {
@@ -236,8 +310,8 @@ fn add_atom(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    mol_style: &Res<MolStyle>,
-    mol_render: &Res<MolRender>,
+    mol_style: &MolStyle,
+    mol_render: &MolRender,
     parent: Entity,
     position: Vec3,
     color: Srgba,
@@ -251,7 +325,7 @@ fn add_atom(
     let mesh = meshes.add(Sphere { ..default() }.mesh().uv(32, 18));
 
     let description_string = description.to_string();
-    let scale = match **mol_render {
+    let scale = match mol_render {
         MolRender::BallStick => mol_style.atom_scale_ball_stick,
         MolRender::Ball => mol_style.atom_scale_ball,
         MolRender::Stick => mol_style.atom_scale_ball_stick, // sphere not added to scene - arbitrary
@@ -294,41 +368,22 @@ fn setup_molecule(mut commands: Commands) {
     ));
 }
 
-fn setup_linear_alkane(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    molecule: Query<Entity, With<MyMolecule>>,
-    mut events: EventReader<UiCarbonCountInputEvent>,
-    mol_style: Res<MolStyle>,
-    mol_render: Res<MolRender>,
-) {
-    for input in events.read() {
-        println!("rebuilding scene for {} carbons", input.0);
-
-        clear(&mut commands, &molecule);
-
-        add_linear_alkane(
-            &mut commands,
-            &mut meshes,
-            &mut materials,
-            &mol_style,
-            &mol_render,
-            Vec3::ZERO,
-            input.0,
-        )
-    }
+fn trigger_init_scene_event(mut event: EventWriter<UpdateSceneEvent>) {
+    event.send(UpdateSceneEvent);
 }
 
 fn add_linear_alkane(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    mol_style: &Res<MolStyle>,
-    mol_render: &Res<MolRender>,
+    mol_style: &MolStyle,
+    mol_render: &MolRender,
+    mol_query: &Query<Entity, With<MyMolecule>>,
     center_first_carbon: Vec3,
     carbons: u32,
 ) {
+    clear(commands, &mol_query);
+
     if carbons == 0 {
         println!("n == 0, nothing to draw");
         return;
@@ -352,8 +407,8 @@ fn add_linear_alkane_with_mol(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    mol_style: &Res<MolStyle>,
-    mol_render: &Res<MolRender>,
+    mol_style: &MolStyle,
+    mol_render: &MolRender,
     molecule: Entity,
     center_first_carbon: Vec3,
     carbons: u32,
@@ -539,13 +594,13 @@ fn add_outer_carbon(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    mol_style: &Res<MolStyle>,
-    mol_render: &Res<MolRender>,
+    mol_style: &MolStyle,
+    mol_render: &MolRender,
     parent: Entity,
     center: Vec3, // carbon center
     single: bool, // whether it's the only carbon in the molecule (methane)
 ) {
-    if **mol_render != MolRender::Stick {
+    if *mol_render != MolRender::Stick {
         // center carbon
         add_atom(
             commands,
@@ -586,7 +641,7 @@ fn add_outer_carbon(
     let h_descr = "H";
     let h_color = color_for_element(&Element::H);
 
-    if **mol_render != MolRender::Stick {
+    if *mol_render != MolRender::Stick {
         add_atom(
             commands,
             meshes,
@@ -638,7 +693,7 @@ fn add_outer_carbon(
 
     if single {
         // p1 only shown when there's only 1 carbon, i.e. 4 bonds with hydrogen
-        if **mol_render != MolRender::Stick {
+        if *mol_render != MolRender::Stick {
             add_atom(
                 commands,
                 meshes,
@@ -661,12 +716,12 @@ fn add_inner_carbon(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
-    mol_style: &Res<MolStyle>,
-    mol_render: &Res<MolRender>,
+    mol_style: &MolStyle,
+    mol_render: &MolRender,
     parent: Entity,
     center: Vec3,
 ) {
-    if **mol_render != MolRender::Stick {
+    if *mol_render != MolRender::Stick {
         // center carbon
         add_atom(
             commands,
@@ -703,7 +758,7 @@ fn add_inner_carbon(
     let h_descr = "H";
     let h_color = color_for_element(&Element::H);
 
-    if **mol_render != MolRender::Stick {
+    if *mol_render != MolRender::Stick {
         add_atom(
             commands, meshes, materials, mol_style, mol_render, parent, p2, h_color, &h_descr,
         );

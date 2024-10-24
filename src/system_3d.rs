@@ -3,7 +3,6 @@ use crate::defocus::DefocusPlugin;
 use crate::embedded_asset_plugin::EmbeddedAssetPlugin;
 use crate::mol2_asset_plugin::Mol2AssetPlugin;
 use crate::rotator::{Rotator, RotatorPlugin};
-use crate::ui::resource::Mol2MoleculeRes;
 use bevy::color::palettes::css::{BLUE, GREEN, RED};
 use bevy::prelude::*;
 
@@ -17,7 +16,6 @@ pub fn add_3d_space(app: &mut App) {
         RotatorPlugin,
         DefocusPlugin,
     ))
-    .insert_resource(Mol2MoleculeRes(None))
     .add_systems(Startup, (setup_camera, setup_light));
     // .add_systems(Update, setup_global_axes);
 }
