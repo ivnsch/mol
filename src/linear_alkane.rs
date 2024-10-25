@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use bevy::{
-    color::palettes::css::{BLACK, GREEN, MAGENTA, ORANGE, RED, WHITE, YELLOW},
+    color::palettes::css::{BLACK, GREEN, LIGHT_CYAN, MAGENTA, ORANGE, RED, WHITE, YELLOW},
     prelude::*,
 };
 use bevy_mod_picking::{
@@ -329,6 +329,7 @@ fn color_for_element(element: &Element) -> Srgba {
         Element::F => MAGENTA,
         Element::P => ORANGE,
         Element::S => YELLOW,
+        Element::Ca => LIGHT_CYAN,
     }
 }
 

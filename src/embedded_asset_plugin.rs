@@ -19,5 +19,6 @@ impl Plugin for EmbeddedAssetPlugin {
         embedded_asset!(app, "asset/fonts/FiraMono-Medium.ttf");
         embedded_asset!(app, "asset/117_ideal.mol2");
         embedded_asset!(app, "asset/benzene.mol2");
+        embedded_asset!(app, "asset/2bbv.mol2");
     }
 }

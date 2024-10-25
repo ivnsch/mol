@@ -55,8 +55,11 @@ impl AssetLoader for Mol2AssetLoader {
                         parsing_atoms = false;
                     }
                     // we don't use this yet, ignore
-                    // entries belonging to section will also be consequently ignored
-                    Header::Other => continue,
+                    // entries belonging to section will also be ignored
+                    Header::Other => {
+                        parsing_bonds = false;
+                        parsing_atoms = false;
+                    }
                 },
                 ProcessMol2LineResult::OneToken => continue,
                 ProcessMol2LineResult::Entity { parts } => {
@@ -155,6 +158,7 @@ fn parse_element(element: &str) -> Result<Element> {
         "F" => Ok(Element::F),
         "P" => Ok(Element::P),
         "S" => Ok(Element::S),
+        "Ca" => Ok(Element::Ca),
         _ => Err(anyhow!("Not handled element str: {}", element)),
     }
 }
