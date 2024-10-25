@@ -5,7 +5,6 @@ use crate::defocus::DefocusPlugin;
 use crate::embedded_asset_plugin::EmbeddedAssetPlugin;
 use crate::mol2_asset_plugin::Mol2AssetPlugin;
 use crate::rotator::{Rotator, RotatorPlugin};
-use bevy::math::bounding;
 use bevy::prelude::*;
 
 #[allow(dead_code)]
@@ -52,34 +51,29 @@ fn setup_camera(mut commands: Commands) {
 
 fn handle_added_bounding_box(
     mut camera_query: Query<(&mut Transform, &mut Projection), With<Camera>>,
-    // mut perspective_query: Query<(&mut Transform, &PerspectiveProjection)>,
     mut events: EventReader<AddedBoundingBox>,
 ) {
     if let Ok((mut transform, mut perspective)) = camera_query.get_single_mut() {
         match *perspective {
             Projection::Perspective(ref mut perspective) => {
-                // for (mut transform, perspective) in perspective_query.iter_mut() {
-                // println!("fov: {:?}", perspective.fov);
                 for e in events.read() {
-                    println!(
-                        "new bounding box: {:?}, max dist: {}",
-                        e.0,
-                        e.0.max_distance()
-                    );
+                    // println!(
+                    //     "new bounding box: {:?}, max dist: {}",
+                    //     e.0,
+                    //     e.0.max_distance()
+                    // );
 
                     let distance = calculate_camera_distance(&e.0, perspective.fov);
-                    println!(
-                        "fov: {}, calculated distance: {}",
-                        perspective.fov, distance
-                    );
-                    transform.translation.z = e.0.max_distance();
+                    // println!(
+                    //     "fov: {}, calculated distance: {}",
+                    //     perspective.fov, distance
+                    // );
+                    transform.translation.z = distance;
                 }
-                // }
             }
-            Projection::Orthographic(ref mut orthographic_projection) => todo!(),
+            Projection::Orthographic(_) => {}
         };
     }
-    // }
 }
 
 fn calculate_camera_distance(bounding_box: &BoundingBox, fov: f32) -> f32 {
