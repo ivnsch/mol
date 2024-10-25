@@ -1,6 +1,7 @@
 use bevy::{
     color::palettes::css::{BLUE, GREEN, RED, YELLOW},
     prelude::*,
+    render::mesh::VertexAttributeValues,
 };
 
 use crate::mol::MyMolecule;
@@ -27,9 +28,17 @@ fn setup_cube(
     let mesh_handle = meshes.add(Cuboid { ..default() }.mesh());
 
     // // print vertices
-    // if let Some(mesh) = meshes.get(mesh_handle.id()) {
-    //     println!("mesh: {:?}", mesh);
-    // }
+    if let Some(mesh) = meshes.get(mesh_handle.id()) {
+        // println!("cube mesh: {:?}", mesh);
+        if let Some(positions) = vertices(mesh) {
+            println!("cube vertices ({}):", positions.len());
+            for position in positions {
+                println!("{:?}", position);
+            }
+        } else {
+            println!("Cube mesh does not contain vertex positions.");
+        }
+    }
 
     let scale = 1.0;
     let cube = (
@@ -58,6 +67,18 @@ fn setup_cube(
         &mut materials,
         Vec3::new(-0.5, -0.5, 0.5),
     );
+}
+
+fn vertices(mesh: &Mesh) -> Option<Vec<[f32; 3]>> {
+    if let Some(VertexAttributeValues::Float32x3(positions)) =
+        mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+    {
+        Some(positions.clone())
+    } else {
+        None
+    }
+}
+
 #[allow(dead_code)]
 fn add_dot(
     commands: &mut Commands,
