@@ -92,13 +92,13 @@ fn run_molecule_rotator(
             if key_input.pressed(controller.key_y) {
                 transform.rotate_around(
                     Vec3::ZERO,
-                    Quat::from_euler(EulerRot::XYZ, 0.0, 0.0, rotation),
+                    Quat::from_euler(EulerRot::XYZ, 0.0, rotation, 0.0),
                 );
             }
             if key_input.pressed(controller.key_z) {
                 transform.rotate_around(
                     Vec3::ZERO,
-                    Quat::from_euler(EulerRot::XYZ, 0.0, rotation, 0.0),
+                    Quat::from_euler(EulerRot::XYZ, 0.0, 0.0, rotation),
                 );
             }
             if key_input.pressed(controller.key_x) {
