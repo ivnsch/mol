@@ -25,6 +25,10 @@ fn setup_cube(
 
     let mesh_handle = meshes.add(Cuboid { ..default() }.mesh());
 
+    // // print vertices
+    // if let Some(mesh) = meshes.get(mesh_handle.id()) {
+    //     println!("mesh: {:?}", mesh);
+    // }
 
     let scale = 1.0;
     let cube = (
