@@ -5,5 +5,4 @@ mod handler;
 mod helper;
 mod marker;
 pub mod resource;
-pub mod scene;
 pub mod system;

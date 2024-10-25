@@ -23,8 +23,7 @@ use crate::{
 
 use super::{
     component::{MyInterParentBond, MyMolecule, Shape},
-    resource::{MolRender, MolStyle},
-    scene::{MolScene, MolSceneContent},
+    resource::{MolRender, MolScene, MolSceneContent, MolStyle},
 };
 
 fn tooltip_descr(atom: &Mol2Atom) -> String {

@@ -3,8 +3,7 @@ use super::{
         check_file_loaded, handle_added_bounding_box, handle_update_scene_event, setup_molecule,
         trigger_init_scene_event,
     },
-    resource::{MolRender, MolStyle},
-    scene::{MolScene, MolSceneContent},
+    resource::{MolRender, MolScene, MolSceneContent, MolStyle},
 };
 use crate::ui::{event::UpdateSceneEvent, resource::CarbonCount};
 use bevy::app::{App, PostStartup, Startup, Update};
