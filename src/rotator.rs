@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::fmt;
 
-use crate::linear_alkane::MyMolecule;
+use crate::mol::MyMolecule;
 
 pub struct RotatorPlugin;
 

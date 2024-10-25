@@ -1,5 +1,5 @@
 use crate::{
-    linear_alkane::MolRender,
+    mol::MolRender,
     mol2_asset_plugin::Mol2Molecule,
     scene::{MolScene, MolSceneContent},
     smiles::process_smiles,

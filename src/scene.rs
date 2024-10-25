@@ -1,7 +1,7 @@
 use bevy::{asset::Handle, prelude::Resource};
 
 use crate::{
-    linear_alkane::{MolRender, MolStyle},
+    mol::{MolRender, MolStyle},
     mol2_asset_plugin::Mol2Molecule,
     ui::resource::CarbonCount,
 };
