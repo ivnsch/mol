@@ -1,8 +1,4 @@
-use crate::{
-    component::{MyInterParentBond, MyMolecule, MyParent, Shape},
-    mol2_asset_plugin::Mol2Atom,
-    resource::{MolRender, MolStyle},
-};
+use crate::{mol::component::MyParent, mol2_asset_plugin::Mol2Atom};
 use std::f32::consts::PI;
 
 use bevy::{
@@ -19,11 +15,16 @@ use crate::{
     debug::AddedBoundingBox,
     element::Element,
     mol2_asset_plugin::{bounding_box_for_mol, Mol2Molecule},
-    scene::{MolScene, MolSceneContent},
     ui::{
         event::UpdateSceneEvent, handler::despawn_all_entities, helper::add_tooltip,
         marker::TooltipMarker,
     },
+};
+
+use super::{
+    component::{MyInterParentBond, MyMolecule, Shape},
+    resource::{MolRender, MolStyle},
+    scene::{MolScene, MolSceneContent},
 };
 
 fn tooltip_descr(atom: &Mol2Atom) -> String {

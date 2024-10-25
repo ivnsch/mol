@@ -1,15 +1,14 @@
-use bevy::app::{App, PostStartup, Startup, Update};
-use bevy_mod_picking::DefaultPickingPlugins;
-
-use crate::{
+use super::{
     handler::{
         check_file_loaded, handle_added_bounding_box, handle_update_scene_event, setup_molecule,
         trigger_init_scene_event,
     },
     resource::{MolRender, MolStyle},
     scene::{MolScene, MolSceneContent},
-    ui::{event::UpdateSceneEvent, resource::CarbonCount},
 };
+use crate::ui::{event::UpdateSceneEvent, resource::CarbonCount};
+use bevy::app::{App, PostStartup, Startup, Update};
+use bevy_mod_picking::DefaultPickingPlugins;
 
 #[allow(dead_code)]
 pub fn add_mol_scene(app: &mut App) {

@@ -1,10 +1,6 @@
+use super::resource::{MolRender, MolStyle};
+use crate::{mol2_asset_plugin::Mol2Molecule, ui::resource::CarbonCount};
 use bevy::{asset::Handle, prelude::Resource};
-
-use crate::{
-    mol2_asset_plugin::Mol2Molecule,
-    resource::{MolRender, MolStyle},
-    ui::resource::CarbonCount,
-};
 
 #[derive(Debug, Resource)]
 pub struct MolScene {
