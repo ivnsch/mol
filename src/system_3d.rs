@@ -1,6 +1,6 @@
 use crate::bounding_box::BoundingBox;
 use crate::camera_controller::{CameraController, CameraControllerPlugin};
-use crate::debug::FocusBoundingBox;
+use crate::debug::AddedBoundingBox;
 use crate::defocus::DefocusPlugin;
 use crate::embedded_asset_plugin::EmbeddedAssetPlugin;
 use crate::mol2_asset_plugin::Mol2AssetPlugin;
@@ -18,9 +18,9 @@ pub fn add_3d_space(app: &mut App) {
         RotatorPlugin,
         DefocusPlugin,
     ))
-    .add_event::<FocusBoundingBox>()
+    .add_event::<AddedBoundingBox>()
     .add_systems(Startup, (setup_camera, setup_light))
-    .add_systems(Update, handle_focus_bounding_box);
+    .add_systems(Update, handle_added_bounding_box);
 }
 
 fn setup_light(mut commands: Commands) {
@@ -50,10 +50,10 @@ fn setup_camera(mut commands: Commands) {
     ));
 }
 
-fn handle_focus_bounding_box(
+fn handle_added_bounding_box(
     mut camera_query: Query<(&mut Transform, &mut Projection), With<Camera>>,
     // mut perspective_query: Query<(&mut Transform, &PerspectiveProjection)>,
-    mut events: EventReader<FocusBoundingBox>,
+    mut events: EventReader<AddedBoundingBox>,
 ) {
     if let Ok((mut transform, mut perspective)) = camera_query.get_single_mut() {
         match *perspective {

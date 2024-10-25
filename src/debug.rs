@@ -85,15 +85,16 @@ fn vertices(mesh: &Mesh) -> Option<Vec<[f32; 3]>> {
     }
 }
 
+/// a new bounding box (from a molecule) was added to the scene
 #[derive(Event, Debug)]
-pub struct FocusBoundingBox(pub BoundingBox);
+pub struct AddedBoundingBox(pub BoundingBox);
 
 #[allow(dead_code)]
 fn setup_polygon(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut event_writer: EventWriter<FocusBoundingBox>,
+    mut event_writer: EventWriter<AddedBoundingBox>,
 ) {
     let debug_material: Handle<StandardMaterial> = materials.add(StandardMaterial {
         base_color: GREEN.into(),
@@ -105,7 +106,7 @@ fn setup_polygon(
     if let Some(mesh) = meshes.get(mesh_handle.id()) {
         if let Some(poly_vertices) = vertices(mesh) {
             let bounding_box = bounding_box_for(&poly_vertices);
-            event_writer.send(FocusBoundingBox(bounding_box));
+            event_writer.send(AddedBoundingBox(bounding_box));
         }
     }
 

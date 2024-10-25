@@ -11,7 +11,7 @@ use bevy_mod_picking::{
 };
 
 use crate::{
-    debug::FocusBoundingBox,
+    debug::AddedBoundingBox,
     element::Element,
     mol2_asset_plugin::{bounding_box_for_mol, Mol2Atom, Mol2Molecule},
     scene::{MolScene, MolSceneContent},
@@ -42,7 +42,7 @@ pub fn add_mol_scene(app: &mut App) {
             (
                 handle_update_scene_event,
                 check_file_loaded,
-                handle_focus_bounding_box,
+                handle_added_bounding_box,
             ),
         );
 }
@@ -144,7 +144,7 @@ fn check_file_loaded(
     mut materials: ResMut<Assets<StandardMaterial>>,
     assets: Res<Assets<Mol2Molecule>>,
     mut scene: ResMut<MolScene>,
-    mut event_writer: EventWriter<FocusBoundingBox>,
+    mut event_writer: EventWriter<AddedBoundingBox>,
 ) {
     if let MolSceneContent::Mol2 {
         handle,
@@ -160,7 +160,7 @@ fn check_file_loaded(
                 };
 
                 let bounding_box = bounding_box_for_mol(mol);
-                event_writer.send(FocusBoundingBox(bounding_box));
+                event_writer.send(AddedBoundingBox(bounding_box));
 
                 println!("received loaded mol event, will rebuild");
                 clear(&mut commands, &mol_query);
@@ -178,9 +178,9 @@ fn check_file_loaded(
     }
 }
 
-fn handle_focus_bounding_box(
+fn handle_added_bounding_box(
     mut mol_query: Query<&mut Transform, With<MyMolecule>>,
-    mut events: EventReader<FocusBoundingBox>,
+    mut events: EventReader<AddedBoundingBox>,
 ) {
     if let Ok(mut transform) = mol_query.get_single_mut() {
         for e in events.read() {
