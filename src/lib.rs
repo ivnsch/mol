@@ -1,6 +1,7 @@
 mod camera_controller;
 #[cfg(test)]
 mod chemcore_exploration_tests;
+mod debug;
 mod defocus;
 mod element;
 mod embedded_asset_plugin;
@@ -14,9 +15,10 @@ mod system_3d;
 mod ui;
 
 use bevy::app::App;
-use mol::add_mol_scene;
+use debug::add_debug;
+// use mol::add_mol_scene;
 use system_3d::add_3d_space;
-use ui::setup::add_ui;
+// use ui::setup::add_ui;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 // interop test - TODO remove
@@ -36,8 +38,10 @@ pub fn init_sim() {
     let app = &mut App::new();
 
     add_3d_space(app);
-    add_mol_scene(app);
-    add_ui(app);
+
+    add_debug(app);
+    // add_mol_scene(app);
+    // add_ui(app);
 
     app.run();
 }
