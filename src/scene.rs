@@ -1,8 +1,8 @@
 use bevy::{asset::Handle, prelude::Resource};
 
 use crate::{
-    mol::{MolRender, MolStyle},
     mol2_asset_plugin::Mol2Molecule,
+    resource::{MolRender, MolStyle},
     ui::resource::CarbonCount,
 };
 

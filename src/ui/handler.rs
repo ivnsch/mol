@@ -1,6 +1,6 @@
 use crate::{
-    mol::MolRender,
     mol2_asset_plugin::Mol2Molecule,
+    resource::MolRender,
     scene::{MolScene, MolSceneContent},
     smiles::process_smiles,
     ui::{

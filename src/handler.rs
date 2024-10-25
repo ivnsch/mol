@@ -1,3 +1,8 @@
+use crate::{
+    component::{MyInterParentBond, MyMolecule, MyParent, Shape},
+    mol2_asset_plugin::Mol2Atom,
+    resource::{MolRender, MolStyle},
+};
 use std::f32::consts::PI;
 
 use bevy::{
@@ -7,44 +12,51 @@ use bevy::{
 use bevy_mod_picking::{
     events::{Out, Over, Pointer},
     prelude::{Highlight, HighlightKind, On},
-    DefaultPickingPlugins, PickableBundle,
+    PickableBundle,
 };
 
 use crate::{
     debug::AddedBoundingBox,
     element::Element,
-    mol2_asset_plugin::{bounding_box_for_mol, Mol2Atom, Mol2Molecule},
+    mol2_asset_plugin::{bounding_box_for_mol, Mol2Molecule},
     scene::{MolScene, MolSceneContent},
     ui::{
         event::UpdateSceneEvent, handler::despawn_all_entities, helper::add_tooltip,
-        marker::TooltipMarker, resource::CarbonCount,
+        marker::TooltipMarker,
     },
 };
 
-#[allow(dead_code)]
-pub fn add_mol_scene(app: &mut App) {
-    app.add_plugins(DefaultPickingPlugins)
-        .insert_resource(MolScene {
-            content: MolSceneContent::Generated(CarbonCount(5)),
-            style: MolStyle {
-                atom_scale_ball_stick: 0.3,
-                bond_len: 0.6,
-                bond_diam: 0.07,
-                atom_scale_ball: 1.8,
-            },
-            render: MolRender::BallStick,
-        })
-        .add_event::<UpdateSceneEvent>()
-        .add_systems(Startup, setup_molecule)
-        .add_systems(PostStartup, (trigger_init_scene_event,)) // TODO maybe it works in startup? test
-        .add_systems(
-            Update,
-            (
-                handle_update_scene_event,
-                check_file_loaded,
-                handle_added_bounding_box,
-            ),
+fn tooltip_descr(atom: &Mol2Atom) -> String {
+    format!(
+        "Id: {},\nname: {},\npos: {},\ntype: {},\nmol name: {}",
+        atom.id,
+        atom.name,
+        atom.loc_vec3(),
+        atom.type_,
+        atom.mol_name
+    )
+}
+
+pub fn handle_update_scene_event(
+    mut event: EventReader<UpdateSceneEvent>,
+    mut commands: Commands,
+    molecule: Query<Entity, With<MyMolecule>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut scene: ResMut<MolScene>,
+    assets: Res<Assets<Mol2Molecule>>,
+) {
+    for _ in event.read() {
+        println!("got an update scene event!");
+        update_scene(
+            &mut commands,
+            &molecule,
+            &mut meshes,
+            &mut materials,
+            &mut scene,
+            &assets,
         );
+    }
 }
 
 /// Used to tint the mesh instead of simply replacing the mesh's material with a single color. See
@@ -71,73 +83,7 @@ static HIGHLIGHT_TINT: Highlight<StandardMaterial> = Highlight {
     })),
 };
 
-#[derive(Component, Default)]
-pub struct MyMolecule;
-
-#[derive(Component, Default)]
-pub struct MyParent;
-
-#[derive(Component, Default)]
-pub struct MyInterParentBond;
-
-#[derive(Resource, Debug)]
-pub struct MolStyle {
-    atom_scale_ball_stick: f32,
-    bond_len: f32,
-    bond_diam: f32,
-    atom_scale_ball: f32,
-}
-
-#[derive(Resource, PartialEq, Eq, Debug)]
-pub enum MolRender {
-    BallStick,
-    #[allow(unused)]
-    Stick,
-    #[allow(unused)]
-    // just a quick experiment - larger sphere scale
-    Ball,
-}
-
-fn add_mol(commands: &mut Commands) -> Entity {
-    commands
-        .spawn((Name::new("mol"), MyMolecule, SpatialBundle { ..default() }))
-        .id()
-}
-
-fn tooltip_descr(atom: &Mol2Atom) -> String {
-    format!(
-        "Id: {},\nname: {},\npos: {},\ntype: {},\nmol name: {}",
-        atom.id,
-        atom.name,
-        atom.loc_vec3(),
-        atom.type_,
-        atom.mol_name
-    )
-}
-
-fn handle_update_scene_event(
-    mut event: EventReader<UpdateSceneEvent>,
-    mut commands: Commands,
-    molecule: Query<Entity, With<MyMolecule>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut scene: ResMut<MolScene>,
-    assets: Res<Assets<Mol2Molecule>>,
-) {
-    for _ in event.read() {
-        println!("got an update scene event!");
-        update_scene(
-            &mut commands,
-            &molecule,
-            &mut meshes,
-            &mut materials,
-            &mut scene,
-            &assets,
-        );
-    }
-}
-
-fn check_file_loaded(
+pub fn check_file_loaded(
     mut commands: Commands,
     mol_query: Query<Entity, With<MyMolecule>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -178,7 +124,7 @@ fn check_file_loaded(
     }
 }
 
-fn handle_added_bounding_box(
+pub fn handle_added_bounding_box(
     mut mol_query: Query<&mut Transform, With<MyMolecule>>,
     mut events: EventReader<AddedBoundingBox>,
 ) {
@@ -284,6 +230,12 @@ fn draw_mol2_mol(
             true,
         );
     }
+}
+
+fn add_mol(commands: &mut Commands) -> Entity {
+    commands
+        .spawn((Name::new("mol"), MyMolecule, SpatialBundle { ..default() }))
+        .id()
 }
 
 fn clear(commands: &mut Commands, mol_query: &Query<Entity, With<MyMolecule>>) {
@@ -415,7 +367,7 @@ fn add_atom(
     commands.entity(parent).add_child(entity);
 }
 
-fn setup_molecule(mut commands: Commands) {
+pub fn setup_molecule(mut commands: Commands) {
     commands.spawn((
         Name::new("group"),
         MyMolecule,
@@ -423,7 +375,7 @@ fn setup_molecule(mut commands: Commands) {
     ));
 }
 
-fn trigger_init_scene_event(mut event: EventWriter<UpdateSceneEvent>) {
+pub fn trigger_init_scene_event(mut event: EventWriter<UpdateSceneEvent>) {
     event.send(UpdateSceneEvent);
 }
 
@@ -799,5 +751,3 @@ fn add_inner_carbon(
         );
     }
 }
-#[derive(Component)]
-struct Shape;

@@ -8,7 +8,7 @@ use bevy::{
 
 use crate::{
     bounding_box::{bounding_box_for, BoundingBox},
-    mol::MyMolecule,
+    component::MyMolecule,
 };
 
 const AXIS_LEN: f32 = 3.0;
