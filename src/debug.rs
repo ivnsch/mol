@@ -23,12 +23,13 @@ fn setup_cube(
         ..default()
     });
 
-    let mesh = meshes.add(Cuboid { ..default() }.mesh());
+    let mesh_handle = meshes.add(Cuboid { ..default() }.mesh());
+
 
     let scale = 1.0;
     let cube = (
         PbrBundle {
-            mesh,
+            mesh: mesh_handle,
             material: debug_material.clone(),
             transform: Transform::from_translation(Vec3::ZERO)
                 .with_scale(Vec3::new(scale, scale, scale)),
