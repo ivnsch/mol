@@ -177,6 +177,8 @@ fn run_camera_controller(
             + controller.velocity.y * dt * Vec3::Y
             + controller.velocity.z * dt * forward;
 
+        // println!("updated z to: {}", transform.translation.z);
+
         // Handle cursor grab
         if cursor_grab_change {
             if cursor_grab {
