@@ -142,17 +142,17 @@ pub fn add_info_labels(mut commands: Commands, font: &Handle<Font>) {
     commands.spawn(generate_info_label(font, "zoom out: s", 60.0));
     commands.spawn(generate_info_label(
         font,
-        "rotate around z: i / shift-i",
+        "rotate around z: z / shift-z",
         80.0,
     ));
     commands.spawn(generate_info_label(
         font,
-        "rotate around y: o / shift-o",
+        "rotate around y: y / shift-y",
         100.0,
     ));
     commands.spawn(generate_info_label(
         font,
-        "rotate around x: p / shift-p",
+        "rotate around x: x / shift-x",
         120.0,
     ));
 }

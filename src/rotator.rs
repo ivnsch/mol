@@ -7,10 +7,17 @@ pub struct RotatorPlugin;
 
 impl Plugin for RotatorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (run_molecule_rotator, run_rotator));
+        app.add_systems(
+            Update,
+            (
+                run_molecule_rotator,
+                // run_rotator
+            ),
+        );
     }
 }
 
+#[allow(unused)]
 #[derive(Component, Debug)]
 pub struct Rotator {
     pub initialized: bool,
@@ -104,7 +111,7 @@ fn run_molecule_rotator(
     };
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, unused)]
 fn run_rotator(
     key_input: Res<ButtonInput<KeyCode>>,
     mut query: Query<(&mut Transform, &mut Rotator), With<Camera>>,
