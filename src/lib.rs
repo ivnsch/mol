@@ -1,3 +1,4 @@
+mod bounding_box;
 mod camera_controller;
 #[cfg(test)]
 mod chemcore_exploration_tests;
@@ -16,8 +17,10 @@ mod ui;
 
 use bevy::app::App;
 use debug::add_debug;
+use mol::add_mol_scene;
 // use mol::add_mol_scene;
 use system_3d::add_3d_space;
+use ui::setup::add_ui;
 // use ui::setup::add_ui;
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -39,9 +42,9 @@ pub fn init_sim() {
 
     add_3d_space(app);
 
-    add_debug(app);
-    // add_mol_scene(app);
-    // add_ui(app);
+    // add_debug(app);
+    add_mol_scene(app);
+    add_ui(app);
 
     app.run();
 }

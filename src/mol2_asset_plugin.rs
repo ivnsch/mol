@@ -6,6 +6,7 @@ use bevy::tasks::futures_lite::io::BufReader;
 use bevy::tasks::futures_lite::{AsyncBufReadExt, StreamExt};
 use bevy::{math::Vec3, reflect::TypePath};
 
+use crate::bounding_box::BoundingBox;
 use crate::element::Element;
 
 pub struct Mol2AssetPlugin;
@@ -206,4 +207,48 @@ pub struct Mol2Bond {
     pub atom1: usize,
     pub atom2: usize,
     pub type_: String,
+}
+
+pub fn bounding_box_for_mol(mol2_mol: &Mol2Molecule) -> BoundingBox {
+    let mut min_x = f32::INFINITY;
+    let mut max_x = f32::NEG_INFINITY;
+
+    let mut min_y = f32::INFINITY;
+    let mut max_y = f32::NEG_INFINITY;
+
+    let mut min_z = f32::INFINITY;
+    let mut max_z = f32::NEG_INFINITY;
+
+    for m in &mol2_mol.atoms {
+        let x = m.x;
+        let y = m.y;
+        let z = m.z;
+
+        if x < min_x {
+            min_x = x;
+        };
+        if x > max_x {
+            max_x = x;
+        };
+        if y < min_y {
+            min_y = y;
+        };
+        if y > max_y {
+            max_y = y;
+        };
+        if z < min_z {
+            min_z = z;
+        };
+        if z > max_z {
+            max_z = z;
+        };
+    }
+    BoundingBox {
+        min_x,
+        max_x,
+        min_y,
+        max_y,
+        min_z,
+        max_z,
+    }
 }

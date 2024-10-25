@@ -11,8 +11,9 @@ use bevy_mod_picking::{
 };
 
 use crate::{
+    debug::FocusBoundingBox,
     element::Element,
-    mol2_asset_plugin::{Mol2Atom, Mol2Molecule},
+    mol2_asset_plugin::{bounding_box_for_mol, Mol2Atom, Mol2Molecule},
     scene::{MolScene, MolSceneContent},
     ui::{
         event::UpdateSceneEvent, handler::despawn_all_entities, helper::add_tooltip,
@@ -136,6 +137,7 @@ fn check_file_loaded(
     mut materials: ResMut<Assets<StandardMaterial>>,
     assets: Res<Assets<Mol2Molecule>>,
     mut scene: ResMut<MolScene>,
+    mut event_writer: EventWriter<FocusBoundingBox>,
 ) {
     if let MolSceneContent::Mol2 {
         handle,
@@ -149,6 +151,9 @@ fn check_file_loaded(
                     handle: handle.clone(),
                     waiting_for_async_handle: false,
                 };
+
+                let bounding_box = bounding_box_for_mol(mol);
+                event_writer.send(FocusBoundingBox(bounding_box));
 
                 println!("received loaded mol event, will rebuild");
                 clear(&mut commands, &mol_query);
