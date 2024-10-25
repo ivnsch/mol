@@ -1,16 +1,22 @@
+use core::f32;
+
 use bevy::{
     color::palettes::css::{BLUE, GREEN, RED, YELLOW},
     prelude::*,
     render::mesh::VertexAttributeValues,
 };
 
-use crate::mol::MyMolecule;
+use crate::{
+    bounding_box::{bounding_box_for, BoundingBox},
+    mol::MyMolecule,
+};
 
 const AXIS_LEN: f32 = 3.0;
 
 #[allow(dead_code)]
 pub fn add_debug(app: &mut App) {
-    app.add_systems(Startup, setup_cube)
+    // app.add_systems(Startup, setup_cube)
+    app.add_systems(Startup, setup_polygon)
         .add_systems(Update, setup_global_axes);
 }
 
@@ -77,6 +83,45 @@ fn vertices(mesh: &Mesh) -> Option<Vec<[f32; 3]>> {
     } else {
         None
     }
+}
+
+#[derive(Event, Debug)]
+pub struct FocusBoundingBox(pub BoundingBox);
+
+#[allow(dead_code)]
+fn setup_polygon(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut event_writer: EventWriter<FocusBoundingBox>,
+) {
+    let debug_material: Handle<StandardMaterial> = materials.add(StandardMaterial {
+        base_color: GREEN.into(),
+        ..default()
+    });
+
+    let mesh_handle = meshes.add(Extrusion::new(RegularPolygon::default(), 1.).mesh());
+
+    if let Some(mesh) = meshes.get(mesh_handle.id()) {
+        if let Some(poly_vertices) = vertices(mesh) {
+            let bounding_box = bounding_box_for(&poly_vertices);
+            event_writer.send(FocusBoundingBox(bounding_box));
+        }
+    }
+
+    let scale = 1.0;
+    let shape = (
+        PbrBundle {
+            mesh: mesh_handle,
+            material: debug_material.clone(),
+            transform: Transform::from_translation(Vec3::ZERO)
+                .with_scale(Vec3::new(scale, scale, scale)),
+            ..default()
+        },
+        MyMolecule,
+    );
+
+    commands.spawn(shape);
 }
 
 #[allow(dead_code)]
