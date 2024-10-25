@@ -12,14 +12,33 @@ pub struct BoundingBox {
 
 impl BoundingBox {
     pub fn max_distance(&self) -> f32 {
-        let points = vec![
-            self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z,
-        ];
         let x_len = self.max_x - self.min_x;
         let y_len = self.max_y - self.min_y;
         let z_len = self.max_z - self.min_z;
 
         (x_len.powf(2.) + y_len.powf(2.) + z_len.powf(2.)).sqrt()
+    }
+
+    pub fn dist_x(&self) -> f32 {
+        self.max_x - self.min_x
+    }
+    pub fn dist_y(&self) -> f32 {
+        self.max_y - self.min_y
+    }
+    pub fn dist_z(&self) -> f32 {
+        self.max_z - self.min_z
+    }
+    /// center point in absolute coords
+    pub fn mid_x(&self) -> f32 {
+        self.min_x + self.dist_x() / 2.
+    }
+    /// center point in absolute coords
+    pub fn mid_y(&self) -> f32 {
+        self.min_y + self.dist_y() / 2.
+    }
+    /// center point in absolute coords
+    pub fn mid_z(&self) -> f32 {
+        self.min_z + self.dist_z() / 2.
     }
 }
 

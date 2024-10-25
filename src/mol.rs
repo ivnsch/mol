@@ -37,7 +37,14 @@ pub fn add_mol_scene(app: &mut App) {
         .add_event::<UpdateSceneEvent>()
         .add_systems(Startup, setup_molecule)
         .add_systems(PostStartup, (trigger_init_scene_event,)) // TODO maybe it works in startup? test
-        .add_systems(Update, (handle_update_scene_event, check_file_loaded));
+        .add_systems(
+            Update,
+            (
+                handle_update_scene_event,
+                check_file_loaded,
+                handle_focus_bounding_box,
+            ),
+        );
 }
 
 /// Used to tint the mesh instead of simply replacing the mesh's material with a single color. See
@@ -167,6 +174,24 @@ fn check_file_loaded(
                     &scene.render,
                 );
             }
+        }
+    }
+}
+
+fn handle_focus_bounding_box(
+    mut mol_query: Query<&mut Transform, With<MyMolecule>>,
+    mut events: EventReader<FocusBoundingBox>,
+) {
+    if let Ok(mut transform) = mol_query.get_single_mut() {
+        for e in events.read() {
+            let bb = &e.0;
+            transform.translation.x = -bb.mid_x();
+            transform.translation.y = -bb.mid_y();
+            transform.translation.z = -bb.mid_z();
+            println!(
+                "new bounding box: {:?}, updated translation to: {:?}",
+                bb, transform.translation
+            );
         }
     }
 }
