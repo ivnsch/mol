@@ -64,9 +64,6 @@ static HIGHLIGHT_TINT: Highlight<StandardMaterial> = Highlight {
 };
 
 #[derive(Component, Default)]
-pub struct MySphere;
-
-#[derive(Component, Default)]
 pub struct MyMolecule;
 
 #[derive(Component, Default)]
