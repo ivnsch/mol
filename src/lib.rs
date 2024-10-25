@@ -8,13 +8,13 @@ mod init_wasm_log;
 mod linear_alkane;
 mod mol2_asset_plugin;
 mod rotator;
+mod scene;
 mod smiles;
 mod system_3d;
 mod ui;
-mod scene;
 
 use bevy::app::App;
-use linear_alkane::add_3d_scratch;
+use linear_alkane::add_mol_scene;
 use system_3d::add_3d_space;
 use ui::setup::add_ui;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -36,7 +36,7 @@ pub fn init_sim() {
     let app = &mut App::new();
 
     add_3d_space(app);
-    add_3d_scratch(app);
+    add_mol_scene(app);
     add_ui(app);
 
     app.run();

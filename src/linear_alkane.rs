@@ -21,7 +21,7 @@ use crate::{
 };
 
 #[allow(dead_code)]
-pub fn add_3d_scratch(app: &mut App) {
+pub fn add_mol_scene(app: &mut App) {
     app.add_plugins(DefaultPickingPlugins)
         .insert_resource(MolScene {
             content: MolSceneContent::Generated(CarbonCount(5)),
