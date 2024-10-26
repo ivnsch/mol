@@ -12,7 +12,10 @@ use crate::{
 };
 use bevy::prelude::*;
 
-use super::marker::{StyleBallMarker, StyleBallStickMarker, StyleStickMarker};
+use super::{
+    comp::bottom_row,
+    marker::{ControlsButtonMarker, StyleBallMarker, StyleBallStickMarker, StyleStickMarker},
+};
 
 /// adds a generic vertical spacer element with fixed height
 pub fn add_spacer(commands: &mut Commands, root_id: Entity) {
@@ -60,6 +63,15 @@ pub fn add_rotate_row(commands: &mut Commands, font: &Handle<Font>, root_id: Ent
     add_square_button(commands, row_id, font, "x", RotXLabelMarker);
     add_square_button(commands, row_id, font, "y", RotYLabelMarker);
     add_square_button(commands, row_id, font, "z", RotZLabelMarker);
+}
+
+pub fn add_controls_row(commands: &mut Commands, font: &Handle<Font>, root_id: Entity) {
+    let row = bottom_row();
+
+    let row_id = commands.spawn(row).id();
+    commands.entity(root_id).add_child(row_id);
+
+    add_button(commands, row_id, font, "Controls", ControlsButtonMarker);
 }
 
 /// adds a label with a given marker

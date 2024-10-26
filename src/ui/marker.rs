@@ -29,3 +29,9 @@ pub struct StyleBallStickMarker;
 pub struct StyleBallMarker;
 #[derive(Component, Default)]
 pub struct StyleStickMarker;
+
+#[derive(Component, Default)]
+pub struct ControlsButtonMarker;
+
+#[derive(Component, Default)]
+pub struct PopupMarker;

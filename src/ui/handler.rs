@@ -20,8 +20,11 @@ use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
 use std::cmp;
 
 use super::{
+    comp::add_controls_box,
     event::UpdateSceneEvent,
-    marker::{StyleBallMarker, StyleBallStickMarker, StyleStickMarker},
+    marker::{
+        ControlsButtonMarker, PopupMarker, StyleBallMarker, StyleBallStickMarker, StyleStickMarker,
+    },
     resource::CarbonCount,
 };
 
@@ -327,5 +330,29 @@ pub fn focus(
                 }
             }
         }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn controls_button_handler(
+    mut commands: Commands,
+    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<ControlsButtonMarker>)>,
+    asset_server: Res<AssetServer>,
+) {
+    for interaction in &mut interaction_query {
+        if interaction == &Interaction::Pressed {
+            let font = asset_server.load("embedded://mol/asset/fonts/FiraMono-Medium.ttf");
+            add_controls_box(&mut commands, &font);
+        }
+    }
+}
+
+pub fn close_popup_on_esc(
+    mut commands: Commands,
+    key_input: Res<ButtonInput<KeyCode>>,
+    popup_query: Query<Entity, With<PopupMarker>>,
+) {
+    if key_input.pressed(KeyCode::Escape) {
+        despawn_all_entities(&mut commands, &popup_query);
     }
 }

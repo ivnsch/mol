@@ -1,9 +1,8 @@
 use super::{
     handler::{
-        focus, style_ball_button_handler, style_ball_stick_button_handler,
-        style_stick_button_handler,
+        close_popup_on_esc, controls_button_handler, focus, style_ball_button_handler, style_ball_stick_button_handler, style_stick_button_handler
     },
-    helper::add_style_row,
+    helper::{add_controls_row, add_style_row},
 };
 use crate::ui::{
     comp::generate_input_box,
@@ -39,6 +38,8 @@ pub fn add_ui(app: &mut App) {
                 style_ball_stick_button_handler,
                 style_stick_button_handler,
                 style_ball_button_handler,
+                controls_button_handler,
+                close_popup_on_esc,
             ),
         )
         .add_systems(Startup, (setup_ui, setup_info_labels))
@@ -96,6 +97,9 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     add_spacer(&mut commands, root_id);
     add_header(&mut commands, root_id, &font, "Style");
     add_style_row(&mut commands, &font, root_id);
+
+    add_spacer(&mut commands, root_id);
+    add_controls_row(&mut commands, &font, root_id);
 
     commands.insert_resource(UiInputEntities {
         carbon_count: carbon_count_value_label,

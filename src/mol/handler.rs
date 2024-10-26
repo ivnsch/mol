@@ -352,9 +352,9 @@ fn add_atom(
             ..default()
         },
         PickableBundle::default(),
-        On::<Pointer<Over>>::commands_mut(move |click, target_commands| {
+        On::<Pointer<Over>>::commands_mut(move |click, commands| {
             add_tooltip(
-                target_commands,
+                commands,
                 click.pointer_location.position,
                 description_string.clone(),
             );
