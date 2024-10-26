@@ -6,7 +6,7 @@
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
-use std::{f32::consts::*, fmt};
+use std::f32::consts::*;
 
 pub struct CameraControllerPlugin;
 
@@ -66,30 +66,6 @@ impl Default for CameraController {
     }
 }
 
-impl fmt::Display for CameraController {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "
-Freecam Controls:
-    Mouse\t- Move camera orientation
-    {:?}\t- Hold to grab cursor
-    {:?} & {:?}\t- Fly forward & backwards
-    {:?} & {:?}\t- Fly sideways left & right
-    {:?} & {:?}\t- Fly up & down
-    {:?}\t- Fly faster while held",
-            self.mouse_key_cursor_grab,
-            self.key_forward,
-            self.key_back,
-            self.key_left,
-            self.key_right,
-            self.key_up,
-            self.key_down,
-            self.key_run,
-        )
-    }
-}
-
 #[allow(clippy::too_many_arguments)]
 fn run_camera_controller(
     time: Res<Time>,
@@ -106,7 +82,6 @@ fn run_camera_controller(
             controller.yaw = yaw;
             controller.pitch = pitch;
             controller.initialized = true;
-            info!("{}", *controller);
         }
 
         handle_keyboard(time, &key_input, &mut transform, &mut controller);

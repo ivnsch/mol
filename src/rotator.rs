@@ -1,7 +1,5 @@
-use bevy::prelude::*;
-use std::fmt;
-
 use crate::mol::component::MyMolecule;
+use bevy::prelude::*;
 
 pub struct RotatorPlugin;
 
@@ -42,20 +40,6 @@ impl Default for Rotator {
             key_shift_left: KeyCode::ShiftLeft,
             key_shift_right: KeyCode::ShiftRight,
         }
-    }
-}
-
-impl fmt::Display for Rotator {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "
-Rotator Controls:
-    {:?} \t- rotate around x
-    {:?} \t- rotate around y
-    {:?} \t- rotate around z",
-            self.key_x, self.key_y, self.key_z,
-        )
     }
 }
 
