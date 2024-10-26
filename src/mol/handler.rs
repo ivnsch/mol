@@ -1,4 +1,4 @@
-use crate::{mol::component::MyParent, mol2_asset_plugin::Mol2Atom};
+use crate::{mol::component::MyParent, mol2_asset_plugin::Mol2Atom, rotator::MolController};
 use std::f32::consts::PI;
 
 use bevy::{
@@ -234,7 +234,12 @@ fn draw_mol2_mol(
 
 fn add_mol(commands: &mut Commands) -> Entity {
     commands
-        .spawn((Name::new("mol"), MyMolecule, SpatialBundle { ..default() }))
+        .spawn((
+            Name::new("mol"),
+            MyMolecule,
+            MolController::default(),
+            SpatialBundle { ..default() },
+        ))
         .id()
 }
 
@@ -371,7 +376,8 @@ pub fn setup_molecule(mut commands: Commands) {
     commands.spawn((
         Name::new("group"),
         MyMolecule,
-        SpatialBundle { ..default() },
+        MolController::default(),
+        SpatialBundle::default(),
     ));
 }
 
