@@ -20,7 +20,6 @@ impl Plugin for RotatorPlugin {
 #[allow(unused)]
 #[derive(Component, Debug)]
 pub struct Rotator {
-    pub initialized: bool,
     pub key_y: KeyCode,
     pub key_z: KeyCode,
     pub key_x: KeyCode,
@@ -29,14 +28,11 @@ pub struct Rotator {
     pub key_p: KeyCode,
     pub key_shift_left: KeyCode,
     pub key_shift_right: KeyCode,
-    pub pitch: f32,
-    pub yaw: f32,
 }
 
 impl Default for Rotator {
     fn default() -> Self {
         Self {
-            initialized: false,
             key_y: KeyCode::KeyY,
             key_z: KeyCode::KeyZ,
             key_x: KeyCode::KeyX,
@@ -45,8 +41,6 @@ impl Default for Rotator {
             key_p: KeyCode::KeyP,
             key_shift_left: KeyCode::ShiftLeft,
             key_shift_right: KeyCode::ShiftRight,
-            pitch: 0.0,
-            yaw: 0.0,
         }
     }
 }
@@ -72,15 +66,7 @@ fn run_molecule_rotator(
 ) {
     if let Ok(mut transform) = sphere.get_single_mut() {
         let q = rotator.get_single_mut();
-        if let Ok(mut controller) = q {
-            if !controller.initialized {
-                let (yaw, pitch, _roll) = transform.rotation.to_euler(EulerRot::YXZ);
-                controller.yaw = yaw;
-                controller.pitch = pitch;
-                controller.initialized = true;
-                info!("{}", *controller);
-            }
-
+        if let Ok(controller) = q {
             let mut rotation = 0.03;
             if key_input.pressed(controller.key_shift_left)
                 || key_input.pressed(controller.key_shift_right)
@@ -88,7 +74,6 @@ fn run_molecule_rotator(
                 rotation = -rotation;
             }
 
-            // Handle key input
             if key_input.pressed(controller.key_y) {
                 transform.rotate_around(
                     Vec3::ZERO,
@@ -117,28 +102,15 @@ fn run_rotator(
     mut query: Query<(&mut Transform, &mut Rotator), With<Camera>>,
 ) {
     let q = query.get_single_mut();
-    // println!("q: {:?}", q);
     if let Ok((mut transform, mut controller)) = q {
-        if !controller.initialized {
-            let (yaw, pitch, _roll) = transform.rotation.to_euler(EulerRot::YXZ);
-            controller.yaw = yaw;
-            controller.pitch = pitch;
-            controller.initialized = true;
-            info!("{}", *controller);
-        }
-
-        // for p in key_input.get_pressed() {
-        //     println!("p: {:?}", p);
-        // }
-
         let mut rotation = 0.03;
+
         if key_input.pressed(controller.key_shift_left)
             || key_input.pressed(controller.key_shift_right)
         {
             rotation = -rotation;
         }
 
-        // Handle key input
         if key_input.pressed(controller.key_i) {
             transform.rotate_around(
                 Vec3::ZERO,
