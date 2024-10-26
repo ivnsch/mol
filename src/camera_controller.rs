@@ -95,9 +95,9 @@ fn run_camera_controller(
     time: Res<Time>,
     mut windows: Query<&mut Window>,
     mouse_events: EventReader<MouseMotion>,
+    mouse_cursor_grab: Local<bool>,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     key_input: Res<ButtonInput<KeyCode>>,
-    mouse_cursor_grab: Local<bool>,
     mut query: Query<(&mut Transform, &mut CameraController), With<Camera>>,
 ) {
     if let Ok((mut transform, mut controller)) = query.get_single_mut() {
@@ -206,7 +206,7 @@ fn handle_mouse(
     windows: &mut Query<&mut Window>,
     mut mouse_events: EventReader<MouseMotion>,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
-    mut mouse_cursor_grab: Local<bool>,
+    mut mouse_cursor_grab: Local<bool>, // whether there's an active grab (user pressing mouse/trackpad)
     transform: &mut Transform,
     controller: &mut CameraController,
 ) {
@@ -215,51 +215,119 @@ fn handle_mouse(
         return;
     }
 
-    let mut cursor_grab_change = false;
-    if mouse_button_input.just_pressed(controller.mouse_key_cursor_grab) {
-        *mouse_cursor_grab = true;
-        cursor_grab_change = true;
-    }
-    if mouse_button_input.just_released(controller.mouse_key_cursor_grab) {
-        *mouse_cursor_grab = false;
-        cursor_grab_change = true;
-    }
-    let cursor_grab = *mouse_cursor_grab;
+    // get current gesture (just started pressing or released)
+    let grab = cursor_grab_update(mouse_button_input, controller.mouse_key_cursor_grab);
 
-    if cursor_grab_change {
-        if cursor_grab {
+    // determine whether currently there's an active grab
+    let update_status = match &grab {
+        // just did something: map to status and save
+        Some(grab) => {
+            let status = match grab {
+                CursorGrabInput::JustPressed => CursorGrabStatus::Active,
+                CursorGrabInput::JustReleased => CursorGrabStatus::Inactive,
+            };
+            // save current state (no-op if user just didn't do anything)
+            *mouse_cursor_grab = match &status {
+                CursorGrabStatus::Active => true,
+                CursorGrabStatus::Inactive => false,
+            };
+            status
+        }
+        // didn't do anything: use current state
+        None => match *mouse_cursor_grab {
+            true => CursorGrabStatus::Active,
+            false => CursorGrabStatus::Inactive,
+        },
+    };
+
+    // if there was a gesture, do cursor and window updates
+    if let Some(input) = &grab {
+        update_cursor_and_window_for_grab_input(windows, &mut mouse_events, input);
+    };
+
+    // rotate mouse during active grab
+    match &update_status {
+        CursorGrabStatus::Active => {
+            update_rotation_with_mouse(&mut mouse_events, transform, controller)
+        }
+        CursorGrabStatus::Inactive => {}
+    };
+}
+
+/// updates cursor visibility and window focus for a given grab input
+fn update_cursor_and_window_for_grab_input(
+    windows: &mut Query<&mut Window>,
+    mouse_events: &mut EventReader<MouseMotion>,
+    input: &CursorGrabInput,
+) {
+    match input {
+        CursorGrabInput::JustPressed => {
             for mut window in windows {
                 if !window.focused {
                     continue;
                 }
-
                 window.cursor.grab_mode = CursorGrabMode::Locked;
                 window.cursor.visible = false;
             }
-        } else {
+        }
+        CursorGrabInput::JustReleased => {
             for mut window in windows {
                 window.cursor.grab_mode = CursorGrabMode::None;
                 window.cursor.visible = true;
             }
+            mouse_events.clear()
         }
-    }
-
-    let mut mouse_delta = Vec2::ZERO;
-    if cursor_grab {
-        for mouse_event in mouse_events.read() {
-            mouse_delta += mouse_event.delta;
-        }
-    } else {
-        mouse_events.clear();
-    }
-
-    if mouse_delta != Vec2::ZERO {
-        // Apply look update
-        controller.pitch = (controller.pitch
-            - mouse_delta.y * RADIANS_PER_DOT * controller.sensitivity)
-            .clamp(-PI / 2., PI / 2.);
-        controller.yaw -= mouse_delta.x * RADIANS_PER_DOT * controller.sensitivity;
-        transform.rotation = Quat::from_euler(EulerRot::ZYX, 0.0, controller.yaw, controller.pitch);
     }
 }
 
+fn update_rotation_with_mouse(
+    mouse_events: &mut EventReader<MouseMotion>,
+    transform: &mut Transform,
+    controller: &mut CameraController,
+) {
+    let mut mouse_delta = Vec2::ZERO;
+
+    for mouse_event in mouse_events.read() {
+        mouse_delta += mouse_event.delta;
+
+        if mouse_delta != Vec2::ZERO {
+            // Apply look update
+            controller.pitch = (controller.pitch
+                - mouse_delta.y * RADIANS_PER_DOT * controller.sensitivity)
+                .clamp(-PI / 2., PI / 2.);
+            controller.yaw -= mouse_delta.x * RADIANS_PER_DOT * controller.sensitivity;
+            transform.rotation =
+                Quat::from_euler(EulerRot::ZYX, 0.0, controller.yaw, controller.pitch);
+        }
+    }
+}
+
+fn cursor_grab_update(
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
+    button: MouseButton,
+) -> Option<CursorGrabInput> {
+    // let mut cursor_grab_change = false;
+    if mouse_button_input.just_pressed(button) {
+        // *mouse_cursor_grab = true;
+        // cursor_grab_change = true;
+        return Some(CursorGrabInput::JustPressed);
+    } else if mouse_button_input.just_released(button) {
+        // *mouse_cursor_grab = false;
+        // cursor_grab_change = true;
+        return Some(CursorGrabInput::JustReleased);
+    }
+    None
+    // let cursor_grab = *mouse_cursor_grab;
+}
+
+#[derive(Debug)]
+enum CursorGrabInput {
+    JustPressed,
+    JustReleased,
+}
+
+#[derive(Debug)]
+enum CursorGrabStatus {
+    Active,
+    Inactive,
+}
