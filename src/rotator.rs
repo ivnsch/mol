@@ -11,7 +11,7 @@ impl Plugin for RotatorPlugin {
             Update,
             (
                 run_molecule_rotator,
-                // run_rotator
+                // run_camera_rotator
             ),
         );
     }
@@ -62,32 +62,32 @@ Rotator Controls:
 fn run_molecule_rotator(
     key_input: Res<ButtonInput<KeyCode>>,
     mut sphere: Query<&mut Transform, With<MyMolecule>>,
-    mut rotator: Query<&mut Rotator, With<Camera>>,
+    mut camera: Query<&mut Rotator, With<Camera>>,
 ) {
-    if let Ok(mut transform) = sphere.get_single_mut() {
-        let q = rotator.get_single_mut();
-        if let Ok(controller) = q {
+    if let Ok(mut sphere_transform) = sphere.get_single_mut() {
+        let camera = camera.get_single_mut();
+        if let Ok(rotator) = camera {
             let mut rotation = 0.03;
-            if key_input.pressed(controller.key_shift_left)
-                || key_input.pressed(controller.key_shift_right)
+            if key_input.pressed(rotator.key_shift_left)
+                || key_input.pressed(rotator.key_shift_right)
             {
                 rotation = -rotation;
             }
 
-            if key_input.pressed(controller.key_y) {
-                transform.rotate_around(
+            if key_input.pressed(rotator.key_y) {
+                sphere_transform.rotate_around(
                     Vec3::ZERO,
                     Quat::from_euler(EulerRot::XYZ, 0.0, rotation, 0.0),
                 );
             }
-            if key_input.pressed(controller.key_z) {
-                transform.rotate_around(
+            if key_input.pressed(rotator.key_z) {
+                sphere_transform.rotate_around(
                     Vec3::ZERO,
                     Quat::from_euler(EulerRot::XYZ, 0.0, 0.0, rotation),
                 );
             }
-            if key_input.pressed(controller.key_x) {
-                transform.rotate_around(
+            if key_input.pressed(rotator.key_x) {
+                sphere_transform.rotate_around(
                     Vec3::ZERO,
                     Quat::from_euler(EulerRot::XYZ, rotation, 0.0, 0.0),
                 );
@@ -97,12 +97,11 @@ fn run_molecule_rotator(
 }
 
 #[allow(clippy::too_many_arguments, unused)]
-fn run_rotator(
+fn run_camera_rotator(
     key_input: Res<ButtonInput<KeyCode>>,
-    mut query: Query<(&mut Transform, &mut Rotator), With<Camera>>,
+    mut camera: Query<(&mut Transform, &mut Rotator), With<Camera>>,
 ) {
-    let q = query.get_single_mut();
-    if let Ok((mut transform, mut controller)) = q {
+    if let Ok((mut transform, mut controller)) = camera.get_single_mut() {
         let mut rotation = 0.03;
 
         if key_input.pressed(controller.key_shift_left)
