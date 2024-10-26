@@ -1,6 +1,7 @@
 use super::{
     handler::{
-        close_popup_on_esc, controls_button_handler, focus, style_ball_button_handler, style_ball_stick_button_handler, style_stick_button_handler
+        close_popup_on_esc, controls_button_handler, focus, style_ball_button_handler,
+        style_ball_stick_button_handler, style_stick_button_handler,
     },
     helper::{add_controls_row, add_style_row},
 };
@@ -58,6 +59,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             right: Val::Px(0.0),
             width: Val::Px(130.0),
             height: Val::Percent(100.0),
+            padding: UiRect::all(Val::Px(10.0)),
             ..default()
         },
         background_color: BackgroundColor(Color::BLACK),

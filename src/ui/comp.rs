@@ -331,6 +331,7 @@ pub fn add_controls_box(commands: &mut Commands, font: &Handle<Font>) {
             right: Val::Auto,
             width: Val::Px(250.),
             height: Val::Px(200.),
+            padding: UiRect::all(Val::Px(10.0)),
             ..default()
         },
         background_color: BLACK.into(),
