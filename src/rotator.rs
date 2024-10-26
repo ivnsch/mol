@@ -1,23 +1,17 @@
-use crate::{
-    camera_controller::{
-        cursor_grab_update, update_cursor_and_window_for_grab_input, update_rotation_with_mouse,
-        CursorGrabInput, CursorGrabStatus, RotPars,
-    },
-    mol::component::MyMolecule,
-};
-use bevy::{input::mouse::MouseMotion, prelude::*};
+use crate::{camera_controller::RotPars, mol::component::MyMolecule};
+use bevy::{input::mouse::MouseMotion, prelude::*, window::CursorGrabMode};
+use std::f32::consts::*;
+
+/// Based on Valorant's default sensitivity, not entirely sure why it is exactly 1.0 / 180.0,
+/// but I'm guessing it is a misunderstanding between degrees/radians and then sticking with
+/// it because it felt nice.
+pub const RADIANS_PER_DOT: f32 = 1.0 / 180.0;
 
 pub struct RotatorPlugin;
 
 impl Plugin for RotatorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (
-                run_molecule_rotator,
-                mouse_handler,
-            ),
-        );
+        app.add_systems(Update, (run_molecule_rotator, mouse_handler));
     }
 }
 
@@ -210,4 +204,75 @@ fn handle_mouse(
         }
         CursorGrabStatus::Inactive => {}
     };
+}
+
+/// updates cursor visibility and window focus for a given grab input
+fn update_cursor_and_window_for_grab_input(
+    windows: &mut Query<&mut Window>,
+    mouse_events: &mut EventReader<MouseMotion>,
+    input: &CursorGrabInput,
+) {
+    match input {
+        CursorGrabInput::JustPressed => {
+            for mut window in windows {
+                if !window.focused {
+                    continue;
+                }
+                window.cursor.grab_mode = CursorGrabMode::Locked;
+                window.cursor.visible = false;
+            }
+        }
+        CursorGrabInput::JustReleased => {
+            for mut window in windows {
+                window.cursor.grab_mode = CursorGrabMode::None;
+                window.cursor.visible = true;
+            }
+            mouse_events.clear()
+        }
+    }
+}
+
+fn update_rotation_with_mouse(
+    mouse_events: &mut EventReader<MouseMotion>,
+    transform: &mut Transform,
+    rot_pars: &mut RotPars,
+) {
+    let mut mouse_delta = Vec2::ZERO;
+
+    for mouse_event in mouse_events.read() {
+        mouse_delta += mouse_event.delta;
+
+        if mouse_delta != Vec2::ZERO {
+            // Apply look update
+            rot_pars.pitch = (rot_pars.pitch
+                - mouse_delta.y * RADIANS_PER_DOT * rot_pars.sensitivity)
+                .clamp(-PI / 2., PI / 2.);
+            rot_pars.yaw -= mouse_delta.x * RADIANS_PER_DOT * rot_pars.sensitivity;
+            transform.rotation = Quat::from_euler(EulerRot::ZYX, 0.0, rot_pars.yaw, rot_pars.pitch);
+        }
+    }
+}
+
+fn cursor_grab_update(
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
+    button: MouseButton,
+) -> Option<CursorGrabInput> {
+    if mouse_button_input.just_pressed(button) {
+        return Some(CursorGrabInput::JustPressed);
+    } else if mouse_button_input.just_released(button) {
+        return Some(CursorGrabInput::JustReleased);
+    }
+    None
+}
+
+#[derive(Debug)]
+enum CursorGrabInput {
+    JustPressed,
+    JustReleased,
+}
+
+#[derive(Debug)]
+enum CursorGrabStatus {
+    Active,
+    Inactive,
 }
