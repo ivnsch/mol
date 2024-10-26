@@ -1,4 +1,4 @@
-use crate::{camera_controller::RotPars, mol::component::MyMolecule};
+use crate::mol::component::MyMolecule;
 use bevy::{input::mouse::MouseMotion, prelude::*, window::CursorGrabMode};
 use std::f32::consts::*;
 
@@ -11,7 +11,13 @@ pub struct RotatorPlugin;
 
 impl Plugin for RotatorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (run_molecule_rotator, mouse_handler));
+        app.add_systems(
+            Update,
+            (
+                run_molecule_rotator
+                // , mouse_handler
+            ),
+        );
     }
 }
 
@@ -33,6 +39,13 @@ impl Default for MolController {
             },
         }
     }
+}
+
+pub struct RotPars {
+    pub initialized: bool,
+    pub pitch: f32,
+    pub yaw: f32,
+    pub sensitivity: f32,
 }
 
 #[allow(unused)]
@@ -168,7 +181,8 @@ fn handle_mouse(
     controller: &mut MolController,
 ) {
     // get current gesture (just started pressing or released)
-    let grab = cursor_grab_update(mouse_button_input, controller.mouse_key_cursor_grab);
+    let grab: Option<CursorGrabInput> =
+        cursor_grab_update(mouse_button_input, controller.mouse_key_cursor_grab);
 
     // determine whether currently there's an active grab
     let update_status = match &grab {
@@ -207,7 +221,7 @@ fn handle_mouse(
 }
 
 /// updates cursor visibility and window focus for a given grab input
-fn update_cursor_and_window_for_grab_input(
+pub fn update_cursor_and_window_for_grab_input(
     windows: &mut Query<&mut Window>,
     mouse_events: &mut EventReader<MouseMotion>,
     input: &CursorGrabInput,
@@ -253,10 +267,11 @@ fn update_rotation_with_mouse(
     }
 }
 
-fn cursor_grab_update(
+pub fn cursor_grab_update(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     button: MouseButton,
 ) -> Option<CursorGrabInput> {
+
     if mouse_button_input.just_pressed(button) {
         return Some(CursorGrabInput::JustPressed);
     } else if mouse_button_input.just_released(button) {
@@ -266,13 +281,13 @@ fn cursor_grab_update(
 }
 
 #[derive(Debug)]
-enum CursorGrabInput {
+pub enum CursorGrabInput {
     JustPressed,
     JustReleased,
 }
 
 #[derive(Debug)]
-enum CursorGrabStatus {
+pub enum CursorGrabStatus {
     Active,
     Inactive,
 }
