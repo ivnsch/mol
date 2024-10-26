@@ -11,13 +11,7 @@ pub struct RotatorPlugin;
 
 impl Plugin for RotatorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (
-                run_molecule_rotator
-                // , mouse_handler
-            ),
-        );
+        app.add_systems(Update, (run_molecule_rotator, mouse_handler));
     }
 }
 
@@ -271,7 +265,6 @@ pub fn cursor_grab_update(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     button: MouseButton,
 ) -> Option<CursorGrabInput> {
-
     if mouse_button_input.just_pressed(button) {
         return Some(CursorGrabInput::JustPressed);
     } else if mouse_button_input.just_released(button) {

@@ -12,7 +12,14 @@ pub struct CameraControllerPlugin;
 
 impl Plugin for CameraControllerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (run_camera_controller, mouse_handler));
+        app.add_systems(
+            Update,
+            (
+                run_camera_controller,
+                // if testing this, disable the mouse_handler mouse_handler as both use the same mouse event
+                // mouse_handler
+            ),
+        );
     }
 }
 
@@ -144,6 +151,8 @@ fn to_velocity(
     axis_input.normalize() * max_speed
 }
 
+/// TODO re-implement using MouseWheel
+#[allow(dead_code)]
 fn mouse_handler(
     mut windows: Query<&mut Window>,
     mut mouse_events: EventReader<MouseMotion>,
@@ -151,10 +160,6 @@ fn mouse_handler(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     mut camera: Query<(&mut Transform, &mut CameraController), With<Camera>>,
 ) {
-    for i in mouse_button_input.get_just_pressed() {
-        println!("pressed!: {:?}", i);
-    }
-
     if let Ok((mut transform, controller)) = camera.get_single_mut() {
         // get current gesture (just started pressing or released)
         let grab = cursor_grab_update(mouse_button_input, controller.mouse_key_cursor_zoom);
