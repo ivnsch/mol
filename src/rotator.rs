@@ -62,7 +62,7 @@ Rotator Controls:
 fn run_molecule_rotator(
     key_input: Res<ButtonInput<KeyCode>>,
     mut sphere: Query<&mut Transform, With<MyMolecule>>,
-    mut camera: Query<&mut Rotator, With<Camera>>,
+    mut camera: Query<&mut Rotator>,
 ) {
     if let Ok(mut sphere_transform) = sphere.get_single_mut() {
         let camera = camera.get_single_mut();
