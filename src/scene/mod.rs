@@ -24,7 +24,7 @@ pub fn add_mol_scene(app: &mut App) {
             content: MolSceneContent::Generated(CarbonCount(5)),
             style: MolStyle {
                 atom_scale_ball_stick: 0.3,
-                bond_len: 0.6,
+                bond_len: 1.0, // used only for builder - in files it's distance between atoms
                 bond_diam: 0.07,
                 atom_scale_ball: 1.8,
             },
