@@ -164,8 +164,8 @@ pub fn load_file_button_handler(
         if interaction == &Interaction::Pressed {
             // let path = "embedded://mol/asset/benzene.mol2";
             // let path = "embedded://mol/asset/117_ideal.mol2";
-            let path = "embedded://mol/asset/1ubq.mol2";
-            // let path = "embedded://mol/asset/2bbv.mol2";
+            // let path = "embedded://mol/asset/1ubq.mol2";
+            let path = "embedded://mol/asset/2bbv.mol2";
             let handle: Handle<Mol2Molecule> = asset_server.load(path);
 
             scene.content = MolSceneContent::Mol2 {
