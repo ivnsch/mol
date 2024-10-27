@@ -210,7 +210,7 @@ fn draw_mol2_mol(
                 mol_render,
                 mol_entity,
                 atom.loc_vec3(),
-                color_for_element(&atom.element),
+                &atom.element,
                 &tooltip_descr(atom),
             );
         }
@@ -315,10 +315,16 @@ fn add_atom(
     mol_render: &MolRender,
     parent: Entity,
     position: Vec3,
-    color: Srgba,
+    element: &Element,
     description: &str,
 ) {
-    let pbr_bundle = sphere_pbr_bundle(meshes, materials, mol_style, mol_render, position, color);
+    let pbr_bundle = sphere_pbr_bundle(
+        meshes,
+        materials,
+        position,
+        sphere_scale(mol_render, mol_style, element),
+        color_for_element(element),
+    );
     let descr = description.to_string();
 
     let sphere = (
@@ -338,6 +344,28 @@ fn add_atom(
 
     let entity = commands.spawn(sphere).id();
     commands.entity(parent).add_child(entity);
+}
+
+fn sphere_scale(mol_render: &MolRender, mol_style: &MolStyle, element: &Element) -> f32 {
+    let basic_scale = match mol_render {
+        MolRender::BallStick => mol_style.atom_scale_ball_stick,
+        MolRender::Ball => mol_style.atom_scale_ball,
+        MolRender::Stick => mol_style.atom_scale_ball_stick, // sphere not added to scene - arbitrary
+    };
+
+    let van_der_waals_radius = match element {
+        Element::H => 1.2,
+        Element::C => 1.7,
+        Element::N => 1.55,
+        Element::O => 1.52,
+        Element::F => 1.47,
+        Element::P => 1.8,
+        Element::S => 1.8,
+        Element::Ca => 2.31,
+    };
+    let van_der_waals_scaling_factor = 1.;
+
+    basic_scale * van_der_waals_radius * van_der_waals_scaling_factor
 }
 
 pub fn setup_molecule(mut commands: Commands) {
@@ -574,7 +602,7 @@ fn add_outer_carbon(
             mol_render,
             parent,
             center,
-            color_for_element(&Element::C),
+            &Element::C,
             "C",
         );
     }
@@ -603,19 +631,42 @@ fn add_outer_carbon(
     p4 += center;
 
     let h_descr = "H";
-    let h_color = color_for_element(&Element::H);
 
     if *mol_render != MolRender::Stick {
         add_atom(
-            commands, meshes, materials, mol_style, mol_render, parent, p2, h_color, h_descr,
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            mol_render,
+            parent,
+            p2,
+            &Element::H,
+            h_descr,
         );
 
         add_atom(
-            commands, meshes, materials, mol_style, mol_render, parent, p3, h_color, h_descr,
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            mol_render,
+            parent,
+            p3,
+            &Element::H,
+            h_descr,
         );
 
         add_atom(
-            commands, meshes, materials, mol_style, mol_render, parent, p4, h_color, h_descr,
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            mol_render,
+            parent,
+            p4,
+            &Element::H,
+            h_descr,
         );
     }
 
@@ -635,7 +686,15 @@ fn add_outer_carbon(
         // p1 only shown when there's only 1 carbon, i.e. 4 bonds with hydrogen
         if *mol_render != MolRender::Stick {
             add_atom(
-                commands, meshes, materials, mol_style, mol_render, parent, p1, WHITE, "H",
+                commands,
+                meshes,
+                materials,
+                mol_style,
+                mol_render,
+                parent,
+                p1,
+                &Element::H,
+                "H",
             );
         }
         add_bond(
@@ -663,7 +722,7 @@ fn add_inner_carbon(
             mol_render,
             parent,
             center,
-            color_for_element(&Element::C),
+            &Element::C,
             "C",
         );
     }
@@ -688,14 +747,29 @@ fn add_inner_carbon(
     p3 += center;
 
     let h_descr = "H";
-    let h_color = color_for_element(&Element::H);
 
     if *mol_render != MolRender::Stick {
         add_atom(
-            commands, meshes, materials, mol_style, mol_render, parent, p2, h_color, h_descr,
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            mol_render,
+            parent,
+            p2,
+            &Element::H,
+            h_descr,
         );
         add_atom(
-            commands, meshes, materials, mol_style, mol_render, parent, p3, h_color, h_descr,
+            commands,
+            meshes,
+            materials,
+            mol_style,
+            mol_render,
+            parent,
+            p3,
+            &Element::H,
+            h_descr,
         );
         add_bond(
             commands, meshes, materials, mol_style, parent, center, p2, false,
