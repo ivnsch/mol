@@ -780,7 +780,7 @@ fn add_outer_carbon(
                 p1,
                 &Element::H,
                 "H",
-                h_material.clone(),
+                c_material.clone(),
                 atom_mesh.clone(),
             );
         }
