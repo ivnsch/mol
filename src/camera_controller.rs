@@ -34,8 +34,6 @@ pub struct CameraController {
     pub key_run: KeyCode,
     pub walk_speed: f32,
     pub run_speed: f32,
-    pub friction: f32,
-    pub velocity: Vec3,
     mouse_key_cursor_zoom: MouseButton,
     zoom_sensitivity: f32,
 }
@@ -50,10 +48,8 @@ impl Default for CameraController {
             key_up: KeyCode::KeyE,
             key_down: KeyCode::KeyQ,
             key_run: KeyCode::ShiftLeft,
-            walk_speed: 10.0,
-            run_speed: 15.0,
-            friction: 0.5,
-            velocity: Vec3::ZERO,
+            walk_speed: 1.0,
+            run_speed: 2.0,
             mouse_key_cursor_zoom: MouseButton::Left,
             zoom_sensitivity: 0.3,
         }
@@ -62,25 +58,26 @@ impl Default for CameraController {
 
 #[allow(clippy::too_many_arguments)]
 fn run_camera_controller(
-    time: Res<Time>,
     key_input: Res<ButtonInput<KeyCode>>,
     mut query: Query<(&mut Transform, &mut CameraController), With<Camera>>,
 ) {
     if let Ok((mut transform, mut controller)) = query.get_single_mut() {
-        handle_keyboard(time, &key_input, &mut transform, &mut controller);
+        handle_keyboard(&key_input, &mut transform, &mut controller);
     }
 }
 
 fn handle_keyboard(
-    time: Res<Time>,
     key_input: &Res<ButtonInput<KeyCode>>,
     transform: &mut Transform,
     controller: &mut CameraController,
 ) {
     let axes_input = input_as_axes(controller, key_input);
-    update_controller_velocity(axes_input, controller, key_input);
-
-    update_translation_with_velocity(time, transform, controller.velocity);
+    transform.translation += axes_input
+        * if key_input.pressed(controller.key_run) {
+            controller.run_speed
+        } else {
+            controller.walk_speed
+        };
 }
 
 /// maps the entered keys to values on x/y/z
@@ -106,49 +103,6 @@ fn input_as_axes(controller: &mut CameraController, key_input: &Res<ButtonInput<
         axis_input.y -= 1.0;
     }
     axis_input
-}
-
-/// updates velocity, based on pressed keys
-fn update_controller_velocity(
-    axis_input: Vec3,
-    controller: &mut CameraController,
-    key_input: &Res<ButtonInput<KeyCode>>,
-) {
-    if axis_input != Vec3::ZERO {
-        controller.velocity = to_velocity(&controller, key_input, axis_input);
-    } else {
-        // nothing pressed: start slow down
-        let friction = controller.friction.clamp(0.0, 1.0);
-        controller.velocity *= 1.0 - friction;
-        // set back to 0 when close enough
-        if controller.velocity.length_squared() < 1e-6 {
-            controller.velocity = Vec3::ZERO;
-        }
-    }
-}
-
-/// uses velocity to update the transform's translation
-fn update_translation_with_velocity(time: Res<Time>, transform: &mut Transform, velocity: Vec3) {
-    let dt = time.delta_seconds();
-
-    let forward = *transform.forward();
-    let right = *transform.right();
-    transform.translation +=
-        velocity.x * dt * right + velocity.y * dt * Vec3::Y + velocity.z * dt * forward;
-}
-
-/// maps the keys pressed to a velocity vector
-fn to_velocity(
-    controller: &CameraController,
-    key_input: &Res<ButtonInput<KeyCode>>,
-    axis_input: Vec3,
-) -> Vec3 {
-    let max_speed = if key_input.pressed(controller.key_run) {
-        controller.run_speed
-    } else {
-        controller.walk_speed
-    };
-    axis_input.normalize() * max_speed
 }
 
 /// TODO re-implement using MouseWheel
