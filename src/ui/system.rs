@@ -3,12 +3,12 @@ use crate::{
     mol2_asset_plugin::Mol2Molecule,
     smiles::process_smiles,
     ui::{
-        event::{PlusMinusInput, PlusMinusInputEvent},
-        helper::add_info_labels,
         component::{
             CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
             LoadMol2ButtonMarker, RotXLabelMarker, RotYLabelMarker, RotZLabelMarker,
         },
+        event::{PlusMinusInput, PlusMinusInputEvent},
+        helper::add_info_labels,
         resource::{UiInputEntities, UiInputSmiles},
     },
 };
@@ -21,10 +21,10 @@ use std::cmp;
 
 use super::{
     comp::add_controls_box,
-    event::UpdateSceneEvent,
     component::{
         ControlsButtonMarker, PopupMarker, StyleBallMarker, StyleBallStickMarker, StyleStickMarker,
     },
+    event::UpdateSceneEvent,
     resource::CarbonCount,
 };
 
@@ -163,7 +163,8 @@ pub fn load_file_button_handler(
     for interaction in &mut interaction_query {
         if interaction == &Interaction::Pressed {
             // let path = "embedded://mol/asset/benzene.mol2";
-            let path = "embedded://mol/asset/117_ideal.mol2";
+            // let path = "embedded://mol/asset/117_ideal.mol2";
+            let path = "embedded://mol/asset/1ubq.mol2";
             // let path = "embedded://mol/asset/2bbv.mol2";
             let handle: Handle<Mol2Molecule> = asset_server.load(path);
 
