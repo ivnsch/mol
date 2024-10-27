@@ -1,8 +1,13 @@
 # mol
 
-![demo](./img/demo.gif)
+A minimal molecule explorer.
 
-A minimal visualizer of linear alkanes, allows to set any number of carbons, and some interactions.
+WIP!
+
+It also includes an experimental linear alkane generator.
+
+![demo](./img/render_bs.png)
+![demo](./img/demo.gif)
 
 ## Instructions
 
@@ -32,3 +37,5 @@ https://github.com/ivnsch/mol_next_app_tmp
 ```
 npm run dev
 ```
+
+![demo](./img/render_b.png)
