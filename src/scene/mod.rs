@@ -3,6 +3,7 @@ pub mod component;
 mod event;
 mod helper;
 mod marker;
+mod system_mol_gen;
 pub mod resource;
 mod system;
 
