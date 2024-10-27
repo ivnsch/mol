@@ -6,8 +6,7 @@ use crate::{
         spacer, square_button_bg, square_button_text, tooltip,
     },
     ui::component::{
-        CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker, RotXLabelMarker,
-        RotYLabelMarker, RotZLabelMarker, TooltipMarker,
+        CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker, TooltipMarker,
     },
 };
 use bevy::prelude::*;
@@ -52,17 +51,6 @@ pub fn add_style_row(commands: &mut Commands, font: &Handle<Font>, root_id: Enti
     add_square_button(commands, row_id, font, "BS", StyleBallStickMarker);
     add_square_button(commands, row_id, font, "S", StyleStickMarker);
     add_square_button(commands, row_id, font, "B", StyleBallMarker);
-}
-
-pub fn add_rotate_row(commands: &mut Commands, font: &Handle<Font>, root_id: Entity) {
-    let row = row();
-
-    let row_id = commands.spawn(row).id();
-    commands.entity(root_id).add_child(row_id);
-
-    add_square_button(commands, row_id, font, "x", RotXLabelMarker);
-    add_square_button(commands, row_id, font, "y", RotYLabelMarker);
-    add_square_button(commands, row_id, font, "z", RotZLabelMarker);
 }
 
 pub fn add_controls_row(commands: &mut Commands, font: &Handle<Font>, root_id: Entity) {

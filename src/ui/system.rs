@@ -5,7 +5,7 @@ use crate::{
     ui::{
         component::{
             CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
-            LoadMol2ButtonMarker, RotXLabelMarker, RotYLabelMarker, RotZLabelMarker,
+            LoadMol2ButtonMarker,
         },
         event::{PlusMinusInput, PlusMinusInputEvent},
         helper::add_info_labels,
@@ -177,63 +177,6 @@ pub fn load_file_button_handler(
                 // (like changing the mol rendering type)
                 waiting_for_async_handle: true,
             };
-        }
-    }
-}
-
-#[allow(clippy::type_complexity)]
-pub fn rot_x_button_handler(
-    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<RotXLabelMarker>)>,
-    mut query: Query<&mut Transform, With<Camera>>,
-) {
-    let q: Result<Mut<'_, Transform>, bevy::ecs::query::QuerySingleError> = query.get_single_mut();
-    if let Ok(mut transform) = q {
-        for interaction in &mut interaction_query {
-            if interaction == &Interaction::Pressed {
-                let rotation = 0.03;
-                transform.rotate_around(
-                    Vec3::ZERO,
-                    Quat::from_euler(EulerRot::XYZ, rotation, 0.0, 0.0),
-                );
-            }
-        }
-    }
-}
-
-#[allow(clippy::type_complexity)]
-pub fn rot_y_button_handler(
-    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<RotYLabelMarker>)>,
-    mut query: Query<&mut Transform, With<Camera>>,
-) {
-    let q: Result<Mut<'_, Transform>, bevy::ecs::query::QuerySingleError> = query.get_single_mut();
-    if let Ok(mut transform) = q {
-        for interaction in &mut interaction_query {
-            if interaction == &Interaction::Pressed {
-                let rotation = 0.03;
-                transform.rotate_around(
-                    Vec3::ZERO,
-                    Quat::from_euler(EulerRot::XYZ, 0.0, rotation, 0.0),
-                );
-            }
-        }
-    }
-}
-
-#[allow(clippy::type_complexity)]
-pub fn rot_z_button_handler(
-    mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<RotZLabelMarker>)>,
-    mut query: Query<&mut Transform, With<Camera>>,
-) {
-    let q: Result<Mut<'_, Transform>, bevy::ecs::query::QuerySingleError> = query.get_single_mut();
-    if let Ok(mut transform) = q {
-        for interaction in &mut interaction_query {
-            if interaction == &Interaction::Pressed {
-                let rotation = 0.03;
-                transform.rotate_around(
-                    Vec3::ZERO,
-                    Quat::from_euler(EulerRot::XYZ, 0.0, 0.0, rotation),
-                );
-            }
         }
     }
 }

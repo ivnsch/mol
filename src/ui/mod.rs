@@ -1,7 +1,7 @@
 mod comp;
+pub mod component;
 pub mod event;
 pub mod helper;
-pub mod component;
 pub mod resource;
 pub mod system;
 
@@ -14,14 +14,13 @@ use self::{
 };
 use crate::ui::{
     comp::generate_input_box,
-    event::PlusMinusInputEvent,
-    helper::{add_button, add_carbons_value_row, add_header, add_rotate_row, add_spacer},
     component::{LoadMol2ButtonMarker, SmilesInputMarker},
+    event::PlusMinusInputEvent,
+    helper::{add_button, add_carbons_value_row, add_header, add_spacer},
     resource::{UiInputEntities, UiInputSmiles},
     system::{
         listen_carbon_count_ui_inputs, load_file_button_handler, minus_button_handler,
-        plus_button_handler, rot_x_button_handler, rot_y_button_handler, rot_z_button_handler,
-        setup_info_labels, text_listener, update_carbon_count_label,
+        plus_button_handler, setup_info_labels, text_listener, update_carbon_count_label,
     },
 };
 use bevy::prelude::*;
@@ -39,9 +38,6 @@ pub fn add_ui(app: &mut App) {
                 plus_button_handler,
                 minus_button_handler,
                 listen_carbon_count_ui_inputs,
-                rot_x_button_handler,
-                rot_y_button_handler,
-                rot_z_button_handler,
                 load_file_button_handler,
                 style_ball_stick_button_handler,
                 style_stick_button_handler,
@@ -91,9 +87,6 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     );
 
     add_spacer(&mut commands, root_id);
-
-    add_header(&mut commands, root_id, &font, "Rotate");
-    add_rotate_row(&mut commands, &font, root_id);
 
     add_button(
         &mut commands,
