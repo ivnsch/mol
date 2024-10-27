@@ -12,7 +12,7 @@ use crate::{
 use bevy::prelude::*;
 
 use super::{
-    comp::bottom_row,
+    comp::{bottom_row, generate_label},
     component::{ControlsButtonMarker, StyleBallMarker, StyleBallStickMarker, StyleStickMarker},
 };
 
@@ -90,6 +90,23 @@ pub fn add_header(
 ) -> Entity {
     let label = generate_header(font, label);
     let spawned_label = commands.spawn(label).id();
+    commands.entity(container_id).add_child(spawned_label);
+    spawned_label
+}
+
+/// adds label to container
+pub fn add_label_with_marker<T>(
+    commands: &mut Commands,
+    container_id: Entity,
+    font: &Handle<Font>,
+    label: &str,
+    marker: T,
+) -> Entity
+where
+    T: Component,
+{
+    let label = generate_label(font, label);
+    let spawned_label = commands.spawn((label, marker)).id();
     commands.entity(container_id).add_child(spawned_label);
     spawned_label
 }

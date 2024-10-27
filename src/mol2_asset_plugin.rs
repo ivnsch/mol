@@ -35,11 +35,14 @@ impl AssetLoader for Mol2AssetLoader {
 
         let mut parsing_atoms = false;
         let mut parsing_bonds = false;
+        let mut parsing_mol = false;
 
         let mut atoms = vec![];
         let mut bonds = vec![];
 
         let mut lines = buffered_reader.lines();
+
+        let mut mol_name = None;
 
         while let Some(line) = lines.next().await {
             let line = line?;
@@ -50,19 +53,27 @@ impl AssetLoader for Mol2AssetLoader {
                     Header::Atom => {
                         parsing_atoms = true;
                         parsing_bonds = false;
+                        parsing_mol = false;
                     }
                     Header::Bond => {
                         parsing_bonds = true;
                         parsing_atoms = false;
+                        parsing_mol = false;
+                    }
+                    Header::Mol => {
+                        parsing_bonds = false;
+                    parsing_atoms = false;
+                        parsing_mol = true;
                     }
                     // we don't use this yet, ignore
                     // entries belonging to section will also be ignored
                     Header::Other => {
                         parsing_bonds = false;
                         parsing_atoms = false;
+                        parsing_mol = false;
                     }
                 },
-                ProcessMol2LineResult::OneToken => continue,
+                // assumption: &parts has correct length for respective handlers
                 ProcessMol2LineResult::Entity { parts } => {
                     if parsing_atoms {
                         let atom = parse_atom_line(&parts)?;
@@ -70,17 +81,29 @@ impl AssetLoader for Mol2AssetLoader {
                     } else if parsing_bonds {
                         let bond = parse_bond_line(&parts)?;
                         bonds.push(bond);
+                    } else if parsing_mol {
+                        // we just care about the name for now: finish parsing this section
+                        parsing_mol = false;
+                        let parsed_mol_name = parse_mol_name_line(&parts)?;
+                        mol_name = Some(parsed_mol_name);
                     }
                 }
             }
         }
+
+        // mol name seems mandatory, so err if not found
+        let mol_name = mol_name.ok_or_else(|| anyhow!("File has no molecule name."))?;
 
         println!(
             "finished parsing mol2 file: atoms: {}, bonds: {}",
             atoms.len(),
             bonds.len()
         );
-        let mol = Mol2Molecule { atoms, bonds };
+        let mol = Mol2Molecule {
+            name: mol_name,
+            atoms,
+            bonds,
+        };
         Ok(mol)
     }
 }
@@ -88,13 +111,13 @@ impl AssetLoader for Mol2AssetLoader {
 enum ProcessMol2LineResult<'a> {
     Empty,
     Header(Header),
-    OneToken, // for now not interpreting these
     Entity { parts: Vec<&'a str> },
 }
 
 enum Header {
     Atom,
     Bond,
+    Mol,
     Other, // for now just ignoring these
 }
 
@@ -114,14 +137,13 @@ fn parse_mol2_line(line: &str) -> ProcessMol2LineResult {
         "@<TRIPOS>BOND" => {
             return ProcessMol2LineResult::Header(Header::Bond);
         }
+        "@<TRIPOS>MOLECULE" => {
+            return ProcessMol2LineResult::Header(Header::Mol);
+        }
         "@<TRIPOS>SUBSTRUCTURE" => {
             return ProcessMol2LineResult::Header(Header::Other);
         }
         _ => {}
-    }
-
-    if parts.len() == 1 {
-        return ProcessMol2LineResult::OneToken;
     }
 
     ProcessMol2LineResult::Entity { parts }
@@ -173,9 +195,14 @@ fn parse_bond_line(parts: &[&str]) -> Result<Mol2Bond> {
     })
 }
 
+fn parse_mol_name_line(parts: &[&str]) -> Result<String> {
+    Ok(parts[0].to_string())
+}
+
 // TODO performance: remove clone from these
 #[derive(Default, Debug, Clone, Asset, TypePath)]
 pub struct Mol2Molecule {
+    pub name: String,
     pub atoms: Vec<Mol2Atom>,
     pub bonds: Vec<Mol2Bond>,
 }

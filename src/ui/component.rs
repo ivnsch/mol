@@ -35,3 +35,6 @@ pub struct ControlsButtonMarker;
 
 #[derive(Component, Default)]
 pub struct PopupMarker;
+
+#[derive(Component, Default)]
+pub struct MolNameMarker;

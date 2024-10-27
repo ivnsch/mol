@@ -22,7 +22,8 @@ use std::cmp;
 use super::{
     comp::add_controls_box,
     component::{
-        ControlsButtonMarker, PopupMarker, StyleBallMarker, StyleBallStickMarker, StyleStickMarker,
+        ControlsButtonMarker, MolNameMarker, PopupMarker, StyleBallMarker, StyleBallStickMarker,
+        StyleStickMarker,
     },
     event::UpdateSceneEvent,
     resource::CarbonCount,
@@ -298,5 +299,25 @@ pub fn close_popup_on_esc(
 ) {
     if key_input.pressed(KeyCode::Escape) {
         despawn_all_entities(&mut commands, &popup_query);
+    }
+}
+
+pub fn update_ui_for_scene(
+    scene: ResMut<MolScene>,
+    mut mol_name_label: Query<&mut Text, With<MolNameMarker>>,
+    assets: Res<Assets<Mol2Molecule>>,
+) {
+    if let Ok(mut label) = mol_name_label.get_single_mut() {
+        match &scene.content {
+            MolSceneContent::Generated(_) => {
+                label.sections[0].value = "Unnamed".to_string();
+            }
+            MolSceneContent::Mol2 { handle, .. } => {
+                if let Some(mol) = assets.get(handle) {
+                    label.sections[0].value = mol.name.to_string();
+                }
+                // don't do anything for other states
+            }
+        }
     }
 }

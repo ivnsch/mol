@@ -25,6 +25,9 @@ use crate::ui::{
 };
 use bevy::prelude::*;
 use bevy_simple_text_input::{TextInputPlugin, TextInputSystem};
+use component::MolNameMarker;
+use helper::add_label_with_marker;
+use system::update_ui_for_scene;
 
 pub fn add_ui(app: &mut App) {
     app.add_plugins(TextInputPlugin)
@@ -44,6 +47,7 @@ pub fn add_ui(app: &mut App) {
                 style_ball_button_handler,
                 controls_button_handler,
                 close_popup_on_esc,
+                update_ui_for_scene,
             ),
         )
         .add_systems(Startup, (setup_ui, setup_info_labels))
@@ -70,6 +74,10 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
 
     let root_id = root.id();
+
+    add_header(&mut commands, root_id, &font, "Mol name:");
+    add_label_with_marker(&mut commands, root_id, &font, "", MolNameMarker);
+    add_spacer(&mut commands, root_id);
 
     add_header(&mut commands, root_id, &font, "Carbon count:");
 
