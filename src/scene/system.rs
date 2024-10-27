@@ -5,16 +5,17 @@ use super::{
     resource::{MolRender, MolScene, MolSceneContent, MolStyle},
 };
 use crate::{
+    bounding_box::BoundingBox,
     debug::AddedBoundingBox,
     element::Element,
-    scene::helper::add_outer_parent,
     mol2_asset_plugin::{bounding_box_for_mol, Mol2Molecule},
+    scene::helper::add_outer_parent,
     ui::{
         component::TooltipMarker, event::UpdateSceneEvent, helper::add_tooltip,
         system::despawn_all_entities,
     },
 };
-use crate::{scene::component::MyParent, mol2_asset_plugin::Mol2Atom};
+use crate::{mol2_asset_plugin::Mol2Atom, scene::component::MyParent};
 use bevy::{
     color::palettes::css::{BLACK, GREEN, LIGHT_CYAN, MAGENTA, ORANGE, RED, WHITE, YELLOW},
     prelude::*,
@@ -45,6 +46,7 @@ pub fn handle_update_scene_event(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut scene: ResMut<MolScene>,
     assets: Res<Assets<Mol2Molecule>>,
+    mut event_writer: EventWriter<AddedBoundingBox>,
 ) {
     for _ in event.read() {
         println!("got an update scene event!");
@@ -55,6 +57,7 @@ pub fn handle_update_scene_event(
             &mut materials,
             &mut scene,
             &assets,
+            &mut event_writer,
         );
     }
 }
@@ -130,16 +133,19 @@ pub fn handle_added_bounding_box(
 ) {
     if let Ok(mut transform) = mol_query.get_single_mut() {
         for e in events.read() {
-            let bb = &e.0;
-            transform.translation.x = -bb.mid_x();
-            transform.translation.y = -bb.mid_y();
-            transform.translation.z = -bb.mid_z();
-            println!(
-                "new bounding box: {:?}, updated translation to: {:?}",
-                bb, transform.translation
-            );
+            update_for_bounding_box(&mut transform, &e.0);
         }
     }
+}
+
+fn update_for_bounding_box(transform: &mut Transform, bounding_box: &BoundingBox) {
+    transform.translation.x = -bounding_box.mid_x();
+    transform.translation.y = -bounding_box.mid_y();
+    transform.translation.z = -bounding_box.mid_z();
+    println!(
+        "new bounding box: {:?}, updated translation to: {:?}",
+        bounding_box, transform.translation
+    );
 }
 
 fn update_scene(
@@ -149,6 +155,7 @@ fn update_scene(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     scene: &mut ResMut<MolScene>,
     assets: &Res<Assets<Mol2Molecule>>,
+    event_writer: &mut EventWriter<AddedBoundingBox>,
 ) {
     match &scene.content {
         MolSceneContent::Generated(carbon_count) => {
@@ -167,6 +174,12 @@ fn update_scene(
             if let Some(mol) = assets.get(handle) {
                 clear(commands, &mol_query);
 
+                // center molecule
+                // we cleared the scene and will rebuild: we're adding a "new" bounding box
+                let bounding_box = bounding_box_for_mol(mol);
+                event_writer.send(AddedBoundingBox(bounding_box));
+
+                // build scene
                 draw_mol2_mol(
                     commands,
                     meshes,
