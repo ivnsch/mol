@@ -7,14 +7,14 @@ use super::{
 use crate::{
     debug::AddedBoundingBox,
     element::Element,
-    mol::helper::add_outer_parent,
+    scene::helper::add_outer_parent,
     mol2_asset_plugin::{bounding_box_for_mol, Mol2Molecule},
     ui::{
         component::TooltipMarker, event::UpdateSceneEvent, helper::add_tooltip,
         system::despawn_all_entities,
     },
 };
-use crate::{mol::component::MyParent, mol2_asset_plugin::Mol2Atom};
+use crate::{scene::component::MyParent, mol2_asset_plugin::Mol2Atom};
 use bevy::{
     color::palettes::css::{BLACK, GREEN, LIGHT_CYAN, MAGENTA, ORANGE, RED, WHITE, YELLOW},
     prelude::*,

@@ -7,7 +7,7 @@ mod defocus;
 mod element;
 mod embedded_asset_plugin;
 mod init_wasm_log;
-mod mol;
+mod scene;
 mod mol2_asset_plugin;
 mod rotator;
 mod smiles;
@@ -15,7 +15,7 @@ mod system_3d;
 mod ui;
 
 use bevy::app::App;
-use mol::add_mol_scene;
+use scene::add_mol_scene;
 use system_3d::add_3d_space;
 use ui::add_ui;
 use wasm_bindgen::prelude::wasm_bindgen;
