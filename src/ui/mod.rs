@@ -32,7 +32,6 @@ use system::update_ui_for_scene;
 pub fn add_ui(app: &mut App) {
     app.add_plugins(TextInputPlugin)
         .add_event::<PlusMinusInputEvent>()
-        // .add_event::<LoadedMol2Event>()
         .insert_resource(UiInputSmiles("".to_string()))
         .add_systems(
             Update,
@@ -115,7 +114,4 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
         carbon_count: carbon_count_value_label,
         smiles: smiles_input,
     });
-
-    // shouldn't be necessary with the new trigger_init_scene_event - TODO confirm and delete this
-    // carbon_count_event_writer.send(UiCarbonCountInputEvent(carbon_count.0 .0));
 }
