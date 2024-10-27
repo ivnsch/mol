@@ -31,9 +31,6 @@ pub struct CameraController {
     pub key_right: KeyCode,
     pub key_up: KeyCode,
     pub key_down: KeyCode,
-    pub key_run: KeyCode,
-    pub walk_speed: f32,
-    pub run_speed: f32,
     mouse_key_cursor_zoom: MouseButton,
     zoom_sensitivity: f32,
 }
@@ -47,9 +44,6 @@ impl Default for CameraController {
             key_right: KeyCode::KeyD,
             key_up: KeyCode::KeyE,
             key_down: KeyCode::KeyQ,
-            key_run: KeyCode::ShiftLeft,
-            walk_speed: 1.0,
-            run_speed: 2.0,
             mouse_key_cursor_zoom: MouseButton::Left,
             zoom_sensitivity: 0.3,
         }
@@ -66,43 +60,40 @@ fn run_camera_controller(
     }
 }
 
+const TRANSLATION_SPEED: f32 = 1.;
+const TRANSLATION_SCALING_FACTOR: f32 = 0.1;
+const TRANSLATION_MIN_UPDATE: f32 = 0.2;
+
 fn handle_keyboard(
     key_input: &Res<ButtonInput<KeyCode>>,
     transform: &mut Transform,
     controller: &mut CameraController,
 ) {
-    let axes_input = input_as_axes(controller, key_input);
-    transform.translation += axes_input
-        * if key_input.pressed(controller.key_run) {
-            controller.run_speed
-        } else {
-            controller.walk_speed
-        };
-}
-
-/// maps the entered keys to values on x/y/z
-/// currently this value is always 1 so this is equivalent to setting a flag ("axis is active")
-fn input_as_axes(controller: &mut CameraController, key_input: &Res<ButtonInput<KeyCode>>) -> Vec3 {
-    let mut axis_input = Vec3::ZERO;
     if key_input.pressed(controller.key_forward) {
-        axis_input.z += 1.0;
+        update_with_scaling(&mut transform.translation.z, true);
     }
     if key_input.pressed(controller.key_back) {
-        axis_input.z -= 1.0;
+        update_with_scaling(&mut transform.translation.z, false);
     }
     if key_input.pressed(controller.key_right) {
-        axis_input.x += 1.0;
+        update_with_scaling(&mut transform.translation.x, true);
     }
     if key_input.pressed(controller.key_left) {
-        axis_input.x -= 1.0;
+        update_with_scaling(&mut transform.translation.x, false);
     }
     if key_input.pressed(controller.key_up) {
-        axis_input.y += 1.0;
+        update_with_scaling(&mut transform.translation.y, true);
     }
     if key_input.pressed(controller.key_down) {
-        axis_input.y -= 1.0;
+        update_with_scaling(&mut transform.translation.z, false);
     }
-    axis_input
+}
+
+/// move faster when far away
+/// assumes molecule centered at 0,0,0
+fn update_with_scaling(dim: &mut f32, add: bool) {
+    *dim += (*dim * TRANSLATION_SCALING_FACTOR * TRANSLATION_SPEED).max(TRANSLATION_MIN_UPDATE)
+        * if add { 1. } else { -1. };
 }
 
 /// TODO re-implement using MouseWheel
