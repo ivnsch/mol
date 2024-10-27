@@ -59,7 +59,13 @@ pub fn add_controls_row(commands: &mut Commands, font: &Handle<Font>, root_id: E
     let row_id = commands.spawn(row).id();
     commands.entity(root_id).add_child(row_id);
 
-    add_button(commands, row_id, font, "Controls", ControlsButtonMarker);
+    add_button(
+        commands,
+        row_id,
+        font,
+        "Controls",
+        ControlsButtonMarker,
+    );
 }
 
 /// adds a label with a given marker

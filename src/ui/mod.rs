@@ -78,6 +78,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     add_header(&mut commands, root_id, &font, "Mol name:");
     add_label_with_marker(&mut commands, root_id, &font, "", MolNameMarker);
     add_spacer(&mut commands, root_id);
+    add_spacer(&mut commands, root_id);
 
     add_header(&mut commands, root_id, &font, "Load example:");
     add_button(
@@ -111,12 +112,17 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     add_spacer(&mut commands, root_id);
     add_spacer(&mut commands, root_id);
+    add_header(&mut commands, root_id, &font, "Style:");
+    add_style_row(&mut commands, &font, root_id);
+
+    add_spacer(&mut commands, root_id);
+    add_spacer(&mut commands, root_id);
+
+    add_header(&mut commands, root_id, &font, "Generator");
 
     add_header(&mut commands, root_id, &font, "Carbon count:");
 
     let carbon_count_value_label = add_carbons_value_row(&mut commands, &font, root_id);
-
-    add_spacer(&mut commands, root_id);
 
     let smiles_input = generate_input_box(
         &font,
@@ -128,10 +134,6 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     );
 
     add_spacer(&mut commands, root_id);
-    add_spacer(&mut commands, root_id);
-    add_header(&mut commands, root_id, &font, "Style");
-    add_style_row(&mut commands, &font, root_id);
-
     add_spacer(&mut commands, root_id);
     add_controls_row(&mut commands, &font, root_id);
 

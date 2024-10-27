@@ -338,7 +338,9 @@ pub fn add_controls_box(commands: &mut Commands, font: &Handle<Font>) {
         ..default()
     };
 
-    let header_id = commands.spawn(generate_header(font, "Controls")).id();
+    let header_id = commands
+        .spawn(generate_header(font, "Controls (esc to close)"))
+        .id();
     let label1_id = commands.spawn(control_row(font, "Move right: a")).id();
     let label2_id = commands.spawn(control_row(font, "Move left: d")).id();
     let label3_id = commands.spawn(control_row(font, "Zoom in: w")).id();
