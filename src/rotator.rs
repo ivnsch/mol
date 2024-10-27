@@ -1,10 +1,10 @@
 use crate::mol::component::MyMolecule;
 use bevy::{input::mouse::MouseMotion, prelude::*, window::CursorGrabMode};
-use std::f32::consts::*;
 
 /// Based on Valorant's default sensitivity, not entirely sure why it is exactly 1.0 / 180.0,
 /// but I'm guessing it is a misunderstanding between degrees/radians and then sticking with
 /// it because it felt nice.
+#[allow(unused)]
 pub const RADIANS_PER_DOT: f32 = 1.0 / 180.0;
 
 pub struct RotatorPlugin;
@@ -15,6 +15,7 @@ impl Plugin for RotatorPlugin {
     }
 }
 
+#[allow(unused)]
 #[derive(Component)]
 pub struct MolController {
     pub mouse_key_cursor_grab: MouseButton,
@@ -25,20 +26,12 @@ impl Default for MolController {
     fn default() -> Self {
         Self {
             mouse_key_cursor_grab: MouseButton::Left,
-            rot_pars: RotPars {
-                initialized: false,
-                pitch: 0.0,
-                yaw: 0.0,
-                sensitivity: 1.0,
-            },
+            rot_pars: RotPars { sensitivity: 0.01 },
         }
     }
 }
 
 pub struct RotPars {
-    pub initialized: bool,
-    pub pitch: f32,
-    pub yaw: f32,
     pub sensitivity: f32,
 }
 
@@ -139,6 +132,7 @@ fn rotate(
     }
 }
 
+#[allow(unused)]
 #[allow(clippy::too_many_arguments)]
 fn mouse_handler(
     mut windows: Query<&mut Window>,
@@ -148,13 +142,6 @@ fn mouse_handler(
     mut mol: Query<(&mut Transform, &mut MolController), With<MyMolecule>>,
 ) {
     if let Ok((mut transform, mut controller)) = mol.get_single_mut() {
-        if !controller.rot_pars.initialized {
-            let (yaw, pitch, _roll) = transform.rotation.to_euler(EulerRot::YXZ);
-            controller.rot_pars.yaw = yaw;
-            controller.rot_pars.pitch = pitch;
-            controller.rot_pars.initialized = true;
-        }
-
         handle_mouse(
             &mut windows,
             mouse_events,
@@ -248,16 +235,16 @@ fn update_rotation_with_mouse(
     let mut mouse_delta = Vec2::ZERO;
 
     for mouse_event in mouse_events.read() {
-        mouse_delta += mouse_event.delta;
+        mouse_delta += mouse_event.delta * rot_pars.sensitivity;
 
-        if mouse_delta != Vec2::ZERO {
-            // Apply look update
-            rot_pars.pitch = (rot_pars.pitch
-                - mouse_delta.y * RADIANS_PER_DOT * rot_pars.sensitivity)
-                .clamp(-PI / 2., PI / 2.);
-            rot_pars.yaw -= mouse_delta.x * RADIANS_PER_DOT * rot_pars.sensitivity;
-            transform.rotation = Quat::from_euler(EulerRot::ZYX, 0.0, rot_pars.yaw, rot_pars.pitch);
-        }
+        transform.rotate_around(
+            Vec3::ZERO,
+            Quat::from_euler(EulerRot::XYZ, mouse_delta.y, 0., 0.),
+        );
+        transform.rotate_around(
+            Vec3::ZERO,
+            Quat::from_euler(EulerRot::XYZ, 0., mouse_delta.x, 0.),
+        );
     }
 }
 
