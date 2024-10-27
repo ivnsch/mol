@@ -1,3 +1,4 @@
+mod comp;
 pub mod component;
 mod event;
 mod helper;

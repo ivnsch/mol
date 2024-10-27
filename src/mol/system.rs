@@ -1,6 +1,20 @@
-use crate::{mol::component::MyParent, mol2_asset_plugin::Mol2Atom, rotator::MolController};
-use std::f32::consts::PI;
-
+use super::{
+    comp::sphere_pbr_bundle,
+    component::{MyInterParentBond, MyMolecule, Shape},
+    helper::add_mol,
+    resource::{MolRender, MolScene, MolSceneContent, MolStyle},
+};
+use crate::{
+    debug::AddedBoundingBox,
+    element::Element,
+    mol::helper::add_outer_parent,
+    mol2_asset_plugin::{bounding_box_for_mol, Mol2Molecule},
+    ui::{
+        component::TooltipMarker, event::UpdateSceneEvent, helper::add_tooltip,
+        system::despawn_all_entities,
+    },
+};
+use crate::{mol::component::MyParent, mol2_asset_plugin::Mol2Atom};
 use bevy::{
     color::palettes::css::{BLACK, GREEN, LIGHT_CYAN, MAGENTA, ORANGE, RED, WHITE, YELLOW},
     prelude::*,
@@ -10,21 +24,7 @@ use bevy_mod_picking::{
     prelude::{Highlight, HighlightKind, On},
     PickableBundle,
 };
-
-use crate::{
-    debug::AddedBoundingBox,
-    element::Element,
-    mol2_asset_plugin::{bounding_box_for_mol, Mol2Molecule},
-    ui::{
-        event::UpdateSceneEvent, system::despawn_all_entities, helper::add_tooltip,
-        component::TooltipMarker,
-    },
-};
-
-use super::{
-    component::{MyInterParentBond, MyMolecule, Shape},
-    resource::{MolRender, MolScene, MolSceneContent, MolStyle},
-};
+use std::f32::consts::PI;
 
 fn tooltip_descr(atom: &Mol2Atom) -> String {
     format!(
@@ -232,17 +232,6 @@ fn draw_mol2_mol(
     }
 }
 
-fn add_mol(commands: &mut Commands) -> Entity {
-    commands
-        .spawn((
-            Name::new("mol"),
-            MyMolecule,
-            MolController::default(),
-            SpatialBundle { ..default() },
-        ))
-        .id()
-}
-
 fn clear(commands: &mut Commands, mol_query: &Query<Entity, With<MyMolecule>>) {
     despawn_all_entities(commands, mol_query);
 }
@@ -258,12 +247,7 @@ fn add_bond(
     atom2_loc: Vec3,
     is_inter_parent: bool,
 ) {
-    let material: Handle<StandardMaterial> = materials.add(StandardMaterial {
-        base_color: Srgba::new(0.4, 0.4, 0.4, 1.0).into(),
-        ..default()
-    });
-
-    let bond = create_bond(meshes, &material, mol_style, atom1_loc, atom2_loc);
+    let bond = create_bond(meshes, materials, mol_style, atom1_loc, atom2_loc);
 
     let entity = if is_inter_parent {
         commands.spawn((bond, MyInterParentBond))
@@ -276,11 +260,16 @@ fn add_bond(
 
 fn create_bond(
     meshes: &mut ResMut<Assets<Mesh>>,
-    material: &Handle<StandardMaterial>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
     mol_style: &MolStyle,
     p1: Vec3,
     p2: Vec3,
 ) -> PbrBundle {
+    let material: Handle<StandardMaterial> = materials.add(StandardMaterial {
+        base_color: Srgba::new(0.4, 0.4, 0.4, 1.0).into(),
+        ..default()
+    });
+
     let midpoint = (p1 + p2) / 2.0;
 
     let distance = p1.distance(p2);
@@ -329,35 +318,14 @@ fn add_atom(
     color: Srgba,
     description: &str,
 ) {
-    let debug_material: Handle<StandardMaterial> = materials.add(StandardMaterial {
-        base_color: color.into(),
-        ..default()
-    });
-
-    let mesh = meshes.add(Sphere { ..default() }.mesh().uv(32, 18));
-
-    let description_string = description.to_string();
-    let scale = match mol_render {
-        MolRender::BallStick => mol_style.atom_scale_ball_stick,
-        MolRender::Ball => mol_style.atom_scale_ball,
-        MolRender::Stick => mol_style.atom_scale_ball_stick, // sphere not added to scene - arbitrary
-    };
+    let pbr_bundle = sphere_pbr_bundle(meshes, materials, mol_style, mol_render, position, color);
+    let descr = description.to_string();
 
     let sphere = (
-        PbrBundle {
-            mesh,
-            material: debug_material.clone(),
-            transform: Transform::from_translation(position)
-                .with_scale(Vec3::new(scale, scale, scale)),
-            ..default()
-        },
+        pbr_bundle,
         PickableBundle::default(),
         On::<Pointer<Over>>::commands_mut(move |over, commands| {
-            add_tooltip(
-                commands,
-                over.pointer_location.position,
-                description_string.clone(),
-            );
+            add_tooltip(commands, over.pointer_location.position, descr.clone());
         }),
         On::<Pointer<Out>>::run(
             |mut commands: Commands, tooltips_query: Query<Entity, With<TooltipMarker>>| {
@@ -373,12 +341,7 @@ fn add_atom(
 }
 
 pub fn setup_molecule(mut commands: Commands) {
-    commands.spawn((
-        Name::new("group"),
-        MyMolecule,
-        MolController::default(),
-        SpatialBundle::default(),
-    ));
+    add_mol(&mut commands);
 }
 
 pub fn trigger_init_scene_event(mut event: EventWriter<UpdateSceneEvent>) {
@@ -437,20 +400,13 @@ fn add_linear_alkane_with_mol(
 
     // add parent wrapper entities to transform as a group
     let first_parent_trans = Vec3::new(0.0, 0.0, 0.0);
-    let first_parent = commands
-        .spawn((
-            Name::new("first_parent"),
-            SpatialBundle {
-                transform: Transform {
-                    rotation: first_parent_rotation,
-                    translation: first_parent_trans,
-                    ..Default::default()
-                },
-                ..default()
-            },
-            MyParent,
-        ))
-        .id();
+    let first_parent = add_outer_parent(
+        commands,
+        "first_parent",
+        first_parent_rotation,
+        first_parent_trans,
+    );
+
     commands.entity(molecule).add_child(first_parent);
     add_outer_carbon(
         commands,
@@ -482,20 +438,12 @@ fn add_linear_alkane_with_mol(
         last_parent_y,
         0.0,
     );
-    let last_parent = commands
-        .spawn((
-            Name::new("last_parent"),
-            SpatialBundle {
-                transform: Transform {
-                    rotation: Quat::from_rotation_z(last_parent_z_rot),
-                    translation: last_parent_trans,
-                    ..Default::default()
-                },
-                ..default()
-            },
-            MyParent,
-        ))
-        .id();
+    let last_parent = add_outer_parent(
+        commands,
+        "last_parent",
+        Quat::from_rotation_z(last_parent_z_rot),
+        last_parent_trans,
+    );
 
     commands.entity(molecule).add_child(last_parent);
     add_outer_carbon(
