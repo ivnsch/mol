@@ -39,3 +39,9 @@ npm run dev
 ```
 
 ![demo](./img/render_b.png)
+
+## Contribute
+
+1. Fork
+2. Commit changes to a branch in your fork
+3. Push your code and make a pull request
