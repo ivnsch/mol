@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use crate::bounding_box::BoundingBox;
 use crate::camera_controller::{CameraController, CameraControllerPlugin};
 use crate::debug::AddedBoundingBox;
@@ -5,6 +7,7 @@ use crate::defocus::DefocusPlugin;
 use crate::embedded_asset_plugin::EmbeddedAssetPlugin;
 use crate::mol2_asset_plugin::Mol2AssetPlugin;
 use crate::rotator::{Rotator, RotatorPlugin};
+use bevy::pbr::CascadeShadowConfigBuilder;
 use bevy::prelude::*;
 
 #[allow(dead_code)]
@@ -27,12 +30,24 @@ fn setup_light(mut commands: Commands) {
         color: Color::WHITE,
         brightness: 1.0,
     });
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
+
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance: light_consts::lux::OVERCAST_DAY,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        transform: Transform {
+            translation: Vec3::new(0.0, 2.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 4.),
+            ..default()
+        },
+        cascade_shadow_config: CascadeShadowConfigBuilder {
+            first_cascade_far_bound: 4.0,
+            maximum_distance: 10.0,
+            ..default()
+        }
+        .into(),
         ..default()
     });
 }
