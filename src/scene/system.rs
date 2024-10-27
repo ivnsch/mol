@@ -150,10 +150,8 @@ fn update_scene(
     scene: &mut ResMut<MolScene>,
     assets: &Res<Assets<Mol2Molecule>>,
 ) {
-    println!("will update scene");
     match &scene.content {
         MolSceneContent::Generated(carbon_count) => {
-            println!("scene render: {:?}", scene.render);
             add_linear_alkane(
                 commands,
                 meshes,
@@ -167,11 +165,9 @@ fn update_scene(
         }
         MolSceneContent::Mol2 { handle, .. } => {
             if let Some(mol) = assets.get(handle) {
-                println!("received loaded mol event, will rebuild");
                 clear(commands, &mol_query);
 
                 draw_mol2_mol(
-                    // TODO replace parameter mol2_mol resource (remove resource) with mol2_molecule, and rename in mol2_mol
                     commands,
                     meshes,
                     materials,
