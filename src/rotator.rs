@@ -265,10 +265,12 @@ pub fn cursor_grab_update(
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     button: MouseButton,
 ) -> Option<CursorGrabInput> {
-    if mouse_button_input.just_pressed(button) {
-        return Some(CursorGrabInput::JustPressed);
-    } else if mouse_button_input.just_released(button) {
+    // Important: don't change ordering, sometimes pressed-release is delivered at the same time,
+    // which we have to map to release, so we ask for release first
+    if mouse_button_input.just_released(button) {
         return Some(CursorGrabInput::JustReleased);
+    } else if mouse_button_input.just_pressed(button) {
+        return Some(CursorGrabInput::JustPressed);
     }
     None
 }
