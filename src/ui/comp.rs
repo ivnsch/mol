@@ -4,7 +4,7 @@ use bevy::{
 };
 use bevy_simple_text_input::{TextInputBundle, TextInputSettings};
 
-use super::marker::PopupMarker;
+use super::component::PopupMarker;
 
 const ROW_HEIGHT: f32 = 30.;
 

@@ -15,9 +15,9 @@ mod system_3d;
 mod ui;
 
 use bevy::app::App;
-use mol::system::add_mol_scene;
+use mol::add_mol_scene;
 use system_3d::add_3d_space;
-use ui::setup::add_ui;
+use ui::add_ui;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 // interop test - TODO remove

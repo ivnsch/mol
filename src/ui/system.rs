@@ -5,7 +5,7 @@ use crate::{
     ui::{
         event::{PlusMinusInput, PlusMinusInputEvent},
         helper::add_info_labels,
-        marker::{
+        component::{
             CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
             LoadMol2ButtonMarker, RotXLabelMarker, RotYLabelMarker, RotZLabelMarker,
         },
@@ -22,7 +22,7 @@ use std::cmp;
 use super::{
     comp::add_controls_box,
     event::UpdateSceneEvent,
-    marker::{
+    component::{
         ControlsButtonMarker, PopupMarker, StyleBallMarker, StyleBallStickMarker, StyleStickMarker,
     },
     resource::CarbonCount,

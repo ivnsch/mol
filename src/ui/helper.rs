@@ -5,7 +5,7 @@ use crate::{
         button_bg, button_text, generate_button_label, generate_header, generate_info_label, row,
         spacer, square_button_bg, square_button_text, tooltip,
     },
-    ui::marker::{
+    ui::component::{
         CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker, RotXLabelMarker,
         RotYLabelMarker, RotZLabelMarker, TooltipMarker,
     },
@@ -14,7 +14,7 @@ use bevy::prelude::*;
 
 use super::{
     comp::bottom_row,
-    marker::{ControlsButtonMarker, StyleBallMarker, StyleBallStickMarker, StyleStickMarker},
+    component::{ControlsButtonMarker, StyleBallMarker, StyleBallStickMarker, StyleStickMarker},
 };
 
 /// adds a generic vertical spacer element with fixed height
