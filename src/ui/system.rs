@@ -22,8 +22,8 @@ use std::cmp;
 use super::{
     comp::add_controls_box,
     component::{
-        ControlsButtonMarker, MolNameMarker, PopupMarker, StyleBallMarker, StyleBallStickMarker,
-        StyleStickMarker,
+        ControlsButtonMarker, MolExampleFile, MolNameMarker, PopupMarker, StyleBallMarker,
+        StyleBallStickMarker, StyleStickMarker,
     },
     event::UpdateSceneEvent,
     resource::CarbonCount,
@@ -163,23 +163,35 @@ pub fn load_file_button_handler(
 ) {
     for interaction in &mut interaction_query {
         if interaction == &Interaction::Pressed {
-            // let path = "embedded://mol/asset/benzene.mol2";
-            // let path = "embedded://mol/asset/117_ideal.mol2";
-            // let path = "embedded://mol/asset/1ubq.mol2";
-            let path = "embedded://mol/asset/2bbv.mol2";
-            let handle: Handle<Mol2Molecule> = asset_server.load(path);
-
-            scene.content = MolSceneContent::Mol2 {
-                handle,
-                // don't trigger update scene as the file may not be ready
-                // an Update system polls the handle instead
-                // this flag is set back to false when the file is ready
-                // the file stays in the scene state to be available for other re-building events
-                // (like changing the mol rendering type)
-                waiting_for_async_handle: true,
-            };
+            load_example_file(&asset_server, &mut scene, &MolExampleFile::Benzene);
         }
     }
+}
+
+fn load_example_file(
+    asset_server: &Res<AssetServer>,
+    scene: &mut ResMut<MolScene>,
+    file: &MolExampleFile,
+) {
+    let file_name = match file {
+        MolExampleFile::Benzene => "benzene.mol2",
+        MolExampleFile::_117 => "117_ideal.mol2",
+        MolExampleFile::_1ubq => "1ubq.mol2",
+        MolExampleFile::_2bbv => "2bbv.mol2",
+    };
+
+    let path = format!("embedded://mol/asset/{}", file_name);
+    let handle: Handle<Mol2Molecule> = asset_server.load(path);
+
+    scene.content = MolSceneContent::Mol2 {
+        handle,
+        // don't trigger update scene as the file may not be ready
+        // an Update system polls the handle instead
+        // this flag is set back to false when the file is ready
+        // the file stays in the scene state to be available for other re-building events
+        // (like changing the mol rendering type)
+        waiting_for_async_handle: true,
+    };
 }
 
 #[allow(clippy::type_complexity)]
@@ -318,6 +330,22 @@ pub fn update_ui_for_scene(
                 }
                 // don't do anything for other states
             }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn file_example_button_handler(
+    mut interaction_query: Query<
+        (&Interaction, &MolExampleFile),
+        (Changed<Interaction>, With<MolExampleFile>),
+    >,
+    asset_server: Res<AssetServer>,
+    mut scene: ResMut<MolScene>,
+) {
+    for (interaction, file) in &mut interaction_query {
+        if interaction == &Interaction::Pressed {
+            load_example_file(&asset_server, &mut scene, &file);
         }
     }
 }

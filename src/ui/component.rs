@@ -38,3 +38,12 @@ pub struct PopupMarker;
 
 #[derive(Component, Default)]
 pub struct MolNameMarker;
+
+#[derive(Component, Default)]
+pub enum MolExampleFile {
+    #[default]
+    Benzene,
+    _117,
+    _1ubq,
+    _2bbv,
+}

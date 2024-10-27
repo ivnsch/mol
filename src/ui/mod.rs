@@ -14,7 +14,7 @@ use self::{
 };
 use crate::ui::{
     comp::generate_input_box,
-    component::{LoadMol2ButtonMarker, SmilesInputMarker},
+    component::SmilesInputMarker,
     event::PlusMinusInputEvent,
     helper::{add_button, add_carbons_value_row, add_header, add_spacer},
     resource::{UiInputEntities, UiInputSmiles},
@@ -25,9 +25,9 @@ use crate::ui::{
 };
 use bevy::prelude::*;
 use bevy_simple_text_input::{TextInputPlugin, TextInputSystem};
-use component::MolNameMarker;
+use component::{MolExampleFile, MolNameMarker};
 use helper::add_label_with_marker;
-use system::update_ui_for_scene;
+use system::{file_example_button_handler, update_ui_for_scene};
 
 pub fn add_ui(app: &mut App) {
     app.add_plugins(TextInputPlugin)
@@ -47,6 +47,7 @@ pub fn add_ui(app: &mut App) {
                 controls_button_handler,
                 close_popup_on_esc,
                 update_ui_for_scene,
+                file_example_button_handler,
             ),
         )
         .add_systems(Startup, (setup_ui, setup_info_labels))
@@ -78,6 +79,39 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     add_label_with_marker(&mut commands, root_id, &font, "", MolNameMarker);
     add_spacer(&mut commands, root_id);
 
+    add_header(&mut commands, root_id, &font, "Load example:");
+    add_button(
+        &mut commands,
+        root_id,
+        &font,
+        "Benzene.mol2",
+        MolExampleFile::Benzene,
+    );
+    add_button(
+        &mut commands,
+        root_id,
+        &font,
+        "117.mol2",
+        MolExampleFile::_117,
+    );
+    add_button(
+        &mut commands,
+        root_id,
+        &font,
+        "1ubq.mol2",
+        MolExampleFile::_1ubq,
+    );
+    add_button(
+        &mut commands,
+        root_id,
+        &font,
+        "2bbv.mol2",
+        MolExampleFile::_2bbv,
+    );
+
+    add_spacer(&mut commands, root_id);
+    add_spacer(&mut commands, root_id);
+
     add_header(&mut commands, root_id, &font, "Carbon count:");
 
     let carbon_count_value_label = add_carbons_value_row(&mut commands, &font, root_id);
@@ -94,15 +128,6 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     );
 
     add_spacer(&mut commands, root_id);
-
-    add_button(
-        &mut commands,
-        root_id,
-        &font,
-        "Load mol2",
-        LoadMol2ButtonMarker,
-    );
-
     add_spacer(&mut commands, root_id);
     add_header(&mut commands, root_id, &font, "Style");
     add_style_row(&mut commands, &font, root_id);
