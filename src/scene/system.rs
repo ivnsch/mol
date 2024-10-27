@@ -209,18 +209,40 @@ fn draw_mol2_mol(
 ) {
     let mol_entity = add_mol(commands);
 
+    let c_material = atom_material(materials, Element::C);
+    let h_material = atom_material(materials, Element::H);
+    let n_material = atom_material(materials, Element::N);
+    let o_material = atom_material(materials, Element::O);
+    let f_material = atom_material(materials, Element::F);
+    let p_material = atom_material(materials, Element::P);
+    let s_material = atom_material(materials, Element::S);
+    let ca_material = atom_material(materials, Element::Ca);
+    let atom_mesh: Handle<Mesh> = atom_mesh(meshes);
+    let bond_material: Handle<StandardMaterial> = bond_material(materials);
+
     if *mol_render != MolRender::Stick {
         for atom in &mol.atoms {
+            let material = match atom.element {
+                Element::H => h_material.clone(),
+                Element::C => c_material.clone(),
+                Element::N => n_material.clone(),
+                Element::O => o_material.clone(),
+                Element::F => f_material.clone(),
+                Element::P => p_material.clone(),
+                Element::S => s_material.clone(),
+                Element::Ca => ca_material.clone(),
+            };
+
             add_atom(
                 commands,
-                meshes,
-                materials,
                 mol_style,
                 mol_render,
                 mol_entity,
                 atom.loc_vec3(),
                 &atom.element,
                 &tooltip_descr(atom),
+                material,
+                atom_mesh.clone(),
             );
         }
     }
@@ -229,7 +251,7 @@ fn draw_mol2_mol(
         add_bond(
             commands,
             meshes,
-            materials,
+            &bond_material,
             mol_style,
             mol_entity,
             // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
@@ -245,18 +267,42 @@ fn clear(commands: &mut Commands, mol_query: &Query<Entity, With<MyMolecule>>) {
     despawn_all_entities(commands, mol_query);
 }
 
+/// each element has a unique color / material
+fn atom_material(
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    element: Element,
+) -> Handle<StandardMaterial> {
+    let color = color_for_element(&element);
+    let material = StandardMaterial {
+        base_color: color.into(),
+        ..default()
+    };
+    materials.add(material)
+}
+
+fn atom_mesh(meshes: &mut ResMut<Assets<Mesh>>) -> Handle<Mesh> {
+    meshes.add(Sphere { ..default() }.mesh().uv(32, 18))
+}
+
+fn bond_material(materials: &mut ResMut<Assets<StandardMaterial>>) -> Handle<StandardMaterial> {
+    materials.add(StandardMaterial {
+        base_color: Srgba::new(0.4, 0.4, 0.4, 1.0).into(),
+        ..default()
+    })
+}
+
 #[allow(clippy::too_many_arguments)]
 fn add_bond(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
+    material: &Handle<StandardMaterial>,
     mol_style: &MolStyle,
     parent: Entity,
     atom1_loc: Vec3,
     atom2_loc: Vec3,
     is_inter_parent: bool,
 ) {
-    let bond = create_bond(meshes, materials, mol_style, atom1_loc, atom2_loc);
+    let bond = create_bond(meshes, material, mol_style, atom1_loc, atom2_loc);
 
     let entity = if is_inter_parent {
         commands.spawn((bond, MyInterParentBond))
@@ -269,16 +315,11 @@ fn add_bond(
 
 fn create_bond(
     meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
+    material: &Handle<StandardMaterial>,
     mol_style: &MolStyle,
     p1: Vec3,
     p2: Vec3,
 ) -> PbrBundle {
-    let material: Handle<StandardMaterial> = materials.add(StandardMaterial {
-        base_color: Srgba::new(0.4, 0.4, 0.4, 1.0).into(),
-        ..default()
-    });
-
     let midpoint = (p1 + p2) / 2.0;
 
     let distance = p1.distance(p2);
@@ -318,21 +359,20 @@ fn color_for_element(element: &Element) -> Srgba {
 #[allow(clippy::too_many_arguments)]
 fn add_atom(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
     mol_style: &MolStyle,
     mol_render: &MolRender,
     parent: Entity,
     position: Vec3,
     element: &Element,
     description: &str,
+    material: Handle<StandardMaterial>,
+    mesh: Handle<Mesh>,
 ) {
     let pbr_bundle = sphere_pbr_bundle(
-        meshes,
-        materials,
         position,
         sphere_scale(mol_render, mol_style, element),
-        color_for_element(element),
+        material,
+        mesh,
     );
     let descr = description.to_string();
 
@@ -428,6 +468,11 @@ fn add_linear_alkane_with_mol(
     center_first_carbon: Vec3,
     carbons: u32,
 ) {
+    let c_material = atom_material(materials, Element::C);
+    let h_material = atom_material(materials, Element::H);
+    let bond_material = bond_material(materials);
+    let atom_mesh: Handle<Mesh> = atom_mesh(meshes);
+
     let single = carbons == 1;
     let first_parent_rotation = Quat::from_rotation_z(if single {
         0.0_f32.to_radians()
@@ -448,12 +493,15 @@ fn add_linear_alkane_with_mol(
     add_outer_carbon(
         commands,
         meshes,
-        materials,
         mol_style,
         mol_render,
         first_parent,
         center_first_carbon,
         single,
+        &c_material,
+        &h_material,
+        &bond_material,
+        &atom_mesh,
     );
     if single {
         return;
@@ -486,19 +534,22 @@ fn add_linear_alkane_with_mol(
     add_outer_carbon(
         commands,
         meshes,
-        materials,
         mol_style,
         mol_render,
         last_parent,
         center_first_carbon,
         false,
+        &c_material,
+        &h_material,
+        &bond_material,
+        &atom_mesh,
     );
 
     if inner_carbons == 0 {
         add_bond(
             commands,
             meshes,
-            materials,
+            &bond_material,
             mol_style,
             molecule,
             last_parent_trans,
@@ -522,7 +573,7 @@ fn add_linear_alkane_with_mol(
             add_bond(
                 commands,
                 meshes,
-                materials,
+                &bond_material,
                 mol_style,
                 molecule,
                 first_parent_trans,
@@ -552,18 +603,21 @@ fn add_linear_alkane_with_mol(
         add_inner_carbon(
             commands,
             meshes,
-            materials,
             mol_style,
             mol_render,
             inner_parent,
             center_first_carbon,
+            &c_material,
+            &h_material,
+            &atom_mesh,
+            &bond_material,
         );
 
         if let Some(previous_trans) = previous_inner_parent_trans {
             add_bond(
                 commands,
                 meshes,
-                materials,
+                &bond_material,
                 mol_style,
                 molecule,
                 inner_parent_trans,
@@ -579,7 +633,7 @@ fn add_linear_alkane_with_mol(
         add_bond(
             commands,
             meshes,
-            materials,
+            &bond_material,
             mol_style,
             molecule,
             last_parent_trans,
@@ -594,31 +648,34 @@ fn add_linear_alkane_with_mol(
 fn add_outer_carbon(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
     mol_style: &MolStyle,
     mol_render: &MolRender,
     parent: Entity,
     center: Vec3, // carbon center
     single: bool, // whether it's the only carbon in the molecule (methane)
+    c_material: &Handle<StandardMaterial>,
+    h_material: &Handle<StandardMaterial>,
+    bond_material: &Handle<StandardMaterial>,
+    atom_mesh: &Handle<Mesh>,
 ) {
     if *mol_render != MolRender::Stick {
         // center carbon
         add_atom(
             commands,
-            meshes,
-            materials,
             mol_style,
             mol_render,
             parent,
             center,
             &Element::C,
             "C",
+            c_material.clone(),
+            atom_mesh.clone(),
         );
     }
 
     // tetrahedral angle
     // note that this is used for the angles with the center of the molecule as vertex,
-    // the angle between the molecules forming a circle has to be 120° (360° / 3 molecules)
+    // the angle between the atoms forming a circle has to be 120° (360° / 3 atoms)
     let bond_angle = 109.5_f32.to_radians();
 
     let rot_x = Quat::from_rotation_x(bond_angle);
@@ -644,51 +701,72 @@ fn add_outer_carbon(
     if *mol_render != MolRender::Stick {
         add_atom(
             commands,
-            meshes,
-            materials,
             mol_style,
             mol_render,
             parent,
             p2,
             &Element::H,
             h_descr,
+            h_material.clone(),
+            atom_mesh.clone(),
         );
 
         add_atom(
             commands,
-            meshes,
-            materials,
             mol_style,
             mol_render,
             parent,
             p3,
             &Element::H,
             h_descr,
+            h_material.clone(),
+            atom_mesh.clone(),
         );
 
         add_atom(
             commands,
-            meshes,
-            materials,
             mol_style,
             mol_render,
             parent,
             p4,
             &Element::H,
             h_descr,
+            h_material.clone(),
+            atom_mesh.clone(),
         );
     }
 
     // add bonds connecting atoms
 
     add_bond(
-        commands, meshes, materials, mol_style, parent, center, p2, false,
+        commands,
+        meshes,
+        bond_material,
+        mol_style,
+        parent,
+        center,
+        p2,
+        false,
     );
     add_bond(
-        commands, meshes, materials, mol_style, parent, center, p3, false,
+        commands,
+        meshes,
+        bond_material,
+        mol_style,
+        parent,
+        center,
+        p3,
+        false,
     );
     add_bond(
-        commands, meshes, materials, mol_style, parent, center, p4, false,
+        commands,
+        meshes,
+        bond_material,
+        mol_style,
+        parent,
+        center,
+        p4,
+        false,
     );
 
     if single {
@@ -696,18 +774,25 @@ fn add_outer_carbon(
         if *mol_render != MolRender::Stick {
             add_atom(
                 commands,
-                meshes,
-                materials,
                 mol_style,
                 mol_render,
                 parent,
                 p1,
                 &Element::H,
                 "H",
+                h_material.clone(),
+                atom_mesh.clone(),
             );
         }
         add_bond(
-            commands, meshes, materials, mol_style, parent, center, p1, false,
+            commands,
+            meshes,
+            bond_material,
+            mol_style,
+            parent,
+            center,
+            p1,
+            false,
         );
     }
 }
@@ -715,30 +800,33 @@ fn add_outer_carbon(
 fn add_inner_carbon(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
     mol_style: &MolStyle,
     mol_render: &MolRender,
     parent: Entity,
     center: Vec3,
+    c_material: &Handle<StandardMaterial>,
+    h_material: &Handle<StandardMaterial>,
+    atom_mesh: &Handle<Mesh>,
+    bond_material: &Handle<StandardMaterial>,
 ) {
     if *mol_render != MolRender::Stick {
         // center carbon
         add_atom(
             commands,
-            meshes,
-            materials,
             mol_style,
             mol_render,
             parent,
             center,
             &Element::C,
             "C",
+            c_material.clone(),
+            atom_mesh.clone(),
         );
     }
 
     // tetrahedral angle
     // note that this is used for the angles with the center of the molecule as vertex,
-    // the angle between the molecules forming a circle has to be 120° (360° / 3 molecules)
+    // the angle between the atoms forming a circle has to be 120° (360° / 3 atoms)
     let bond_angle = 109.5_f32.to_radians();
 
     let rot_x = Quat::from_rotation_x(bond_angle);
@@ -760,31 +848,45 @@ fn add_inner_carbon(
     if *mol_render != MolRender::Stick {
         add_atom(
             commands,
-            meshes,
-            materials,
             mol_style,
             mol_render,
             parent,
             p2,
             &Element::H,
             h_descr,
+            h_material.clone(),
+            atom_mesh.clone(),
         );
         add_atom(
             commands,
-            meshes,
-            materials,
             mol_style,
             mol_render,
             parent,
             p3,
             &Element::H,
             h_descr,
+            h_material.clone(),
+            atom_mesh.clone(),
         );
         add_bond(
-            commands, meshes, materials, mol_style, parent, center, p2, false,
+            commands,
+            meshes,
+            bond_material,
+            mol_style,
+            parent,
+            center,
+            p2,
+            false,
         );
         add_bond(
-            commands, meshes, materials, mol_style, parent, center, p3, false,
+            commands,
+            meshes,
+            bond_material,
+            mol_style,
+            parent,
+            center,
+            p3,
+            false,
         );
     }
 }
