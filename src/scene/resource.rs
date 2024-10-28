@@ -51,6 +51,5 @@ pub struct PreloadedAssets {
     pub ca_mat: Handle<StandardMaterial>,
     pub atom_mesh: Handle<Mesh>,
     pub bond_mat: Handle<StandardMaterial>,
+    pub bond_cyl_mesh: Handle<Mesh>,
 }
-
-// impl Default for P

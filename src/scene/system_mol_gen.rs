@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use super::{
-    component::MyMolecule,
+    component::{MyInterParentBond, MyMolecule},
     helper::add_mol,
     resource::{MolRender, MolStyle, PreloadedAssets},
     system::{add_atom, clear},
@@ -20,6 +20,7 @@ pub fn add_linear_alkane(
     center_first_carbon: Vec3,
     carbons: u32,
     preloaded_assets: &Res<PreloadedAssets>,
+    query: &mut Query<&mut Transform, With<MyInterParentBond>>,
 ) {
     clear(commands, mol_query);
 
@@ -39,6 +40,7 @@ pub fn add_linear_alkane(
         center_first_carbon,
         carbons,
         preloaded_assets,
+        query,
     )
 }
 
@@ -52,6 +54,7 @@ fn add_linear_alkane_with_mol(
     center_first_carbon: Vec3,
     carbons: u32,
     preloaded_assets: &Res<PreloadedAssets>,
+    query: &mut Query<&mut Transform, With<MyInterParentBond>>,
 ) {
     let single = carbons == 1;
     let first_parent_rotation = Quat::from_rotation_z(if single {
@@ -79,6 +82,7 @@ fn add_linear_alkane_with_mol(
         center_first_carbon,
         single,
         preloaded_assets,
+        query,
     );
     if single {
         return;
@@ -117,6 +121,7 @@ fn add_linear_alkane_with_mol(
         center_first_carbon,
         false,
         preloaded_assets,
+        query,
     );
 
     if inner_carbons == 0 {
@@ -130,6 +135,8 @@ fn add_linear_alkane_with_mol(
             last_parent_trans,
             first_parent_trans,
             true,
+            preloaded_assets,
+            query,
         );
         return;
     }
@@ -155,6 +162,8 @@ fn add_linear_alkane_with_mol(
                 first_parent_trans,
                 inner_parent_trans,
                 true,
+                preloaded_assets,
+                query,
             );
         }
         let inner_parent = commands
@@ -184,6 +193,7 @@ fn add_linear_alkane_with_mol(
             inner_parent,
             center_first_carbon,
             preloaded_assets,
+            query,
         );
 
         if let Some(previous_trans) = previous_inner_parent_trans {
@@ -197,6 +207,8 @@ fn add_linear_alkane_with_mol(
                 inner_parent_trans,
                 previous_trans,
                 true,
+                preloaded_assets,
+                query,
             );
         }
 
@@ -214,6 +226,8 @@ fn add_linear_alkane_with_mol(
             last_parent_trans,
             previous_trans,
             true,
+            preloaded_assets,
+            query,
         );
     }
 }
@@ -229,6 +243,7 @@ fn add_outer_carbon(
     center: Vec3, // carbon center
     single: bool, // whether it's the only carbon in the molecule (methane)
     assets: &Res<PreloadedAssets>,
+    query: &mut Query<&mut Transform, With<MyInterParentBond>>,
 ) {
     if *mol_render != MolRender::Stick {
         // center carbon
@@ -320,6 +335,8 @@ fn add_outer_carbon(
         center,
         p2,
         false,
+        assets,
+        query,
     );
     add_bond(
         commands,
@@ -331,6 +348,8 @@ fn add_outer_carbon(
         center,
         p3,
         false,
+        assets,
+        query,
     );
     add_bond(
         commands,
@@ -342,6 +361,8 @@ fn add_outer_carbon(
         center,
         p4,
         false,
+        assets,
+        query,
     );
 
     if single {
@@ -369,6 +390,8 @@ fn add_outer_carbon(
             center,
             p1,
             false,
+            assets,
+            query,
         );
     }
 }
@@ -381,6 +404,7 @@ fn add_inner_carbon(
     parent: Entity,
     center: Vec3,
     assets: &Res<PreloadedAssets>,
+    query: &mut Query<&mut Transform, With<MyInterParentBond>>,
 ) {
     if *mol_render != MolRender::Stick {
         // center carbon
@@ -451,6 +475,8 @@ fn add_inner_carbon(
             center,
             p2,
             false,
+            assets,
+            query,
         );
         add_bond(
             commands,
@@ -462,6 +488,8 @@ fn add_inner_carbon(
             center,
             p3,
             false,
+            assets,
+            query,
         );
     }
 }

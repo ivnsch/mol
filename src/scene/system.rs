@@ -50,6 +50,7 @@ pub fn preload_item_assets(
     let ca_mat = atom_material(materials, Element::Ca);
     let atom_mesh: Handle<Mesh> = atom_mesh(&mut meshes);
     let bond_mat: Handle<StandardMaterial> = bond_material(materials);
+    let bond_cyl_mesh: Handle<Mesh> = bond_cylinder_mesh(&mut meshes, 0.07);
 
     *preloaded_assets = PreloadedAssets {
         h_mat,
@@ -62,6 +63,7 @@ pub fn preload_item_assets(
         ca_mat,
         atom_mesh,
         bond_mat,
+        bond_cyl_mesh,
     };
 }
 
@@ -85,6 +87,7 @@ pub fn handle_update_scene_event(
     assets: Res<Assets<Mol2Molecule>>,
     mut event_writer: EventWriter<AddedBoundingBox>,
     preloaded_assets: Res<PreloadedAssets>,
+    mut bond_query: Query<&mut Transform, With<MyInterParentBond>>,
 ) {
     for _ in event.read() {
         println!("got an update scene event!");
@@ -97,6 +100,7 @@ pub fn handle_update_scene_event(
             &assets,
             &mut event_writer,
             &preloaded_assets,
+            &mut bond_query,
         );
     }
 }
@@ -132,7 +136,8 @@ pub fn check_file_loaded(
     assets: Res<Assets<Mol2Molecule>>,
     mut scene: ResMut<MolScene>,
     mut event_writer: EventWriter<AddedBoundingBox>,
-    preloaded_assets: ResMut<PreloadedAssets>,
+    preloaded_assets: Res<PreloadedAssets>,
+    mut bond_query: Query<&mut Transform, With<MyInterParentBond>>,
 ) {
     if let MolSceneContent::Mol2 {
         handle,
@@ -160,6 +165,7 @@ pub fn check_file_loaded(
                     &scene.style,
                     &scene.render,
                     &preloaded_assets,
+                    &mut bond_query,
                 );
             }
         }
@@ -195,6 +201,7 @@ fn update_scene(
     assets: &Res<Assets<Mol2Molecule>>,
     event_writer: &mut EventWriter<AddedBoundingBox>,
     preloaded_assets: &Res<PreloadedAssets>,
+    bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
 ) {
     match &scene.content {
         MolSceneContent::Generated(carbon_count) => {
@@ -207,6 +214,7 @@ fn update_scene(
                 Vec3::ZERO,
                 carbon_count.0,
                 preloaded_assets,
+                bond_query,
             );
         }
         MolSceneContent::Mol2 { handle, .. } => {
@@ -226,6 +234,7 @@ fn update_scene(
                     &scene.style,
                     &scene.render,
                     preloaded_assets,
+                    bond_query,
                 );
             } else {
                 // when the user loads a file, there's *no* scene update event, so we shouldn't be here
@@ -244,7 +253,8 @@ fn draw_mol2_mol(
     mol: &Mol2Molecule,
     mol_style: &MolStyle,
     mol_render: &MolRender,
-    assets: &PreloadedAssets,
+    assets: &Res<PreloadedAssets>,
+    bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
 ) {
     let mol_entity = add_mol(commands);
 
@@ -289,6 +299,8 @@ fn draw_mol2_mol(
                 mol.atoms[bond.atom1 - 1].loc_vec3(),
                 mol.atoms[bond.atom2 - 1].loc_vec3(),
                 true,
+                assets,
+                bond_query,
             );
         }
     }
@@ -322,6 +334,16 @@ pub fn bond_material(materials: &mut ResMut<Assets<StandardMaterial>>) -> Handle
     })
 }
 
+pub fn bond_cylinder_mesh(meshes: &mut ResMut<Assets<Mesh>>, radius: f32) -> Handle<Mesh> {
+    meshes.add(
+        Cylinder {
+            radius,
+            half_height: 0.5,
+        }
+        .mesh(),
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn add_bond(
     commands: &mut Commands,
@@ -333,9 +355,17 @@ pub fn add_bond(
     atom1_loc: Vec3,
     atom2_loc: Vec3,
     is_inter_parent: bool,
+    preloaded_assets: &Res<PreloadedAssets>,
+    bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
 ) {
     let bond = create_bond(
-        meshes, material, mol_style, mol_render, atom1_loc, atom2_loc,
+        meshes,
+        material,
+        mol_style,
+        mol_render,
+        atom1_loc,
+        atom2_loc,
+        &preloaded_assets.bond_cyl_mesh,
     );
 
     let entity = if is_inter_parent {
@@ -345,6 +375,16 @@ pub fn add_bond(
     }
     .id();
     commands.entity(parent).add_child(entity);
+
+    // Only BallStick uses cylinders (instead of Capsule3d or nothing)
+    if *mol_render == MolRender::BallStick {
+        // set bond length via transform (instead of directly on the cylinder, which would require loading separate meshes),
+        // for better performance
+        let distance = atom1_loc.distance(atom2_loc);
+        for mut transform in bond_query.iter_mut() {
+            transform.scale = Vec3::new(1.0, distance, 1.0);
+        }
+    }
 }
 
 fn create_bond(
@@ -354,6 +394,7 @@ fn create_bond(
     mol_render: &MolRender,
     p1: Vec3,
     p2: Vec3,
+    cylinder_mesh: &Handle<Mesh>,
 ) -> PbrBundle {
     let midpoint = (p1 + p2) / 2.0;
 
@@ -365,13 +406,8 @@ fn create_bond(
     let half_length = distance / 2.0;
 
     let mesh = match mol_render {
-        MolRender::BallStick | MolRender::Ball => meshes.add(
-            Cylinder {
-                radius,
-                half_height: half_length,
-            }
-            .mesh(),
-        ),
+        // Just clone mesh. Length will be adjusted via transform for better performance
+        MolRender::BallStick | MolRender::Ball => cylinder_mesh.clone(),
         MolRender::Stick => meshes.add(
             Capsule3d {
                 radius,
