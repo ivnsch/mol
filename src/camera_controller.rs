@@ -91,6 +91,7 @@ fn handle_keyboard(
 
 /// move faster when far away
 /// assumes molecule centered at 0,0,0
+/// (in user experience sense, in that we move faster because we're traveling through assumed empty/mostly empty space)
 fn update_with_scaling(dim: &mut f32, add: bool) {
     *dim += (*dim * TRANSLATION_SCALING_FACTOR * TRANSLATION_SPEED).max(TRANSLATION_MIN_UPDATE)
         * if add { 1. } else { -1. };
