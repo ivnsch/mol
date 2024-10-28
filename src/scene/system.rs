@@ -172,7 +172,7 @@ pub fn check_file_loaded(
 }
 
 pub fn handle_added_bounding_box(
-    mut mol_query: Query<&mut Transform, With<MyMolecule>>,
+    mut mol_query: Query<&mut Transform, With<MyMoleculeWrapper>>,
     mut events: EventReader<AddedBoundingBox>,
 ) {
     if let Ok(mut transform) = mol_query.get_single_mut() {
