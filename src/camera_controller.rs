@@ -70,10 +70,10 @@ fn handle_keyboard(
     controller: &mut CameraController,
 ) {
     if key_input.pressed(controller.key_forward) {
-        update_with_scaling(&mut transform.translation.z, true);
+        update_with_scaling(&mut transform.translation.z, false);
     }
     if key_input.pressed(controller.key_back) {
-        update_with_scaling(&mut transform.translation.z, false);
+        update_with_scaling(&mut transform.translation.z, true)
     }
     if key_input.pressed(controller.key_right) {
         update_with_scaling(&mut transform.translation.x, true);
