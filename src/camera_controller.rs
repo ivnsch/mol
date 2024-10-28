@@ -85,7 +85,7 @@ fn handle_keyboard(
         update_with_scaling(&mut transform.translation.y, true);
     }
     if key_input.pressed(controller.key_down) {
-        update_with_scaling(&mut transform.translation.z, false);
+        update_with_scaling(&mut transform.translation.y, false);
     }
 }
 
