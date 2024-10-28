@@ -347,7 +347,7 @@ pub fn file_example_button_handler(
 ) {
     for (interaction, file) in &mut interaction_query {
         if interaction == &Interaction::Pressed {
-            load_example_file(&asset_server, &mut scene, &file);
+            load_example_file(&asset_server, &mut scene, file);
         }
     }
 }

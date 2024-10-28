@@ -1,4 +1,4 @@
-use crate::scene::component::{MyMolecule, MyMoleculeWrapper};
+use crate::scene::component::MyMoleculeWrapper;
 use bevy::{input::mouse::MouseMotion, prelude::*, window::CursorGrabMode};
 
 /// Based on Valorant's default sensitivity, not entirely sure why it is exactly 1.0 / 180.0,

@@ -52,7 +52,7 @@ pub fn add_linear_alkane(
 #[allow(clippy::too_many_arguments)]
 fn add_linear_alkane_with_mol(
     commands: &mut Commands,
-    mut meshes: &mut ResMut<Assets<Mesh>>,
+    meshes: &mut ResMut<Assets<Mesh>>,
     mol_style: &MolStyle,
     mol_render: &MolRender,
     molecule: Entity,
@@ -119,7 +119,7 @@ fn add_linear_alkane_with_mol(
     commands.entity(molecule).add_child(last_parent);
     add_outer_carbon(
         commands,
-        &mut meshes,
+        meshes,
         mol_style,
         mol_render,
         last_parent,
@@ -132,7 +132,7 @@ fn add_linear_alkane_with_mol(
     if inner_carbons == 0 {
         add_bond(
             commands,
-            &mut meshes,
+            meshes,
             &preloaded_assets.bond_mat,
             mol_style,
             mol_render,
@@ -159,7 +159,7 @@ fn add_linear_alkane_with_mol(
         if i == 0 {
             add_bond(
                 commands,
-                &mut meshes,
+                meshes,
                 &preloaded_assets.bond_mat,
                 mol_style,
                 mol_render,
@@ -192,7 +192,7 @@ fn add_linear_alkane_with_mol(
         commands.entity(molecule).add_child(inner_parent);
         add_inner_carbon(
             commands,
-            &mut meshes,
+            meshes,
             mol_style,
             mol_render,
             inner_parent,
@@ -204,7 +204,7 @@ fn add_linear_alkane_with_mol(
         if let Some(previous_trans) = previous_inner_parent_trans {
             add_bond(
                 commands,
-                &mut meshes,
+                meshes,
                 &preloaded_assets.bond_mat,
                 mol_style,
                 mol_render,
@@ -223,7 +223,7 @@ fn add_linear_alkane_with_mol(
     if let Some(previous_trans) = previous_inner_parent_trans {
         add_bond(
             commands,
-            &mut meshes,
+            meshes,
             &preloaded_assets.bond_mat,
             mol_style,
             mol_render,

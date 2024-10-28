@@ -219,7 +219,7 @@ fn update_scene(
         }
         MolSceneContent::Mol2 { handle, .. } => {
             if let Some(mol) = assets.get(handle) {
-                clear(commands, &mol_query);
+                clear(commands, mol_query);
 
                 // build scene
                 draw_mol2_mol(
