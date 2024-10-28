@@ -282,6 +282,7 @@ fn draw_mol2_mol(
                 meshes,
                 &assets.bond_mat,
                 mol_style,
+                mol_render,
                 mol_entity,
                 // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
                 // this seems to be always the case in mol2 files
@@ -327,12 +328,15 @@ pub fn add_bond(
     meshes: &mut ResMut<Assets<Mesh>>,
     material: &Handle<StandardMaterial>,
     mol_style: &MolStyle,
+    mol_render: &MolRender,
     parent: Entity,
     atom1_loc: Vec3,
     atom2_loc: Vec3,
     is_inter_parent: bool,
 ) {
-    let bond = create_bond(meshes, material, mol_style, atom1_loc, atom2_loc);
+    let bond = create_bond(
+        meshes, material, mol_style, mol_render, atom1_loc, atom2_loc,
+    );
 
     let entity = if is_inter_parent {
         commands.spawn((bond, MyInterParentBond))
@@ -347,6 +351,7 @@ fn create_bond(
     meshes: &mut ResMut<Assets<Mesh>>,
     material: &Handle<StandardMaterial>,
     mol_style: &MolStyle,
+    mol_render: &MolRender,
     p1: Vec3,
     p2: Vec3,
 ) -> PbrBundle {
@@ -356,15 +361,27 @@ fn create_bond(
     let direction = (p2 - p1).normalize();
     let rotation = Quat::from_rotation_arc(Vec3::Y, direction);
 
-    let mesh: Handle<Mesh> = meshes.add(
-        Capsule3d {
-            radius: mol_style.bond_diam,
-            half_length: distance / 2.0,
-        }
-        .mesh()
-        .latitudes(CAPSULE_LAT)
-        .longitudes(CAPSULE_LON),
-    );
+    let radius = mol_style.bond_diam;
+    let half_length = distance / 2.0;
+
+    let mesh = match mol_render {
+        MolRender::BallStick | MolRender::Ball => meshes.add(
+            Cylinder {
+                radius,
+                half_height: half_length,
+            }
+            .mesh(),
+        ),
+        MolRender::Stick => meshes.add(
+            Capsule3d {
+                radius,
+                half_length,
+            }
+            .mesh()
+            .latitudes(CAPSULE_LAT)
+            .longitudes(CAPSULE_LON),
+        ),
+    };
 
     PbrBundle {
         mesh: mesh.clone(),
