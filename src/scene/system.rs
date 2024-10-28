@@ -4,6 +4,7 @@ use super::{
     helper::add_mol,
     resource::{MolRender, MolScene, MolSceneContent, MolStyle},
     system_mol_gen::add_linear_alkane,
+    ItemAssets,
 };
 use crate::mol2_asset_plugin::Mol2Atom;
 use crate::{
@@ -41,8 +42,7 @@ pub fn handle_update_scene_event(
     mut event: EventReader<UpdateSceneEvent>,
     mut commands: Commands,
     molecule: Query<Entity, With<MyMolecule>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut item_assets: ItemAssets,
     mut scene: ResMut<MolScene>,
     assets: Res<Assets<Mol2Molecule>>,
     mut event_writer: EventWriter<AddedBoundingBox>,
@@ -52,8 +52,7 @@ pub fn handle_update_scene_event(
         update_scene(
             &mut commands,
             &molecule,
-            &mut meshes,
-            &mut materials,
+            &mut item_assets,
             &mut scene,
             &assets,
             &mut event_writer,
@@ -88,8 +87,7 @@ static HIGHLIGHT_TINT: Highlight<StandardMaterial> = Highlight {
 pub fn check_file_loaded(
     mut commands: Commands,
     mol_query: Query<Entity, With<MyMolecule>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut item_assets: ItemAssets,
     assets: Res<Assets<Mol2Molecule>>,
     mut scene: ResMut<MolScene>,
     mut event_writer: EventWriter<AddedBoundingBox>,
@@ -115,8 +113,7 @@ pub fn check_file_loaded(
 
                 draw_mol2_mol(
                     &mut commands,
-                    &mut meshes,
-                    &mut materials,
+                    &mut item_assets,
                     mol,
                     &scene.style,
                     &scene.render,
@@ -150,8 +147,7 @@ fn update_for_bounding_box(transform: &mut Transform, bounding_box: &BoundingBox
 fn update_scene(
     commands: &mut Commands,
     mol_query: &Query<Entity, With<MyMolecule>>,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
+    item_assets: &mut ItemAssets,
     scene: &mut ResMut<MolScene>,
     assets: &Res<Assets<Mol2Molecule>>,
     event_writer: &mut EventWriter<AddedBoundingBox>,
@@ -160,8 +156,7 @@ fn update_scene(
         MolSceneContent::Generated(carbon_count) => {
             add_linear_alkane(
                 commands,
-                meshes,
-                materials,
+                item_assets,
                 &scene.style,
                 &scene.render,
                 mol_query,
@@ -179,14 +174,7 @@ fn update_scene(
                 event_writer.send(AddedBoundingBox(bounding_box));
 
                 // build scene
-                draw_mol2_mol(
-                    commands,
-                    meshes,
-                    materials,
-                    mol,
-                    &scene.style,
-                    &scene.render,
-                );
+                draw_mol2_mol(commands, item_assets, mol, &scene.style, &scene.render);
             } else {
                 // when the user loads a file, there's *no* scene update event, so we shouldn't be here
                 // this is for things like changing the rendering type: normally the file is already loaded
@@ -200,14 +188,14 @@ fn update_scene(
 
 fn draw_mol2_mol(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
+    item_assets: &mut ItemAssets,
     mol: &Mol2Molecule,
     mol_style: &MolStyle,
     mol_render: &MolRender,
 ) {
     let mol_entity = add_mol(commands);
 
+    let materials = &mut item_assets.materials;
     let c_material = atom_material(materials, Element::C);
     let h_material = atom_material(materials, Element::H);
     let n_material = atom_material(materials, Element::N);
@@ -216,7 +204,7 @@ fn draw_mol2_mol(
     let p_material = atom_material(materials, Element::P);
     let s_material = atom_material(materials, Element::S);
     let ca_material = atom_material(materials, Element::Ca);
-    let atom_mesh: Handle<Mesh> = atom_mesh(meshes);
+    let atom_mesh: Handle<Mesh> = atom_mesh(&mut item_assets.meshes);
     let bond_material: Handle<StandardMaterial> = bond_material(materials);
 
     if *mol_render != MolRender::Stick {
@@ -249,7 +237,7 @@ fn draw_mol2_mol(
     for bond in &mol.bonds {
         add_bond(
             commands,
-            meshes,
+            &mut item_assets.meshes,
             &bond_material,
             mol_style,
             mol_entity,

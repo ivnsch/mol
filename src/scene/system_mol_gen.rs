@@ -5,6 +5,7 @@ use super::{
     helper::add_mol,
     resource::{MolRender, MolStyle},
     system::{add_atom, clear},
+    ItemAssets,
 };
 use crate::scene::{
     component::MyParent,
@@ -16,8 +17,7 @@ use bevy::prelude::*;
 #[allow(clippy::too_many_arguments)]
 pub fn add_linear_alkane(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
+    item_assets: &mut ItemAssets,
     mol_style: &MolStyle,
     mol_render: &MolRender,
     mol_query: &Query<Entity, With<MyMolecule>>,
@@ -35,8 +35,7 @@ pub fn add_linear_alkane(
 
     add_linear_alkane_with_mol(
         commands,
-        meshes,
-        materials,
+        item_assets,
         mol_style,
         mol_render,
         mol,
@@ -48,18 +47,17 @@ pub fn add_linear_alkane(
 #[allow(clippy::too_many_arguments)]
 fn add_linear_alkane_with_mol(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
+    item_assets: &mut ItemAssets,
     mol_style: &MolStyle,
     mol_render: &MolRender,
     molecule: Entity,
     center_first_carbon: Vec3,
     carbons: u32,
 ) {
-    let c_material = atom_material(materials, Element::C);
-    let h_material = atom_material(materials, Element::H);
-    let bond_material = bond_material(materials);
-    let atom_mesh: Handle<Mesh> = atom_mesh(meshes);
+    let c_material = atom_material(&mut item_assets.materials, Element::C);
+    let h_material = atom_material(&mut item_assets.materials, Element::H);
+    let bond_material = bond_material(&mut item_assets.materials);
+    let atom_mesh: Handle<Mesh> = atom_mesh(&mut item_assets.meshes);
 
     let single = carbons == 1;
     let first_parent_rotation = Quat::from_rotation_z(if single {
@@ -80,7 +78,7 @@ fn add_linear_alkane_with_mol(
     commands.entity(molecule).add_child(first_parent);
     add_outer_carbon(
         commands,
-        meshes,
+        &mut item_assets.meshes,
         mol_style,
         mol_render,
         first_parent,
@@ -121,7 +119,7 @@ fn add_linear_alkane_with_mol(
     commands.entity(molecule).add_child(last_parent);
     add_outer_carbon(
         commands,
-        meshes,
+        &mut item_assets.meshes,
         mol_style,
         mol_render,
         last_parent,
@@ -136,7 +134,7 @@ fn add_linear_alkane_with_mol(
     if inner_carbons == 0 {
         add_bond(
             commands,
-            meshes,
+            &mut item_assets.meshes,
             &bond_material,
             mol_style,
             molecule,
@@ -160,7 +158,7 @@ fn add_linear_alkane_with_mol(
         if i == 0 {
             add_bond(
                 commands,
-                meshes,
+                &mut item_assets.meshes,
                 &bond_material,
                 mol_style,
                 molecule,
@@ -190,7 +188,7 @@ fn add_linear_alkane_with_mol(
         commands.entity(molecule).add_child(inner_parent);
         add_inner_carbon(
             commands,
-            meshes,
+            &mut item_assets.meshes,
             mol_style,
             mol_render,
             inner_parent,
@@ -204,7 +202,7 @@ fn add_linear_alkane_with_mol(
         if let Some(previous_trans) = previous_inner_parent_trans {
             add_bond(
                 commands,
-                meshes,
+                &mut item_assets.meshes,
                 &bond_material,
                 mol_style,
                 molecule,
@@ -220,7 +218,7 @@ fn add_linear_alkane_with_mol(
     if let Some(previous_trans) = previous_inner_parent_trans {
         add_bond(
             commands,
-            meshes,
+            &mut item_assets.meshes,
             &bond_material,
             mol_style,
             molecule,

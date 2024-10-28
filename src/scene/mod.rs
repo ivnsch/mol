@@ -3,9 +3,9 @@ pub mod component;
 mod event;
 mod helper;
 mod marker;
-mod system_mol_gen;
 pub mod resource;
 mod system;
+mod system_mol_gen;
 
 use self::{
     resource::{MolRender, MolScene, MolSceneContent, MolStyle},
@@ -15,7 +15,13 @@ use self::{
     },
 };
 use crate::ui::{event::UpdateSceneEvent, resource::CarbonCount};
-use bevy::app::{App, PostStartup, Startup, Update};
+use bevy::{
+    app::{App, PostStartup, Startup, Update},
+    asset::Assets,
+    ecs::system::SystemParam,
+    pbr::StandardMaterial,
+    prelude::{Mesh, ResMut},
+};
 use bevy_mod_picking::DefaultPickingPlugins;
 
 #[allow(dead_code)]
@@ -42,4 +48,10 @@ pub fn add_mol_scene(app: &mut App) {
                 handle_added_bounding_box,
             ),
         );
+}
+
+#[derive(SystemParam)]
+pub struct ItemAssets<'w> {
+    meshes: ResMut<'w, Assets<Mesh>>,
+    materials: ResMut<'w, Assets<StandardMaterial>>,
 }
