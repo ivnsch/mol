@@ -64,7 +64,7 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             flex_direction: FlexDirection::Column,
             top: Val::Px(0.0),
             right: Val::Px(0.0),
-            width: Val::Px(130.0),
+            width: Val::Px(150.0),
             height: Val::Percent(100.0),
             padding: UiRect::all(Val::Px(10.0)),
             ..default()
@@ -116,10 +116,17 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     add_style_row(&mut commands, &font, root_id);
 
     add_spacer(&mut commands, root_id);
+    add_controls_row(&mut commands, &font, root_id);
+    add_spacer(&mut commands, root_id);
+    add_spacer(&mut commands, root_id);
+    add_spacer(&mut commands, root_id);
+    add_spacer(&mut commands, root_id);
+    add_spacer(&mut commands, root_id);
+    add_spacer(&mut commands, root_id);
     add_spacer(&mut commands, root_id);
 
+    add_header(&mut commands, root_id, &font, "Proof of concept:");
     add_header(&mut commands, root_id, &font, "Generator");
-
     add_header(&mut commands, root_id, &font, "Carbon count:");
 
     let carbon_count_value_label = add_carbons_value_row(&mut commands, &font, root_id);
@@ -132,10 +139,6 @@ pub fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
         SmilesInputMarker,
         "".to_string(),
     );
-
-    add_spacer(&mut commands, root_id);
-    add_spacer(&mut commands, root_id);
-    add_controls_row(&mut commands, &font, root_id);
 
     commands.insert_resource(UiInputEntities {
         carbon_count: carbon_count_value_label,
