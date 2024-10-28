@@ -275,19 +275,21 @@ fn draw_mol2_mol(
         }
     }
 
-    for bond in &mol.bonds {
-        add_bond(
-            commands,
-            meshes,
-            &assets.bond_mat,
-            mol_style,
-            mol_entity,
-            // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
-            // this seems to be always the case in mol2 files
-            mol.atoms[bond.atom1 - 1].loc_vec3(),
-            mol.atoms[bond.atom2 - 1].loc_vec3(),
-            true,
-        );
+    if *mol_render != MolRender::Ball {
+        for bond in &mol.bonds {
+            add_bond(
+                commands,
+                meshes,
+                &assets.bond_mat,
+                mol_style,
+                mol_entity,
+                // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
+                // this seems to be always the case in mol2 files
+                mol.atoms[bond.atom1 - 1].loc_vec3(),
+                mol.atoms[bond.atom2 - 1].loc_vec3(),
+                true,
+            );
+        }
     }
 }
 
