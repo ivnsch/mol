@@ -60,9 +60,9 @@ fn run_camera_controller(
     }
 }
 
-const TRANSLATION_SPEED: f32 = 1.;
-const TRANSLATION_SCALING_FACTOR: f32 = 0.1;
-const TRANSLATION_MIN_UPDATE: f32 = 0.2;
+const TRANSLATION_SPEED: f32 = 0.8; // base speed (unscaled by TRANSLATION_SCALING_FACTOR)
+const TRANSLATION_SCALING_FACTOR: f32 = 0.05; // lower to slow down more quickly
+const TRANSLATION_MIN_UPDATE: f32 = 0.3; // lower speed boundary
 
 fn handle_keyboard(
     key_input: &Res<ButtonInput<KeyCode>>,
