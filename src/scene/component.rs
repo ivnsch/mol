@@ -4,6 +4,9 @@ use bevy::prelude::Component;
 pub struct MyMolecule;
 
 #[derive(Component, Default)]
+pub struct MyMoleculeWrapper;
+
+#[derive(Component, Default)]
 pub struct MyParent;
 
 #[derive(Component, Default)]

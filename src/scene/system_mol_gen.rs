@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use super::{
-    component::{MyInterParentBond, MyMolecule},
+    component::{MyInterParentBond, MyMolecule, MyMoleculeWrapper},
     helper::add_mol,
     resource::{MolRender, MolStyle, PreloadedAssets},
     system::{add_atom, clear},
@@ -21,6 +21,7 @@ pub fn add_linear_alkane(
     carbons: u32,
     preloaded_assets: &Res<PreloadedAssets>,
     query: &mut Query<&mut Transform, With<MyInterParentBond>>,
+    wrapper_query: &Query<Entity, With<MyMoleculeWrapper>>,
 ) {
     clear(commands, mol_query);
 
@@ -29,19 +30,23 @@ pub fn add_linear_alkane(
         return;
     }
 
-    let mol = add_mol(commands);
+    if let Ok(wrapper) = wrapper_query.get_single() {
+        let mol = add_mol(commands, wrapper);
 
-    add_linear_alkane_with_mol(
-        commands,
-        meshes,
-        mol_style,
-        mol_render,
-        mol,
-        center_first_carbon,
-        carbons,
-        preloaded_assets,
-        query,
-    )
+        add_linear_alkane_with_mol(
+            commands,
+            meshes,
+            mol_style,
+            mol_render,
+            mol,
+            center_first_carbon,
+            carbons,
+            preloaded_assets,
+            query,
+        )
+    } else {
+        eprintln!("No mol wrapper found, can't add mol.");
+    }
 }
 
 #[allow(clippy::too_many_arguments)]

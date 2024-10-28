@@ -1,8 +1,8 @@
 use super::{
     comp::sphere_pbr_bundle,
-    component::{MyInterParentBond, MyMolecule, Shape},
+    component::{MyInterParentBond, MyMolecule, MyMoleculeWrapper, Shape},
     event::{AddedBoundingBox, UpdateSceneEvent},
-    helper::add_mol,
+    helper::{add_mol, add_mol_wrapper},
     resource::{MolRender, MolScene, MolSceneContent, MolStyle, PreloadedAssets},
     system_mol_gen::add_linear_alkane,
 };
@@ -84,6 +84,7 @@ pub fn handle_update_scene_event(
     assets: Res<Assets<Mol2Molecule>>,
     preloaded_assets: Res<PreloadedAssets>,
     mut bond_query: Query<&mut Transform, With<MyInterParentBond>>,
+    wrapper_query: Query<Entity, With<MyMoleculeWrapper>>,
 ) {
     for _ in event.read() {
         println!("got an update scene event!");
@@ -96,6 +97,7 @@ pub fn handle_update_scene_event(
             &assets,
             &preloaded_assets,
             &mut bond_query,
+            &wrapper_query,
         );
     }
 }
@@ -133,6 +135,7 @@ pub fn check_file_loaded(
     mut event_writer: EventWriter<AddedBoundingBox>,
     preloaded_assets: Res<PreloadedAssets>,
     mut bond_query: Query<&mut Transform, With<MyInterParentBond>>,
+    wrapper_query: Query<Entity, With<MyMoleculeWrapper>>,
 ) {
     if let MolSceneContent::Mol2 {
         handle,
@@ -161,6 +164,7 @@ pub fn check_file_loaded(
                     &scene.render,
                     &preloaded_assets,
                     &mut bond_query,
+                    &wrapper_query,
                 );
             }
         }
@@ -196,6 +200,7 @@ fn update_scene(
     assets: &Res<Assets<Mol2Molecule>>,
     preloaded_assets: &Res<PreloadedAssets>,
     bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
+    wrapper_query: &Query<Entity, With<MyMoleculeWrapper>>,
 ) {
     match &scene.content {
         MolSceneContent::Generated(carbon_count) => {
@@ -209,6 +214,7 @@ fn update_scene(
                 carbon_count.0,
                 preloaded_assets,
                 bond_query,
+                wrapper_query,
             );
         }
         MolSceneContent::Mol2 { handle, .. } => {
@@ -224,6 +230,7 @@ fn update_scene(
                     &scene.render,
                     preloaded_assets,
                     bond_query,
+                    wrapper_query,
                 );
             } else {
                 // when the user loads a file, there's *no* scene update event, so we shouldn't be here
@@ -244,54 +251,59 @@ fn draw_mol2_mol(
     mol_render: &MolRender,
     assets: &Res<PreloadedAssets>,
     bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
+    wrapper_query: &Query<Entity, With<MyMoleculeWrapper>>,
 ) {
-    let mol_entity = add_mol(commands);
+    if let Ok(wrapper) = wrapper_query.get_single() {
+        let mol_entity = add_mol(commands, wrapper);
 
-    if *mol_render != MolRender::Stick {
-        for atom in &mol.atoms {
-            let material = match atom.element {
-                Element::H => assets.h_mat.clone(),
-                Element::C => assets.c_mat.clone(),
-                Element::N => assets.n_mat.clone(),
-                Element::O => assets.o_mat.clone(),
-                Element::F => assets.f_mat.clone(),
-                Element::P => assets.p_mat.clone(),
-                Element::S => assets.s_mat.clone(),
-                Element::Ca => assets.ca_mat.clone(),
-            };
+        if *mol_render != MolRender::Stick {
+            for atom in &mol.atoms {
+                let material = match atom.element {
+                    Element::H => assets.h_mat.clone(),
+                    Element::C => assets.c_mat.clone(),
+                    Element::N => assets.n_mat.clone(),
+                    Element::O => assets.o_mat.clone(),
+                    Element::F => assets.f_mat.clone(),
+                    Element::P => assets.p_mat.clone(),
+                    Element::S => assets.s_mat.clone(),
+                    Element::Ca => assets.ca_mat.clone(),
+                };
 
-            add_atom(
-                commands,
-                mol_style,
-                mol_render,
-                mol_entity,
-                atom.loc_vec3(),
-                &atom.element,
-                &tooltip_descr(atom),
-                &material,
-                &assets.atom_mesh,
-            );
+                add_atom(
+                    commands,
+                    mol_style,
+                    mol_render,
+                    mol_entity,
+                    atom.loc_vec3(),
+                    &atom.element,
+                    &tooltip_descr(atom),
+                    &material,
+                    &assets.atom_mesh,
+                );
+            }
         }
-    }
 
-    if *mol_render != MolRender::Ball {
-        for bond in &mol.bonds {
-            add_bond(
-                commands,
-                meshes,
-                &assets.bond_mat,
-                mol_style,
-                mol_render,
-                mol_entity,
-                // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
-                // this seems to be always the case in mol2 files
-                mol.atoms[bond.atom1 - 1].loc_vec3(),
-                mol.atoms[bond.atom2 - 1].loc_vec3(),
-                true,
-                assets,
-                bond_query,
-            );
+        if *mol_render != MolRender::Ball {
+            for bond in &mol.bonds {
+                add_bond(
+                    commands,
+                    meshes,
+                    &assets.bond_mat,
+                    mol_style,
+                    mol_render,
+                    mol_entity,
+                    // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
+                    // this seems to be always the case in mol2 files
+                    mol.atoms[bond.atom1 - 1].loc_vec3(),
+                    mol.atoms[bond.atom2 - 1].loc_vec3(),
+                    true,
+                    assets,
+                    bond_query,
+                );
+            }
         }
+    } else {
+        eprintln!("No mol wrapper found, can't add mol.");
     }
 }
 
@@ -495,7 +507,8 @@ fn sphere_scale(mol_render: &MolRender, mol_style: &MolStyle, element: &Element)
 }
 
 pub fn setup_molecule(mut commands: Commands) {
-    add_mol(&mut commands);
+    let wrapper = add_mol_wrapper(&mut commands);
+    add_mol(&mut commands, wrapper);
 }
 
 pub fn trigger_init_scene_event(mut event: EventWriter<UpdateSceneEvent>) {

@@ -1,4 +1,4 @@
-use crate::scene::component::MyMolecule;
+use crate::scene::component::{MyMolecule, MyMoleculeWrapper};
 use bevy::{input::mouse::MouseMotion, prelude::*, window::CursorGrabMode};
 
 /// Based on Valorant's default sensitivity, not entirely sure why it is exactly 1.0 / 180.0,
@@ -65,7 +65,7 @@ impl Default for Rotator {
 
 fn run_molecule_rotator(
     key_input: Res<ButtonInput<KeyCode>>,
-    mut sphere: Query<&mut Transform, With<MyMolecule>>,
+    mut sphere: Query<&mut Transform, With<MyMoleculeWrapper>>,
     mut camera: Query<&mut Rotator>,
 ) {
     if let Ok(mut transform) = sphere.get_single_mut() {
@@ -139,7 +139,7 @@ fn mouse_handler(
     mouse_events: EventReader<MouseMotion>,
     mouse_cursor_grab: Local<bool>,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
-    mut mol: Query<(&mut Transform, &mut MolController), With<MyMolecule>>,
+    mut mol: Query<(&mut Transform, &mut MolController), With<MyMoleculeWrapper>>,
 ) {
     if let Ok((mut transform, mut controller)) = mol.get_single_mut() {
         handle_mouse(
