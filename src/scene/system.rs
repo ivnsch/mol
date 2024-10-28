@@ -84,7 +84,10 @@ pub fn handle_update_scene_event(
     assets: Res<Assets<Mol2Molecule>>,
     preloaded_assets: Res<PreloadedAssets>,
     mut bond_query: Query<&mut Transform, With<MyInterParentBond>>,
-    wrapper_query: Query<Entity, With<MyMoleculeWrapper>>,
+    mut wrapper_query: Query<
+        (Entity, &mut Transform),
+        (With<MyMoleculeWrapper>, Without<MyInterParentBond>),
+    >,
 ) {
     for _ in event.read() {
         println!("got an update scene event!");
@@ -97,7 +100,7 @@ pub fn handle_update_scene_event(
             &assets,
             &preloaded_assets,
             &mut bond_query,
-            &wrapper_query,
+            &mut wrapper_query,
         );
     }
 }
@@ -135,7 +138,10 @@ pub fn check_file_loaded(
     mut event_writer: EventWriter<AddedBoundingBox>,
     preloaded_assets: Res<PreloadedAssets>,
     mut bond_query: Query<&mut Transform, With<MyInterParentBond>>,
-    wrapper_query: Query<Entity, With<MyMoleculeWrapper>>,
+    mut wrapper_query: Query<
+        (Entity, &mut Transform),
+        (With<MyMoleculeWrapper>, Without<MyInterParentBond>),
+    >,
 ) {
     if let MolSceneContent::Mol2 {
         handle,
@@ -144,28 +150,33 @@ pub fn check_file_loaded(
     {
         if *waiting_for_async_handle {
             if let Some(mol) = assets.get(handle) {
-                // got the molecule - set flag to false so this is not called again
-                scene.content = MolSceneContent::Mol2 {
-                    handle: handle.clone(),
-                    waiting_for_async_handle: false,
-                };
+                if let Ok((_, mut wrapper_transform)) = wrapper_query.get_single_mut() {
+                    // got the molecule - set flag to false so this is not called again
+                    scene.content = MolSceneContent::Mol2 {
+                        handle: handle.clone(),
+                        waiting_for_async_handle: false,
+                    };
 
-                let bounding_box = bounding_box_for_mol(mol);
-                event_writer.send(AddedBoundingBox(bounding_box));
+                    // reset transforms (note: this just resets rotation, translation is managed with the camera)
+                    *wrapper_transform = Transform::IDENTITY;
 
-                println!("received loaded mol event, will rebuild");
-                clear(&mut commands, &mol_query);
+                    let bounding_box = bounding_box_for_mol(mol);
+                    event_writer.send(AddedBoundingBox(bounding_box));
 
-                draw_mol2_mol(
-                    &mut commands,
-                    &mut meshes,
-                    mol,
-                    &scene.style,
-                    &scene.render,
-                    &preloaded_assets,
-                    &mut bond_query,
-                    &wrapper_query,
-                );
+                    println!("received loaded mol event, will rebuild");
+                    clear(&mut commands, &mol_query);
+
+                    draw_mol2_mol(
+                        &mut commands,
+                        &mut meshes,
+                        mol,
+                        &scene.style,
+                        &scene.render,
+                        &preloaded_assets,
+                        &mut bond_query,
+                        &mut wrapper_query,
+                    );
+                }
             }
         }
     }
@@ -186,10 +197,10 @@ fn update_for_bounding_box(transform: &mut Transform, bounding_box: &BoundingBox
     transform.translation.x = -bounding_box.mid_x();
     transform.translation.y = -bounding_box.mid_y();
     transform.translation.z = -bounding_box.mid_z();
-    println!(
-        "new bounding box: {:?}, updated translation to: {:?}",
-        bounding_box, transform.translation
-    );
+    // println!(
+    //     "new bounding box: {:?}, updated translation to: {:?}",
+    //     bounding_box, transform.translation
+    // );
 }
 
 fn update_scene(
@@ -200,7 +211,10 @@ fn update_scene(
     assets: &Res<Assets<Mol2Molecule>>,
     preloaded_assets: &Res<PreloadedAssets>,
     bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
-    wrapper_query: &Query<Entity, With<MyMoleculeWrapper>>,
+    wrapper_query: &mut Query<
+        (Entity, &mut Transform),
+        (With<MyMoleculeWrapper>, Without<MyInterParentBond>),
+    >,
 ) {
     match &scene.content {
         MolSceneContent::Generated(carbon_count) => {
@@ -242,6 +256,26 @@ fn update_scene(
         }
     }
 }
+// pub fn handle_added_bounding_box(
+//     mut mol_query: Query<&mut Transform, With<MyMoleculeWrapper>>,
+//     mut events: EventReader<AddedBoundingBox>,
+// ) {
+//     if let Ok(mut transform) = mol_query.get_single_mut() {
+//         for e in events.read() {
+//             update_for_bounding_box(&mut transform, &e.0);
+//         }
+//     }
+// }
+
+// fn update_for_bounding_box(transform: &mut Transform, bounding_box: &BoundingBox) {
+//     transform.translation.x = -bounding_box.mid_x();
+//     transform.translation.y = -bounding_box.mid_y();
+//     transform.translation.z = -bounding_box.mid_z();
+//     println!(
+//         "new bounding box: {:?}, updated translation to: {:?}",
+//         bounding_box, transform.translation
+//     );
+// }
 
 fn draw_mol2_mol(
     commands: &mut Commands,
@@ -251,10 +285,13 @@ fn draw_mol2_mol(
     mol_render: &MolRender,
     assets: &Res<PreloadedAssets>,
     bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
-    wrapper_query: &Query<Entity, With<MyMoleculeWrapper>>,
+    wrapper_query: &mut Query<
+        (Entity, &mut Transform),
+        (With<MyMoleculeWrapper>, Without<MyInterParentBond>),
+    >,
 ) {
-    if let Ok(wrapper) = wrapper_query.get_single() {
-        let mol_entity = add_mol(commands, wrapper);
+    if let Ok((wrapper_entity, _)) = wrapper_query.get_single_mut() {
+        let mol_entity = add_mol(commands, wrapper_entity);
 
         if *mol_render != MolRender::Stick {
             for atom in &mol.atoms {

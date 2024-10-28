@@ -83,6 +83,7 @@ fn handle_added_bounding_box(
                     //     "fov: {}, calculated distance: {}",
                     //     perspective.fov, distance
                     // );
+                    *transform = Transform::IDENTITY;
                     transform.translation.z = distance;
                 }
             }

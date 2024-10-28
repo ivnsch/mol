@@ -21,7 +21,10 @@ pub fn add_linear_alkane(
     carbons: u32,
     preloaded_assets: &Res<PreloadedAssets>,
     query: &mut Query<&mut Transform, With<MyInterParentBond>>,
-    wrapper_query: &Query<Entity, With<MyMoleculeWrapper>>,
+    wrapper_query: &Query<
+        (Entity, &mut Transform),
+        (With<MyMoleculeWrapper>, Without<MyInterParentBond>),
+    >,
 ) {
     clear(commands, mol_query);
 
@@ -30,7 +33,7 @@ pub fn add_linear_alkane(
         return;
     }
 
-    if let Ok(wrapper) = wrapper_query.get_single() {
+    if let Ok((wrapper, _)) = wrapper_query.get_single() {
         let mol = add_mol(commands, wrapper);
 
         add_linear_alkane_with_mol(
