@@ -85,7 +85,6 @@ pub fn handle_update_scene_event(
     mut meshes: ResMut<Assets<Mesh>>,
     mut scene: ResMut<MolScene>,
     assets: Res<Assets<Mol2Molecule>>,
-    mut event_writer: EventWriter<AddedBoundingBox>,
     preloaded_assets: Res<PreloadedAssets>,
     mut bond_query: Query<&mut Transform, With<MyInterParentBond>>,
 ) {
@@ -98,7 +97,6 @@ pub fn handle_update_scene_event(
             &mut meshes,
             &mut scene,
             &assets,
-            &mut event_writer,
             &preloaded_assets,
             &mut bond_query,
         );
@@ -199,7 +197,6 @@ fn update_scene(
     meshes: &mut ResMut<Assets<Mesh>>,
     scene: &mut ResMut<MolScene>,
     assets: &Res<Assets<Mol2Molecule>>,
-    event_writer: &mut EventWriter<AddedBoundingBox>,
     preloaded_assets: &Res<PreloadedAssets>,
     bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
 ) {
@@ -220,11 +217,6 @@ fn update_scene(
         MolSceneContent::Mol2 { handle, .. } => {
             if let Some(mol) = assets.get(handle) {
                 clear(commands, &mol_query);
-
-                // center molecule
-                // we cleared the scene and will rebuild: we're adding a "new" bounding box
-                let bounding_box = bounding_box_for_mol(mol);
-                event_writer.send(AddedBoundingBox(bounding_box));
 
                 // build scene
                 draw_mol2_mol(
