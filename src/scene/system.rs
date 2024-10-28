@@ -349,10 +349,15 @@ fn create_bond(
     let direction = (p2 - p1).normalize();
     let rotation = Quat::from_rotation_arc(Vec3::Y, direction);
 
-    let mesh: Handle<Mesh> = meshes.add(Capsule3d {
-        radius: mol_style.bond_diam,
-        half_length: distance / 2.0,
-    });
+    let mesh: Handle<Mesh> = meshes.add(
+        Capsule3d {
+            radius: mol_style.bond_diam,
+            half_length: distance / 2.0,
+        }
+        .mesh()
+        .latitudes(32)
+        .longitudes(16),
+    );
 
     PbrBundle {
         mesh: mesh.clone(),
