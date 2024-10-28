@@ -247,7 +247,7 @@ pub fn setup_info_labels(commands: Commands, asset_server: Res<AssetServer>) {
 pub fn text_listener(
     mut events: EventReader<TextInputSubmitEvent>,
     mut input: ResMut<UiInputSmiles>,
-    mut event_writer: EventWriter<UpdateSceneEvent>,
+mut event_writer: EventWriter<UpdateSceneEvent>,
     mut scene: ResMut<MolScene>,
     input_entities: Res<UiInputEntities>,
 ) {

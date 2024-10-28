@@ -15,14 +15,10 @@ use self::{
     },
 };
 use crate::ui::{event::UpdateSceneEvent, resource::CarbonCount};
-use bevy::{
-    app::{App, PostStartup, Startup, Update},
-    asset::Assets,
-    ecs::system::SystemParam,
-    pbr::StandardMaterial,
-    prelude::{Mesh, ResMut},
-};
+use bevy::app::{App, PostStartup, Startup, Update};
 use bevy_mod_picking::DefaultPickingPlugins;
+use resource::PreloadedAssets;
+use system::preload_item_assets;
 
 #[allow(dead_code)]
 pub fn add_mol_scene(app: &mut App) {
@@ -37,7 +33,9 @@ pub fn add_mol_scene(app: &mut App) {
             },
             render: MolRender::BallStick,
         })
+        .insert_resource(PreloadedAssets::default())
         .add_event::<UpdateSceneEvent>()
+        .add_systems(Startup, preload_item_assets)
         .add_systems(Startup, setup_molecule)
         .add_systems(PostStartup, (trigger_init_scene_event,)) // TODO maybe it works in startup? test
         .add_systems(
@@ -48,10 +46,4 @@ pub fn add_mol_scene(app: &mut App) {
                 handle_added_bounding_box,
             ),
         );
-}
-
-#[derive(SystemParam)]
-pub struct ItemAssets<'w> {
-    meshes: ResMut<'w, Assets<Mesh>>,
-    materials: ResMut<'w, Assets<StandardMaterial>>,
 }

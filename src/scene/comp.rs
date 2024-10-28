@@ -14,12 +14,12 @@ pub fn outer_parent_spatial_bundle(rotation: Quat, translation: Vec3) -> Spatial
 pub fn sphere_pbr_bundle(
     position: Vec3,
     scale: f32,
-    material: Handle<StandardMaterial>,
-    mesh: Handle<Mesh>,
+    material: &Handle<StandardMaterial>,
+    mesh: &Handle<Mesh>,
 ) -> PbrBundle {
     PbrBundle {
-        mesh,
-        material,
+        mesh: mesh.clone(),
+        material: material.clone(),
         transform: Transform::from_translation(position).with_scale(Vec3::new(scale, scale, scale)),
         ..default()
     }

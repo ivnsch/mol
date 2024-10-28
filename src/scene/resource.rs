@@ -1,5 +1,9 @@
 use crate::{mol2_asset_plugin::Mol2Molecule, ui::resource::CarbonCount};
-use bevy::{asset::Handle, prelude::Resource};
+use bevy::{
+    asset::Handle,
+    pbr::StandardMaterial,
+    prelude::{Mesh, Resource},
+};
 
 #[derive(Debug, Resource)]
 pub struct MolScene {
@@ -34,3 +38,19 @@ pub enum MolRender {
     // just a quick experiment - larger sphere scale
     Ball,
 }
+
+#[derive(Resource, Debug, Default)]
+pub struct PreloadedAssets {
+    pub h_mat: Handle<StandardMaterial>,
+    pub c_mat: Handle<StandardMaterial>,
+    pub o_mat: Handle<StandardMaterial>,
+    pub n_mat: Handle<StandardMaterial>,
+    pub f_mat: Handle<StandardMaterial>,
+    pub p_mat: Handle<StandardMaterial>,
+    pub s_mat: Handle<StandardMaterial>,
+    pub ca_mat: Handle<StandardMaterial>,
+    pub atom_mesh: Handle<Mesh>,
+    pub bond_mat: Handle<StandardMaterial>,
+}
+
+// impl Default for P

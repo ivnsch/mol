@@ -3,26 +3,23 @@ use std::f32::consts::PI;
 use super::{
     component::MyMolecule,
     helper::add_mol,
-    resource::{MolRender, MolStyle},
+    resource::{MolRender, MolStyle, PreloadedAssets},
     system::{add_atom, clear},
-    ItemAssets,
 };
-use crate::scene::{
-    component::MyParent,
-    system::{add_bond, atom_material, atom_mesh, bond_material},
-};
+use crate::scene::{component::MyParent, system::add_bond};
 use crate::{element::Element, scene::helper::add_outer_parent};
 use bevy::prelude::*;
 
 #[allow(clippy::too_many_arguments)]
 pub fn add_linear_alkane(
     commands: &mut Commands,
-    item_assets: &mut ItemAssets,
+    meshes: &mut ResMut<Assets<Mesh>>,
     mol_style: &MolStyle,
     mol_render: &MolRender,
     mol_query: &Query<Entity, With<MyMolecule>>,
     center_first_carbon: Vec3,
     carbons: u32,
+    preloaded_assets: &Res<PreloadedAssets>,
 ) {
     clear(commands, mol_query);
 
@@ -35,30 +32,27 @@ pub fn add_linear_alkane(
 
     add_linear_alkane_with_mol(
         commands,
-        item_assets,
+        meshes,
         mol_style,
         mol_render,
         mol,
         center_first_carbon,
         carbons,
+        preloaded_assets,
     )
 }
 
 #[allow(clippy::too_many_arguments)]
 fn add_linear_alkane_with_mol(
     commands: &mut Commands,
-    item_assets: &mut ItemAssets,
+    mut meshes: &mut ResMut<Assets<Mesh>>,
     mol_style: &MolStyle,
     mol_render: &MolRender,
     molecule: Entity,
     center_first_carbon: Vec3,
     carbons: u32,
+    preloaded_assets: &Res<PreloadedAssets>,
 ) {
-    let c_material = atom_material(&mut item_assets.materials, Element::C);
-    let h_material = atom_material(&mut item_assets.materials, Element::H);
-    let bond_material = bond_material(&mut item_assets.materials);
-    let atom_mesh: Handle<Mesh> = atom_mesh(&mut item_assets.meshes);
-
     let single = carbons == 1;
     let first_parent_rotation = Quat::from_rotation_z(if single {
         0.0_f32.to_radians()
@@ -78,16 +72,13 @@ fn add_linear_alkane_with_mol(
     commands.entity(molecule).add_child(first_parent);
     add_outer_carbon(
         commands,
-        &mut item_assets.meshes,
+        meshes,
         mol_style,
         mol_render,
         first_parent,
         center_first_carbon,
         single,
-        &c_material,
-        &h_material,
-        &bond_material,
-        &atom_mesh,
+        preloaded_assets,
     );
     if single {
         return;
@@ -119,23 +110,20 @@ fn add_linear_alkane_with_mol(
     commands.entity(molecule).add_child(last_parent);
     add_outer_carbon(
         commands,
-        &mut item_assets.meshes,
+        &mut meshes,
         mol_style,
         mol_render,
         last_parent,
         center_first_carbon,
         false,
-        &c_material,
-        &h_material,
-        &bond_material,
-        &atom_mesh,
+        preloaded_assets,
     );
 
     if inner_carbons == 0 {
         add_bond(
             commands,
-            &mut item_assets.meshes,
-            &bond_material,
+            &mut meshes,
+            &preloaded_assets.bond_mat,
             mol_style,
             molecule,
             last_parent_trans,
@@ -158,8 +146,8 @@ fn add_linear_alkane_with_mol(
         if i == 0 {
             add_bond(
                 commands,
-                &mut item_assets.meshes,
-                &bond_material,
+                &mut meshes,
+                &preloaded_assets.bond_mat,
                 mol_style,
                 molecule,
                 first_parent_trans,
@@ -188,22 +176,19 @@ fn add_linear_alkane_with_mol(
         commands.entity(molecule).add_child(inner_parent);
         add_inner_carbon(
             commands,
-            &mut item_assets.meshes,
+            &mut meshes,
             mol_style,
             mol_render,
             inner_parent,
             center_first_carbon,
-            &c_material,
-            &h_material,
-            &atom_mesh,
-            &bond_material,
+            preloaded_assets,
         );
 
         if let Some(previous_trans) = previous_inner_parent_trans {
             add_bond(
                 commands,
-                &mut item_assets.meshes,
-                &bond_material,
+                &mut meshes,
+                &preloaded_assets.bond_mat,
                 mol_style,
                 molecule,
                 inner_parent_trans,
@@ -218,8 +203,8 @@ fn add_linear_alkane_with_mol(
     if let Some(previous_trans) = previous_inner_parent_trans {
         add_bond(
             commands,
-            &mut item_assets.meshes,
-            &bond_material,
+            &mut meshes,
+            &preloaded_assets.bond_mat,
             mol_style,
             molecule,
             last_parent_trans,
@@ -239,10 +224,7 @@ fn add_outer_carbon(
     parent: Entity,
     center: Vec3, // carbon center
     single: bool, // whether it's the only carbon in the molecule (methane)
-    c_material: &Handle<StandardMaterial>,
-    h_material: &Handle<StandardMaterial>,
-    bond_material: &Handle<StandardMaterial>,
-    atom_mesh: &Handle<Mesh>,
+    assets: &Res<PreloadedAssets>,
 ) {
     if *mol_render != MolRender::Stick {
         // center carbon
@@ -254,8 +236,8 @@ fn add_outer_carbon(
             center,
             &Element::C,
             "C",
-            c_material.clone(),
-            atom_mesh.clone(),
+            &assets.c_mat,
+            &assets.atom_mesh,
         );
     }
 
@@ -293,8 +275,8 @@ fn add_outer_carbon(
             p2,
             &Element::H,
             h_descr,
-            h_material.clone(),
-            atom_mesh.clone(),
+            &assets.h_mat,
+            &assets.atom_mesh,
         );
 
         add_atom(
@@ -305,8 +287,8 @@ fn add_outer_carbon(
             p3,
             &Element::H,
             h_descr,
-            h_material.clone(),
-            atom_mesh.clone(),
+            &assets.h_mat,
+            &assets.atom_mesh,
         );
 
         add_atom(
@@ -317,8 +299,8 @@ fn add_outer_carbon(
             p4,
             &Element::H,
             h_descr,
-            h_material.clone(),
-            atom_mesh.clone(),
+            &assets.h_mat,
+            &assets.atom_mesh,
         );
     }
 
@@ -327,7 +309,7 @@ fn add_outer_carbon(
     add_bond(
         commands,
         meshes,
-        bond_material,
+        &assets.bond_mat,
         mol_style,
         parent,
         center,
@@ -337,7 +319,7 @@ fn add_outer_carbon(
     add_bond(
         commands,
         meshes,
-        bond_material,
+        &assets.bond_mat,
         mol_style,
         parent,
         center,
@@ -347,7 +329,7 @@ fn add_outer_carbon(
     add_bond(
         commands,
         meshes,
-        bond_material,
+        &assets.bond_mat,
         mol_style,
         parent,
         center,
@@ -366,14 +348,14 @@ fn add_outer_carbon(
                 p1,
                 &Element::H,
                 "H",
-                c_material.clone(),
-                atom_mesh.clone(),
+                &assets.c_mat,
+                &assets.atom_mesh,
             );
         }
         add_bond(
             commands,
             meshes,
-            bond_material,
+            &assets.bond_mat,
             mol_style,
             parent,
             center,
@@ -390,10 +372,7 @@ fn add_inner_carbon(
     mol_render: &MolRender,
     parent: Entity,
     center: Vec3,
-    c_material: &Handle<StandardMaterial>,
-    h_material: &Handle<StandardMaterial>,
-    atom_mesh: &Handle<Mesh>,
-    bond_material: &Handle<StandardMaterial>,
+    assets: &Res<PreloadedAssets>,
 ) {
     if *mol_render != MolRender::Stick {
         // center carbon
@@ -405,8 +384,8 @@ fn add_inner_carbon(
             center,
             &Element::C,
             "C",
-            c_material.clone(),
-            atom_mesh.clone(),
+            &assets.c_mat,
+            &assets.atom_mesh,
         );
     }
 
@@ -440,8 +419,8 @@ fn add_inner_carbon(
             p2,
             &Element::H,
             h_descr,
-            h_material.clone(),
-            atom_mesh.clone(),
+            &assets.h_mat,
+            &assets.atom_mesh,
         );
         add_atom(
             commands,
@@ -451,13 +430,13 @@ fn add_inner_carbon(
             p3,
             &Element::H,
             h_descr,
-            h_material.clone(),
-            atom_mesh.clone(),
+            &assets.h_mat,
+            &assets.atom_mesh,
         );
         add_bond(
             commands,
             meshes,
-            bond_material,
+            &assets.bond_mat,
             mol_style,
             parent,
             center,
@@ -467,7 +446,7 @@ fn add_inner_carbon(
         add_bond(
             commands,
             meshes,
-            bond_material,
+            &assets.bond_mat,
             mol_style,
             parent,
             center,
