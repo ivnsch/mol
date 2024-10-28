@@ -26,6 +26,11 @@ use bevy_mod_picking::{
     PickableBundle,
 };
 
+const SPHERE_LAT: usize = 32;
+const SPHERE_LON: usize = 18;
+const CAPSULE_LAT: usize = 32;
+const CAPSULE_LON: usize = 16;
+
 pub fn preload_item_assets(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -304,7 +309,7 @@ pub fn atom_material(
 }
 
 pub fn atom_mesh(meshes: &mut ResMut<Assets<Mesh>>) -> Handle<Mesh> {
-    meshes.add(Sphere { ..default() }.mesh().uv(32, 18))
+    meshes.add(Sphere { ..default() }.mesh().uv(SPHERE_LAT, SPHERE_LON))
 }
 
 pub fn bond_material(materials: &mut ResMut<Assets<StandardMaterial>>) -> Handle<StandardMaterial> {
@@ -355,8 +360,8 @@ fn create_bond(
             half_length: distance / 2.0,
         }
         .mesh()
-        .latitudes(32)
-        .longitudes(16),
+        .latitudes(CAPSULE_LAT)
+        .longitudes(CAPSULE_LON),
     );
 
     PbrBundle {
