@@ -1,6 +1,6 @@
 mod comp;
 pub mod component;
-mod event;
+pub mod event;
 mod helper;
 pub mod resource;
 mod system;
@@ -13,9 +13,10 @@ use self::{
         trigger_init_scene_event,
     },
 };
-use crate::ui::{event::UpdateSceneEvent, resource::CarbonCount};
+use crate::ui::resource::CarbonCount;
 use bevy::app::{App, PostStartup, Startup, Update};
 use bevy_mod_picking::DefaultPickingPlugins;
+use event::UpdateSceneEvent;
 use resource::PreloadedAssets;
 use system::preload_item_assets;
 

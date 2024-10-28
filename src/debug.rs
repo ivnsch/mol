@@ -7,8 +7,8 @@ use bevy::{
 };
 
 use crate::{
-    bounding_box::{bounding_box_for, BoundingBox},
-    scene::component::MyMolecule,
+    bounding_box::bounding_box_for,
+    scene::{component::MyMolecule, event::AddedBoundingBox},
 };
 
 const AXIS_LEN: f32 = 3.0;
@@ -84,10 +84,6 @@ fn vertices(mesh: &Mesh) -> Option<Vec<[f32; 3]>> {
         None
     }
 }
-
-/// a new bounding box (from a molecule) was added to the scene
-#[derive(Event, Debug)]
-pub struct AddedBoundingBox(pub BoundingBox);
 
 #[allow(dead_code)]
 fn setup_polygon(

@@ -1,6 +1,7 @@
 use super::{
     comp::sphere_pbr_bundle,
     component::{MyInterParentBond, MyMolecule, Shape},
+    event::{AddedBoundingBox, UpdateSceneEvent},
     helper::add_mol,
     resource::{MolRender, MolScene, MolSceneContent, MolStyle, PreloadedAssets},
     system_mol_gen::add_linear_alkane,
@@ -8,13 +9,9 @@ use super::{
 use crate::mol2_asset_plugin::Mol2Atom;
 use crate::{
     bounding_box::BoundingBox,
-    debug::AddedBoundingBox,
     element::Element,
     mol2_asset_plugin::{bounding_box_for_mol, Mol2Molecule},
-    ui::{
-        component::TooltipMarker, event::UpdateSceneEvent, helper::add_tooltip,
-        system::despawn_all_entities,
-    },
+    ui::{component::TooltipMarker, helper::add_tooltip, system::despawn_all_entities},
 };
 use bevy::{
     color::palettes::css::{BLACK, GREEN, LIGHT_CYAN, MAGENTA, ORANGE, RED, WHITE, YELLOW},

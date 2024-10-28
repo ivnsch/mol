@@ -17,6 +17,3 @@ pub enum PlusMinusInput {
     Plus,
     Minus,
 }
-
-#[derive(Event, Debug)]
-pub struct UpdateSceneEvent;

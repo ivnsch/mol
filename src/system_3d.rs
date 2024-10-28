@@ -2,11 +2,11 @@ use std::f32::consts::PI;
 
 use crate::bounding_box::BoundingBox;
 use crate::camera_controller::{CameraController, CameraControllerPlugin};
-use crate::debug::AddedBoundingBox;
 use crate::defocus::DefocusPlugin;
 use crate::embedded_asset_plugin::EmbeddedAssetPlugin;
 use crate::mol2_asset_plugin::Mol2AssetPlugin;
 use crate::rotator::{Rotator, RotatorPlugin};
+use crate::scene::event::AddedBoundingBox;
 use bevy::pbr::CascadeShadowConfigBuilder;
 use bevy::prelude::*;
 
