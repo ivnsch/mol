@@ -1,14 +1,17 @@
 use std::f32::consts::PI;
 
 use crate::bounding_box::BoundingBox;
-use crate::camera_controller::{CameraController, CameraControllerPlugin};
 use crate::defocus::DefocusPlugin;
 use crate::embedded_asset_plugin::EmbeddedAssetPlugin;
 use crate::mol2_asset_plugin::Mol2AssetPlugin;
-use crate::rotator::{Rotator, RotatorPlugin};
+use crate::rotator::RotatorPlugin;
 use crate::scene::event::AddedBoundingBox;
 use bevy::pbr::CascadeShadowConfigBuilder;
 use bevy::prelude::*;
+use sim_controls::{
+    camera_controller::{CameraController, CameraControllerPlugin},
+    rotator::Rotator,
+};
 
 #[allow(dead_code)]
 pub fn add_3d_space(app: &mut App) {

@@ -16,6 +16,7 @@ anyhow = "1.0.90"
 wasm-bindgen = "0.2.95"
 log = "0.4.22"
 wasm-logger = "0.2"
+sim_controls = { git = "https://github.com/ivnsch/sim_controls" }
 
 [profile.release]
 strip = true

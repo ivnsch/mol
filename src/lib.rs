@@ -1,5 +1,4 @@
 mod bounding_box;
-mod camera_controller;
 #[cfg(test)]
 mod chemcore_exploration_tests;
 mod debug;
@@ -7,9 +6,9 @@ mod defocus;
 mod element;
 mod embedded_asset_plugin;
 mod init_wasm_log;
-mod scene;
 mod mol2_asset_plugin;
 mod rotator;
+mod scene;
 mod smiles;
 mod system_3d;
 mod ui;
