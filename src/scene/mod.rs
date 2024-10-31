@@ -16,7 +16,7 @@ use bevy::app::{App, PostStartup, Startup, Update};
 use bevy_mod_picking::DefaultPickingPlugins;
 use event::UpdateSceneEvent;
 use resource::PreloadedAssets;
-use system::preload_item_assets;
+use system::{preload_item_assets, update_bond_length};
 
 #[allow(dead_code)]
 pub fn add_mol_scene(app: &mut App) {
@@ -41,6 +41,7 @@ pub fn add_mol_scene(app: &mut App) {
                 handle_update_scene_event,
                 check_file_loaded,
                 handle_added_bounding_box,
+                update_bond_length,
             ),
         );
 }

@@ -378,19 +378,22 @@ pub fn add_bond(
         &preloaded_assets.bond_cyl_mesh,
     );
 
-    let entity = commands.spawn((bond, MyBond)).id();
+    let length = atom1_loc.distance(atom2_loc);
+    let entity = commands.spawn((bond, MyBond { length })).id();
     commands.entity(parent).add_child(entity);
+}
 
+#[allow(clippy::too_many_arguments)]
+pub fn update_bond_length(
+    scene: ResMut<MolScene>,
+    mut bond_query: Query<(&mut Transform, &MyBond), With<MyBond>>,
+) {
     // Only BallStick uses cylinders (instead of Capsule3d or nothing)
-    if *mol_render == MolRender::BallStick {
+    if scene.render == MolRender::BallStick {
         // set bond length via transform (instead of directly on the cylinder, which would require loading separate meshes),
         // for better performance
-        let distance = atom1_loc.distance(atom2_loc);
-        println!("will get transform of bond..");
-
-        for mut transform in bond_query.iter_mut() {
-            println!("will set bond size: {}", distance);
-            transform.scale = Vec3::new(1.0, distance, 1.0);
+        for (mut transform, bond) in bond_query.iter_mut() {
+            transform.scale = Vec3::new(1.0, bond.length, 1.0);
         }
     }
 }

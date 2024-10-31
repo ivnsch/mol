@@ -10,7 +10,9 @@ pub struct MyMoleculeWrapper;
 pub struct MyParent;
 
 #[derive(Component, Default)]
-pub struct MyBond;
+pub struct MyBond {
+    pub length: f32,
+}
 
 #[derive(Component)]
 pub struct Shape;
