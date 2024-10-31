@@ -25,7 +25,6 @@ pub fn add_mol_scene(app: &mut App) {
             content: MolSceneContent::Empty,
             style: MolStyle {
                 atom_scale_ball_stick: 0.3,
-                bond_diam: 0.07,
                 atom_scale_ball: 1.8,
             },
             render: MolRender::BallStick,

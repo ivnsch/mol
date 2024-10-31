@@ -24,7 +24,6 @@ pub enum MolSceneContent {
 #[derive(Resource, Debug)]
 pub struct MolStyle {
     pub atom_scale_ball_stick: f32,
-    pub bond_diam: f32,
     pub atom_scale_ball: f32,
 }
 
@@ -51,4 +50,5 @@ pub struct PreloadedAssets {
     pub atom_mesh: Handle<Mesh>,
     pub bond_mat: Handle<StandardMaterial>,
     pub bond_cyl_mesh: Handle<Mesh>,
+    pub bond_caps_mesh: Handle<Mesh>,
 }

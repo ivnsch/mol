@@ -24,8 +24,8 @@ use bevy_mod_picking::{
 
 const SPHERE_LAT: usize = 32;
 const SPHERE_LON: usize = 18;
-const CAPSULE_LAT: usize = 32;
-const CAPSULE_LON: usize = 16;
+// const CAPSULE_LAT: usize = 32;
+// const CAPSULE_LON: usize = 16;
 
 pub fn preload_item_assets(
     mut meshes: ResMut<Assets<Mesh>>,
@@ -47,6 +47,7 @@ pub fn preload_item_assets(
     let atom_mesh: Handle<Mesh> = atom_mesh(&mut meshes);
     let bond_mat: Handle<StandardMaterial> = bond_material(materials);
     let bond_cyl_mesh: Handle<Mesh> = bond_cylinder_mesh(&mut meshes, 0.07);
+    let bond_caps_mesh: Handle<Mesh> = bond_capsule_mesh(&mut meshes, 0.07);
 
     *preloaded_assets = PreloadedAssets {
         h_mat,
@@ -60,6 +61,7 @@ pub fn preload_item_assets(
         atom_mesh,
         bond_mat,
         bond_cyl_mesh,
+        bond_caps_mesh,
     };
 }
 
@@ -78,11 +80,9 @@ pub fn handle_update_scene_event(
     mut event: EventReader<UpdateSceneEvent>,
     mut commands: Commands,
     molecule: Query<Entity, With<MyMolecule>>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut scene: ResMut<MolScene>,
     assets: Res<Assets<Mol2Molecule>>,
     preloaded_assets: Res<PreloadedAssets>,
-    mut bond_query: Query<&mut Transform, With<MyBond>>,
     mut wrapper_query: Query<(Entity, &mut Transform), (With<MyMoleculeWrapper>, Without<MyBond>)>,
 ) {
     for _ in event.read() {
@@ -91,11 +91,9 @@ pub fn handle_update_scene_event(
         update_scene(
             &mut commands,
             &molecule,
-            &mut meshes,
             &mut scene,
             &assets,
             &preloaded_assets,
-            &mut bond_query,
             &mut wrapper_query,
         );
     }
@@ -128,12 +126,10 @@ static HIGHLIGHT_TINT: Highlight<StandardMaterial> = Highlight {
 pub fn check_file_loaded(
     mut commands: Commands,
     mol_query: Query<Entity, With<MyMolecule>>,
-    mut meshes: ResMut<Assets<Mesh>>,
     assets: Res<Assets<Mol2Molecule>>,
     mut scene: ResMut<MolScene>,
     mut event_writer: EventWriter<AddedBoundingBox>,
     preloaded_assets: Res<PreloadedAssets>,
-    mut bond_query: Query<&mut Transform, With<MyBond>>,
     mut wrapper_query: Query<(Entity, &mut Transform), (With<MyMoleculeWrapper>, Without<MyBond>)>,
 ) {
     if let MolSceneContent::Mol2 {
@@ -161,12 +157,10 @@ pub fn check_file_loaded(
 
                     draw_mol2_mol(
                         &mut commands,
-                        &mut meshes,
                         mol,
                         &scene.style,
                         &scene.render,
                         &preloaded_assets,
-                        &mut bond_query,
                         &mut wrapper_query,
                     );
                 }
@@ -199,11 +193,9 @@ fn update_for_bounding_box(transform: &mut Transform, bounding_box: &BoundingBox
 fn update_scene(
     commands: &mut Commands,
     mol_query: &Query<Entity, With<MyMolecule>>,
-    meshes: &mut ResMut<Assets<Mesh>>,
     scene: &mut ResMut<MolScene>,
     assets: &Res<Assets<Mol2Molecule>>,
     preloaded_assets: &Res<PreloadedAssets>,
-    bond_query: &mut Query<&mut Transform, With<MyBond>>,
     wrapper_query: &mut Query<(Entity, &mut Transform), (With<MyMoleculeWrapper>, Without<MyBond>)>,
 ) {
     match &scene.content {
@@ -214,12 +206,10 @@ fn update_scene(
                 // build scene
                 draw_mol2_mol(
                     commands,
-                    meshes,
                     mol,
                     &scene.style,
                     &scene.render,
                     preloaded_assets,
-                    bond_query,
                     wrapper_query,
                 );
             } else {
@@ -256,12 +246,10 @@ fn update_scene(
 
 fn draw_mol2_mol(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
     mol: &Mol2Molecule,
     mol_style: &MolStyle,
     mol_render: &MolRender,
     assets: &Res<PreloadedAssets>,
-    bond_query: &mut Query<&mut Transform, With<MyBond>>,
     wrapper_query: &mut Query<(Entity, &mut Transform), (With<MyMoleculeWrapper>, Without<MyBond>)>,
 ) {
     if let Ok((wrapper_entity, _)) = wrapper_query.get_single_mut() {
@@ -298,9 +286,7 @@ fn draw_mol2_mol(
             for bond in &mol.bonds {
                 add_bond(
                     commands,
-                    meshes,
                     &assets.bond_mat,
-                    mol_style,
                     mol_render,
                     mol_entity,
                     // ASSUMPTION: atoms ordered by id, 1-indexed, no gaps
@@ -308,7 +294,6 @@ fn draw_mol2_mol(
                     mol.atoms[bond.atom1 - 1].loc_vec3(),
                     mol.atoms[bond.atom2 - 1].loc_vec3(),
                     assets,
-                    bond_query,
                 );
             }
         }
@@ -355,27 +340,33 @@ pub fn bond_cylinder_mesh(meshes: &mut ResMut<Assets<Mesh>>, radius: f32) -> Han
     )
 }
 
+pub fn bond_capsule_mesh(meshes: &mut ResMut<Assets<Mesh>>, radius: f32) -> Handle<Mesh> {
+    meshes.add(
+        Capsule3d {
+            radius,
+            half_length: 0.5,
+        }
+        .mesh(),
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn add_bond(
     commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
     material: &Handle<StandardMaterial>,
-    mol_style: &MolStyle,
     mol_render: &MolRender,
     parent: Entity,
     atom1_loc: Vec3,
     atom2_loc: Vec3,
     preloaded_assets: &Res<PreloadedAssets>,
-    bond_query: &mut Query<&mut Transform, With<MyBond>>,
 ) {
     let bond = create_bond(
-        meshes,
         material,
-        mol_style,
         mol_render,
         atom1_loc,
         atom2_loc,
         &preloaded_assets.bond_cyl_mesh,
+        &preloaded_assets.bond_caps_mesh,
     );
 
     let length = atom1_loc.distance(atom2_loc);
@@ -399,35 +390,22 @@ pub fn update_bond_length(
 }
 
 fn create_bond(
-    meshes: &mut ResMut<Assets<Mesh>>,
     material: &Handle<StandardMaterial>,
-    mol_style: &MolStyle,
     mol_render: &MolRender,
     p1: Vec3,
     p2: Vec3,
     cylinder_mesh: &Handle<Mesh>,
+    capsule_mesh: &Handle<Mesh>,
 ) -> PbrBundle {
     let midpoint = (p1 + p2) / 2.0;
 
-    let distance = p1.distance(p2);
     let direction = (p2 - p1).normalize();
     let rotation = Quat::from_rotation_arc(Vec3::Y, direction);
-
-    let radius = mol_style.bond_diam;
-    let half_length = distance / 2.0;
 
     let mesh = match mol_render {
         // Just clone mesh. Length will be adjusted via transform for better performance
         MolRender::BallStick | MolRender::Ball => cylinder_mesh.clone(),
-        MolRender::Stick => meshes.add(
-            Capsule3d {
-                radius,
-                half_length,
-            }
-            .mesh()
-            .latitudes(CAPSULE_LAT)
-            .longitudes(CAPSULE_LON),
-        ),
+        MolRender::Stick => capsule_mesh.clone(),
     };
 
     PbrBundle {
