@@ -380,11 +380,17 @@ pub fn update_bond_length(
     mut bond_query: Query<(&mut Transform, &MyBond), With<MyBond>>,
 ) {
     // Only BallStick uses cylinders (instead of Capsule3d or nothing)
-    if scene.render == MolRender::BallStick {
+    if scene.render == MolRender::BallStick || scene.render == MolRender::Stick {
         // set bond length via transform (instead of directly on the cylinder, which would require loading separate meshes),
         // for better performance
         for (mut transform, bond) in bond_query.iter_mut() {
-            transform.scale = Vec3::new(1.0, bond.length, 1.0);
+            let length = if scene.render == MolRender::Stick {
+                // shorten a bit for corners to look smooth
+                bond.length * 0.95
+            } else {
+                bond.length
+            };
+            transform.scale = Vec3::new(1.0, length, 1.0);
         }
     }
 }
