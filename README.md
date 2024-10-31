@@ -4,10 +4,7 @@ A minimal molecule explorer.
 
 WIP!
 
-It also includes an experimental linear alkane generator.
-
 ![demo](./img/render_bs.png)
-![demo](./img/demo.gif)
 
 Try it out [live](https://cool-sunshine-4a2b07.netlify.app/)!
 
