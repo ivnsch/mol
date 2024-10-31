@@ -1,10 +1,9 @@
 use super::{
     comp::sphere_pbr_bundle,
-    component::{MyInterParentBond, MyMolecule, MyMoleculeWrapper, Shape},
+    component::{MyBond, MyMolecule, MyMoleculeWrapper, Shape},
     event::{AddedBoundingBox, UpdateSceneEvent},
     helper::{add_mol, add_mol_wrapper},
     resource::{MolRender, MolScene, MolSceneContent, MolStyle, PreloadedAssets},
-    system_mol_gen::add_linear_alkane,
 };
 use crate::mol2_asset_plugin::Mol2Atom;
 use crate::{
@@ -83,11 +82,8 @@ pub fn handle_update_scene_event(
     mut scene: ResMut<MolScene>,
     assets: Res<Assets<Mol2Molecule>>,
     preloaded_assets: Res<PreloadedAssets>,
-    mut bond_query: Query<&mut Transform, With<MyInterParentBond>>,
-    mut wrapper_query: Query<
-        (Entity, &mut Transform),
-        (With<MyMoleculeWrapper>, Without<MyInterParentBond>),
-    >,
+    mut bond_query: Query<&mut Transform, With<MyBond>>,
+    mut wrapper_query: Query<(Entity, &mut Transform), (With<MyMoleculeWrapper>, Without<MyBond>)>,
 ) {
     for _ in event.read() {
         println!("got an update scene event!");
@@ -137,11 +133,8 @@ pub fn check_file_loaded(
     mut scene: ResMut<MolScene>,
     mut event_writer: EventWriter<AddedBoundingBox>,
     preloaded_assets: Res<PreloadedAssets>,
-    mut bond_query: Query<&mut Transform, With<MyInterParentBond>>,
-    mut wrapper_query: Query<
-        (Entity, &mut Transform),
-        (With<MyMoleculeWrapper>, Without<MyInterParentBond>),
-    >,
+    mut bond_query: Query<&mut Transform, With<MyBond>>,
+    mut wrapper_query: Query<(Entity, &mut Transform), (With<MyMoleculeWrapper>, Without<MyBond>)>,
 ) {
     if let MolSceneContent::Mol2 {
         handle,
@@ -210,27 +203,10 @@ fn update_scene(
     scene: &mut ResMut<MolScene>,
     assets: &Res<Assets<Mol2Molecule>>,
     preloaded_assets: &Res<PreloadedAssets>,
-    bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
-    wrapper_query: &mut Query<
-        (Entity, &mut Transform),
-        (With<MyMoleculeWrapper>, Without<MyInterParentBond>),
-    >,
+    bond_query: &mut Query<&mut Transform, With<MyBond>>,
+    wrapper_query: &mut Query<(Entity, &mut Transform), (With<MyMoleculeWrapper>, Without<MyBond>)>,
 ) {
     match &scene.content {
-        MolSceneContent::Generated(carbon_count) => {
-            add_linear_alkane(
-                commands,
-                meshes,
-                &scene.style,
-                &scene.render,
-                mol_query,
-                Vec3::ZERO,
-                carbon_count.0,
-                preloaded_assets,
-                bond_query,
-                wrapper_query,
-            );
-        }
         MolSceneContent::Mol2 { handle, .. } => {
             if let Some(mol) = assets.get(handle) {
                 clear(commands, mol_query);
@@ -254,6 +230,7 @@ fn update_scene(
                 );
             }
         }
+        MolSceneContent::Empty => {}
     }
 }
 // pub fn handle_added_bounding_box(
@@ -284,11 +261,8 @@ fn draw_mol2_mol(
     mol_style: &MolStyle,
     mol_render: &MolRender,
     assets: &Res<PreloadedAssets>,
-    bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
-    wrapper_query: &mut Query<
-        (Entity, &mut Transform),
-        (With<MyMoleculeWrapper>, Without<MyInterParentBond>),
-    >,
+    bond_query: &mut Query<&mut Transform, With<MyBond>>,
+    wrapper_query: &mut Query<(Entity, &mut Transform), (With<MyMoleculeWrapper>, Without<MyBond>)>,
 ) {
     if let Ok((wrapper_entity, _)) = wrapper_query.get_single_mut() {
         let mol_entity = add_mol(commands, wrapper_entity);
@@ -333,7 +307,6 @@ fn draw_mol2_mol(
                     // this seems to be always the case in mol2 files
                     mol.atoms[bond.atom1 - 1].loc_vec3(),
                     mol.atoms[bond.atom2 - 1].loc_vec3(),
-                    true,
                     assets,
                     bond_query,
                 );
@@ -392,9 +365,8 @@ pub fn add_bond(
     parent: Entity,
     atom1_loc: Vec3,
     atom2_loc: Vec3,
-    is_inter_parent: bool,
     preloaded_assets: &Res<PreloadedAssets>,
-    bond_query: &mut Query<&mut Transform, With<MyInterParentBond>>,
+    bond_query: &mut Query<&mut Transform, With<MyBond>>,
 ) {
     let bond = create_bond(
         meshes,
@@ -406,12 +378,7 @@ pub fn add_bond(
         &preloaded_assets.bond_cyl_mesh,
     );
 
-    let entity = if is_inter_parent {
-        commands.spawn((bond, MyInterParentBond))
-    } else {
-        commands.spawn(bond)
-    }
-    .id();
+    let entity = commands.spawn((bond, MyBond)).id();
     commands.entity(parent).add_child(entity);
 
     // Only BallStick uses cylinders (instead of Capsule3d or nothing)
@@ -419,7 +386,10 @@ pub fn add_bond(
         // set bond length via transform (instead of directly on the cylinder, which would require loading separate meshes),
         // for better performance
         let distance = atom1_loc.distance(atom2_loc);
+        println!("will get transform of bond..");
+
         for mut transform in bond_query.iter_mut() {
+            println!("will set bond size: {}", distance);
             transform.scale = Vec3::new(1.0, distance, 1.0);
         }
     }

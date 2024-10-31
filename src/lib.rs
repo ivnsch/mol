@@ -9,7 +9,6 @@ mod init_wasm_log;
 mod mol2_asset_plugin;
 mod rotator;
 mod scene;
-mod smiles;
 mod system_3d;
 mod ui;
 

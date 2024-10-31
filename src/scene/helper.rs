@@ -1,7 +1,4 @@
-use super::{
-    comp::outer_parent_spatial_bundle,
-    component::{MyMolecule, MyMoleculeWrapper, MyParent},
-};
+use super::component::{MyMolecule, MyMoleculeWrapper};
 use bevy::prelude::*;
 use sim_controls::rotator::MouseController;
 
@@ -25,21 +22,6 @@ pub fn add_mol_wrapper(commands: &mut Commands) -> Entity {
             MyMoleculeWrapper,
             MouseController::default(),
             SpatialBundle { ..default() },
-        ))
-        .id()
-}
-
-pub fn add_outer_parent(
-    commands: &mut Commands,
-    name: &str,
-    rotation: Quat,
-    translation: Vec3,
-) -> Entity {
-    commands
-        .spawn((
-            Name::new(name.to_string()),
-            outer_parent_spatial_bundle(rotation, translation),
-            MyParent,
         ))
         .id()
 }

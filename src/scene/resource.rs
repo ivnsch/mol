@@ -1,4 +1,4 @@
-use crate::{mol2_asset_plugin::Mol2Molecule, ui::resource::CarbonCount};
+use crate::mol2_asset_plugin::Mol2Molecule;
 use bevy::{
     asset::Handle,
     pbr::StandardMaterial,
@@ -14,7 +14,7 @@ pub struct MolScene {
 
 #[derive(Debug)]
 pub enum MolSceneContent {
-    Generated(CarbonCount),
+    Empty,
     Mol2 {
         handle: Handle<Mol2Molecule>,
         waiting_for_async_handle: bool,
@@ -24,7 +24,6 @@ pub enum MolSceneContent {
 #[derive(Resource, Debug)]
 pub struct MolStyle {
     pub atom_scale_ball_stick: f32,
-    pub bond_len: f32,
     pub bond_diam: f32,
     pub atom_scale_ball: f32,
 }

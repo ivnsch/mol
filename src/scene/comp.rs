@@ -1,16 +1,5 @@
 use bevy::prelude::*;
 
-pub fn outer_parent_spatial_bundle(rotation: Quat, translation: Vec3) -> SpatialBundle {
-    SpatialBundle {
-        transform: Transform {
-            rotation,
-            translation,
-            ..Default::default()
-        },
-        ..default()
-    }
-}
-
 pub fn sphere_pbr_bundle(
     position: Vec3,
     scale: f32,

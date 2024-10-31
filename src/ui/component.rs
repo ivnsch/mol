@@ -1,13 +1,6 @@
 use bevy::{ecs::query::QueryData, prelude::Component};
 
 #[derive(Component, Default, QueryData)]
-pub struct CarbonCountLabelMarker;
-#[derive(Component, Default)]
-pub struct CarbonCountPlusMarker;
-#[derive(Component, Default)]
-pub struct CarbonCountMinusMarker;
-
-#[derive(Component, Default, QueryData)]
 pub struct RotXLabelMarker;
 #[derive(Component, Default)]
 pub struct RotYLabelMarker;

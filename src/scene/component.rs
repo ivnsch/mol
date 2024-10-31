@@ -10,7 +10,7 @@ pub struct MyMoleculeWrapper;
 pub struct MyParent;
 
 #[derive(Component, Default)]
-pub struct MyInterParentBond;
+pub struct MyBond;
 
 #[derive(Component)]
 pub struct Shape;

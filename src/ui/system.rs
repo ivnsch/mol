@@ -4,23 +4,13 @@ use crate::{
         event::UpdateSceneEvent,
         resource::{MolRender, MolScene, MolSceneContent},
     },
-    smiles::process_smiles,
-    ui::{
-        component::{
-            CarbonCountLabelMarker, CarbonCountMinusMarker, CarbonCountPlusMarker,
-            LoadMol2ButtonMarker,
-        },
-        event::{PlusMinusInput, PlusMinusInputEvent},
-        helper::add_info_labels,
-        resource::{UiInputEntities, UiInputSmiles},
-    },
+    ui::{component::LoadMol2ButtonMarker, helper::add_info_labels},
 };
 use bevy::{
-    color::palettes::css::{BLACK, BLUE, GRAY, GREEN},
+    color::palettes::css::{BLUE, GRAY},
     prelude::*,
 };
-use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
-use std::cmp;
+use bevy_simple_text_input::TextInputInactive;
 
 use super::{
     comp::add_controls_box,
@@ -28,7 +18,6 @@ use super::{
         ControlsButtonMarker, MolExampleFile, MolNameMarker, PopupMarker, StyleBallMarker,
         StyleBallStickMarker, StyleStickMarker,
     },
-    resource::CarbonCount,
 };
 
 /// removes all entities matching a query (1 filter)
@@ -39,121 +28,6 @@ where
     for e in query.iter() {
         let entity = commands.entity(e);
         entity.despawn_recursive();
-    }
-}
-
-/// handles interactions with plus button
-/// it updates the button's appearance and sends an event
-#[allow(clippy::type_complexity)]
-pub fn plus_button_handler(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &mut BorderColor),
-        (Changed<Interaction>, With<CarbonCountPlusMarker>),
-    >,
-    mut event_writer: EventWriter<PlusMinusInputEvent>,
-) {
-    for (interaction, mut color, mut border_color) in &mut interaction_query {
-        plus_minus_button_handler(
-            (interaction, &mut color, &mut border_color),
-            &mut event_writer,
-            PlusMinusInput::Plus,
-        );
-    }
-}
-
-/// handles interactions with minus button
-/// it updates the button's appearance and sends an event
-#[allow(clippy::type_complexity)]
-pub fn minus_button_handler(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &mut BorderColor),
-        (Changed<Interaction>, With<CarbonCountMinusMarker>),
-    >,
-    mut event_writer: EventWriter<PlusMinusInputEvent>,
-) {
-    for (interaction, mut color, mut border_color) in &mut interaction_query {
-        plus_minus_button_handler(
-            (interaction, &mut color, &mut border_color),
-            &mut event_writer,
-            PlusMinusInput::Minus,
-        );
-    }
-}
-
-/// handles interactions with plus or minus button
-/// it updates the button's appearance and sends an event
-fn plus_minus_button_handler(
-    interaction: (&Interaction, &mut BackgroundColor, &mut BorderColor),
-    event_writer: &mut EventWriter<PlusMinusInputEvent>,
-    plus_minus: PlusMinusInput,
-) {
-    let (interaction, color, border_color) = interaction;
-    match *interaction {
-        Interaction::Pressed => {
-            *color = GREEN.into();
-            border_color.0 = GREEN.into();
-            println!("sending plus minus event: {:?}", plus_minus);
-            event_writer.send(PlusMinusInputEvent { plus_minus });
-        }
-        Interaction::Hovered => {}
-        Interaction::None => {
-            *color = BLACK.into();
-            border_color.0 = BLACK.into();
-        }
-    }
-}
-
-/// handles carbon count inputs
-/// basically, we listen to clicks on the +/- buttons
-/// then update the scene accordingly
-// TODO error handling (show on ui)
-#[allow(clippy::too_many_arguments)]
-pub fn listen_carbon_count_ui_inputs(
-    mut events: EventReader<PlusMinusInputEvent>,
-    mut event_writer: EventWriter<UpdateSceneEvent>,
-    mut scene: ResMut<MolScene>,
-) {
-    for input in events.read() {
-        // update
-        let current = match scene.content {
-            MolSceneContent::Generated(carbon_count) => carbon_count,
-            // if currently not displaying the generator, start a new one with 5 (just some number) carbons
-            MolSceneContent::Mol2 { .. } => CarbonCount(5),
-        };
-        let increment: i32 = match input.plus_minus {
-            PlusMinusInput::Plus => 1,
-            PlusMinusInput::Minus => -1,
-        };
-
-        // TODO replace this with update the scene and send rebuild scene event!
-
-        let new_i = current.0 as i32 + increment;
-        // pressing "-" at 0 stays at 0
-        let new = cmp::max(0, new_i) as u32;
-
-        // we generate a new scene with the new carbon count
-        let scene_content = MolSceneContent::Generated(CarbonCount(new));
-        scene.content = scene_content;
-        event_writer.send(UpdateSceneEvent);
-    }
-}
-
-/// Updates carbon count label to reflect scene state
-pub fn update_carbon_count_label(
-    mut commands: Commands,
-    input_entities: Res<UiInputEntities>,
-    mut label_query: Query<(Entity, &mut Text), With<CarbonCountLabelMarker>>,
-    scene: Res<MolScene>,
-) {
-    let entity_id = commands.entity(input_entities.carbon_count).id();
-    for (entity, mut text) in label_query.iter_mut() {
-        if entity == entity_id {
-            // update value
-            text.sections[0].value = match &scene.content {
-                MolSceneContent::Generated(carbon_count) => carbon_count.0.to_string(),
-                MolSceneContent::Mol2 { .. } => "".to_string(),
-            };
-        }
     }
 }
 
@@ -246,33 +120,6 @@ pub fn setup_info_labels(commands: Commands, asset_server: Res<AssetServer>) {
     add_info_labels(commands, &font);
 }
 
-pub fn text_listener(
-    mut events: EventReader<TextInputSubmitEvent>,
-    mut input: ResMut<UiInputSmiles>,
-    mut event_writer: EventWriter<UpdateSceneEvent>,
-    mut scene: ResMut<MolScene>,
-    input_entities: Res<UiInputEntities>,
-) {
-    for text_input in events.read() {
-        if text_input.entity == input_entities.smiles {
-            println!("submitted smiles: {:?}", text_input.value);
-            input.0 = text_input.value.clone();
-            match process_smiles(input.0.clone()) {
-                Ok(carbon_count) => {
-                    let scene_content = MolSceneContent::Generated(carbon_count);
-                    scene.content = scene_content;
-                    event_writer.send(UpdateSceneEvent);
-                }
-                Err(e) => {
-                    println!("Error processing smiles: {e}")
-                }
-            }
-        } else {
-            println!("unknown entity: {:?}", text_input.value);
-        }
-    }
-}
-
 pub fn focus(
     query: Query<(Entity, &Interaction), Changed<Interaction>>,
     mut text_input_query: Query<(Entity, &mut TextInputInactive, &mut BorderColor)>,
@@ -323,8 +170,8 @@ pub fn update_ui_for_scene(
 ) {
     if let Ok(mut label) = mol_name_label.get_single_mut() {
         match &scene.content {
-            MolSceneContent::Generated(_) => {
-                label.sections[0].value = "Unnamed".to_string();
+            MolSceneContent::Empty => {
+                label.sections[0].value = "Empty".to_string();
             }
             MolSceneContent::Mol2 { handle, .. } => {
                 if let Some(mol) = assets.get(handle) {
