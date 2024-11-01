@@ -1,6 +1,6 @@
 use super::{
     comp::sphere_pbr_bundle,
-    component::{MyBond, MyDoubleBond, MyMolecule, MyMoleculeWrapper, Shape},
+    component::{MyBond, MyMolecule, MyMoleculeWrapper, Shape},
     event::{AddedBoundingBox, UpdateSceneEvent},
     helper::{add_mol, add_mol_wrapper},
     resource::{MolRender, MolScene, MolSceneContent, MolStyle, PreloadedAssets},
@@ -364,86 +364,36 @@ pub fn add_bond(
 ) {
     let length = atom1_loc.distance(atom2_loc);
 
-    let mut bonds = vec![];
-
-    if bond.type_ == "3" {
-        let bond_coords = calculate_triple_bond_coords(
+    let bond_coords = match bond.type_.as_ref() {
+        "2" => calculate_double_bond_coords(
             BondCoords {
                 start: atom1_loc,
                 end: atom2_loc,
             },
             0.1,
-        );
-        bonds.push(create_bond(
-            material,
-            mol_render,
-            bond_coords.bond1_start,
-            bond_coords.bond1_end,
-            &preloaded_assets.bond_cyl_mesh,
-            &preloaded_assets.bond_caps_mesh,
-            bond,
-        ));
-
-        bonds.push(create_bond(
-            material,
-            mol_render,
-            bond_coords.bond2_start,
-            bond_coords.bond2_end,
-            &preloaded_assets.bond_cyl_mesh,
-            &preloaded_assets.bond_caps_mesh,
-            bond,
-        ));
-
-        bonds.push(create_bond(
-            material,
-            mol_render,
-            bond_coords.bond3_start,
-            bond_coords.bond3_end,
-            &preloaded_assets.bond_cyl_mesh,
-            &preloaded_assets.bond_caps_mesh,
-            bond,
-        ));
-    } else if bond.type_ == "2" {
-        let bond_coords = calculate_double_bond_coords(
+        ),
+        "3" => calculate_triple_bond_coords(
             BondCoords {
                 start: atom1_loc,
                 end: atom2_loc,
             },
             0.1,
+        ),
+        "1" | _ => vec![BondCoords {
+            start: atom1_loc,
+            end: atom2_loc,
+        }],
+    };
+
+    for bond_coord in bond_coords {
+        let bond = create_bond(
+            material,
+            mol_render,
+            bond_coord.start,
+            bond_coord.end,
+            &preloaded_assets.bond_cyl_mesh,
+            &preloaded_assets.bond_caps_mesh,
         );
-
-        bonds.push(create_bond(
-            material,
-            mol_render,
-            bond_coords.bond1_start,
-            bond_coords.bond1_end,
-            &preloaded_assets.bond_cyl_mesh,
-            &preloaded_assets.bond_caps_mesh,
-            bond,
-        ));
-
-        bonds.push(create_bond(
-            material,
-            mol_render,
-            bond_coords.bond2_start,
-            bond_coords.bond2_end,
-            &preloaded_assets.bond_cyl_mesh,
-            &preloaded_assets.bond_caps_mesh,
-            bond,
-        ));
-    } else {
-        bonds.push(create_bond(
-            material,
-            mol_render,
-            atom1_loc,
-            atom2_loc,
-            &preloaded_assets.bond_cyl_mesh,
-            &preloaded_assets.bond_caps_mesh,
-            bond,
-        ));
-    }
-
-    for bond in bonds {
         let entity = commands.spawn((bond, MyBond { length })).id();
         commands.entity(parent).add_child(entity);
     }
@@ -456,25 +406,7 @@ struct BondCoords {
     end: Vec3,
 }
 
-#[derive(Debug)]
-struct DoubleBondCoords {
-    bond1_start: Vec3,
-    bond1_end: Vec3,
-    bond2_start: Vec3,
-    bond2_end: Vec3,
-}
-
-#[derive(Debug)]
-struct TripleBondCoords {
-    bond1_start: Vec3,
-    bond1_end: Vec3,
-    bond2_start: Vec3,
-    bond2_end: Vec3,
-    bond3_start: Vec3,
-    bond3_end: Vec3,
-}
-
-fn calculate_double_bond_coords(line: BondCoords, distance: f32) -> DoubleBondCoords {
+fn calculate_double_bond_coords(line: BondCoords, distance: f32) -> Vec<BondCoords> {
     let v = line.end - line.start;
 
     // choose arbitrary vector that is not parallel to v - axis vectors here for brevity
@@ -495,15 +427,19 @@ fn calculate_double_bond_coords(line: BondCoords, distance: f32) -> DoubleBondCo
     // point 2, that is the start of the other bond same thing in the opposite direction
     let point2 = -u * distance;
 
-    DoubleBondCoords {
-        bond1_start: line.start + point1,
-        bond1_end: line.end + point1,
-        bond2_start: line.start + point2,
-        bond2_end: line.end + point2,
-    }
+    vec![
+        BondCoords {
+            start: line.start + point1,
+            end: line.end + point1,
+        },
+        BondCoords {
+            start: line.start + point2,
+            end: line.end + point2,
+        },
+    ]
 }
 
-fn calculate_triple_bond_coords(line: BondCoords, distance: f32) -> TripleBondCoords {
+fn calculate_triple_bond_coords(line: BondCoords, distance: f32) -> Vec<BondCoords> {
     let v = line.end - line.start;
 
     // choose arbitrary vector that is not parallel to v - axis vectors here for brevity
@@ -524,14 +460,20 @@ fn calculate_triple_bond_coords(line: BondCoords, distance: f32) -> TripleBondCo
     // point 2, that is the start of the other bond same thing in the opposite direction
     let point2 = -u * distance;
 
-    TripleBondCoords {
-        bond1_start: line.start + point1,
-        bond1_end: line.end + point1,
-        bond2_start: line.start + point2,
-        bond2_end: line.end + point2,
-        bond3_start: line.start,
-        bond3_end: line.end,
-    }
+    vec![
+        BondCoords {
+            start: line.start + point1,
+            end: line.end + point1,
+        },
+        BondCoords {
+            start: line.start + point2,
+            end: line.end + point2,
+        },
+        BondCoords {
+            start: line.start,
+            end: line.end,
+        },
+    ]
 }
 
 /// set bond length via transform (instead of directly on the mesh, which would require loading separate ones),
@@ -562,7 +504,6 @@ fn create_bond(
     p2: Vec3,
     cylinder_mesh: &Handle<Mesh>,
     capsule_mesh: &Handle<Mesh>,
-    bond: &Mol2Bond,
 ) -> PbrBundle {
     let midpoint = (p1 + p2) / 2.0;
 
