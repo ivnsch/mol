@@ -364,7 +364,15 @@ pub fn add_bond(
 ) {
     let length = atom1_loc.distance(atom2_loc);
 
-    let start_points = calculate_double_bond_coords(
+    // let bond_coords = calculate_double_bond_coords(
+    //     BondCoords {
+    //         start: atom1_loc,
+    //         end: atom2_loc,
+    //     },
+    //     0.1,
+    // );
+
+    let bond_coords = calculate_triple_bond_coords(
         BondCoords {
             start: atom1_loc,
             end: atom2_loc,
@@ -374,37 +382,67 @@ pub fn add_bond(
 
     let mut bonds = vec![];
 
-    if bond.type_ == "2" {
-        bonds.push(create_bond(
-            material,
-            mol_render,
-            start_points.bond1_start,
-            start_points.bond1_end,
-            &preloaded_assets.bond_cyl_mesh,
-            &preloaded_assets.bond_caps_mesh,
-            bond,
-        ));
+    bonds.push(create_bond(
+        material,
+        mol_render,
+        bond_coords.bond1_start,
+        bond_coords.bond1_end,
+        &preloaded_assets.bond_cyl_mesh,
+        &preloaded_assets.bond_caps_mesh,
+        bond,
+    ));
 
-        bonds.push(create_bond(
-            material,
-            mol_render,
-            start_points.bond2_start,
-            start_points.bond2_end,
-            &preloaded_assets.bond_cyl_mesh,
-            &preloaded_assets.bond_caps_mesh,
-            bond,
-        ));
-    } else {
-        bonds.push(create_bond(
-            material,
-            mol_render,
-            atom1_loc,
-            atom2_loc,
-            &preloaded_assets.bond_cyl_mesh,
-            &preloaded_assets.bond_caps_mesh,
-            bond,
-        ));
-    }
+    bonds.push(create_bond(
+        material,
+        mol_render,
+        bond_coords.bond2_start,
+        bond_coords.bond2_end,
+        &preloaded_assets.bond_cyl_mesh,
+        &preloaded_assets.bond_caps_mesh,
+        bond,
+    ));
+
+    bonds.push(create_bond(
+        material,
+        mol_render,
+        bond_coords.bond3_start,
+        bond_coords.bond3_end,
+        &preloaded_assets.bond_cyl_mesh,
+        &preloaded_assets.bond_caps_mesh,
+        bond,
+    ));
+
+    // if bond.type_ == "2" {
+    //     bonds.push(create_bond(
+    //         material,
+    //         mol_render,
+    //         bond_coords.bond1_start,
+    //         bond_coords.bond1_end,
+    //         &preloaded_assets.bond_cyl_mesh,
+    //         &preloaded_assets.bond_caps_mesh,
+    //         bond,
+    //     ));
+
+    //     bonds.push(create_bond(
+    //         material,
+    //         mol_render,
+    //         bond_coords.bond2_start,
+    //         bond_coords.bond2_end,
+    //         &preloaded_assets.bond_cyl_mesh,
+    //         &preloaded_assets.bond_caps_mesh,
+    //         bond,
+    //     ));
+    // } else {
+    //     bonds.push(create_bond(
+    //         material,
+    //         mol_render,
+    //         atom1_loc,
+    //         atom2_loc,
+    //         &preloaded_assets.bond_cyl_mesh,
+    //         &preloaded_assets.bond_caps_mesh,
+    //         bond,
+    //     ));
+    // }
 
     for bond in bonds {
         let entity = commands.spawn((bond, MyBond { length })).id();
@@ -425,6 +463,16 @@ struct DoubleBondCoords {
     bond1_end: Vec3,
     bond2_start: Vec3,
     bond2_end: Vec3,
+}
+
+#[derive(Debug)]
+struct TripleBondCoords {
+    bond1_start: Vec3,
+    bond1_end: Vec3,
+    bond2_start: Vec3,
+    bond2_end: Vec3,
+    bond3_start: Vec3,
+    bond3_end: Vec3,
 }
 
 fn calculate_double_bond_coords(line: BondCoords, distance: f32) -> DoubleBondCoords {
@@ -453,6 +501,37 @@ fn calculate_double_bond_coords(line: BondCoords, distance: f32) -> DoubleBondCo
         bond1_end: line.end + point1,
         bond2_start: line.start + point2,
         bond2_end: line.end + point2,
+    }
+}
+
+fn calculate_triple_bond_coords(line: BondCoords, distance: f32) -> TripleBondCoords {
+    let v = line.end - line.start;
+
+    // choose arbitrary vector that is not parallel to v - axis vectors here for brevity
+    let not_parallel_unit_vector = if v.dot(Vec3::X).abs() < 0.99 {
+        Vec3::X
+    } else if v.dot(Vec3::Y).abs() < 0.99 {
+        Vec3::Y
+    } else {
+        Vec3::Z
+    };
+
+    // cross product of v and arbitrary vector above is a vector perpendicular to v
+    // this is the direction across which we want to position the bond's start
+    let u = v.cross(not_parallel_unit_vector).normalize();
+
+    // multiply direction unit vector by distance to get actual start
+    let point1 = u * distance;
+    // point 2, that is the start of the other bond same thing in the opposite direction
+    let point2 = -u * distance;
+
+    TripleBondCoords {
+        bond1_start: line.start + point1,
+        bond1_end: line.end + point1,
+        bond2_start: line.start + point2,
+        bond2_end: line.end + point2,
+        bond3_start: line.start,
+        bond3_end: line.end,
     }
 }
 
