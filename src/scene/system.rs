@@ -374,7 +374,7 @@ pub fn add_bond(
     //         start: atom1_loc,
     //         end: atom2_loc,
     //     },
-    //     0.08,
+    //     0.1,
     // );
     // let bond_coords = vec![c.bond1, c.bond2, c.bond3];
 
@@ -395,7 +395,7 @@ pub fn add_bond(
                     start: atom1_loc,
                     end: atom2_loc,
                 },
-                0.08,
+                0.1,
             );
             vec![c.bond1, c.bond2, c.bond3]
         }
