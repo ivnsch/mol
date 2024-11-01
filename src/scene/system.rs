@@ -1,11 +1,11 @@
 use super::{
     comp::sphere_pbr_bundle,
-    component::{MyBond, MyMolecule, MyMoleculeWrapper, Shape},
+    component::{MyBond, MyDoubleBond, MyMolecule, MyMoleculeWrapper, Shape},
     event::{AddedBoundingBox, UpdateSceneEvent},
     helper::{add_mol, add_mol_wrapper},
     resource::{MolRender, MolScene, MolSceneContent, MolStyle, PreloadedAssets},
 };
-use crate::mol2_asset_plugin::Mol2Atom;
+use crate::mol2_asset_plugin::{Mol2Atom, Mol2Bond};
 use crate::{
     bounding_box::BoundingBox,
     element::Element,
@@ -294,6 +294,7 @@ fn draw_mol2_mol(
                     mol.atoms[bond.atom1 - 1].loc_vec3(),
                     mol.atoms[bond.atom2 - 1].loc_vec3(),
                     assets,
+                    bond,
                 );
             }
         }
@@ -359,21 +360,90 @@ pub fn add_bond(
     atom1_loc: Vec3,
     atom2_loc: Vec3,
     preloaded_assets: &Res<PreloadedAssets>,
+    bond: &Mol2Bond,
 ) {
-    let bond = create_bond(
-        material,
-        mol_render,
-        atom1_loc,
-        atom2_loc,
-        &preloaded_assets.bond_cyl_mesh,
-        &preloaded_assets.bond_caps_mesh,
+    let length = atom1_loc.distance(atom2_loc);
+
+    let start_points = calculate_double_bond_coords(
+        BondCoords {
+            start: atom1_loc,
+            end: atom2_loc,
+        },
+        0.1,
     );
 
-    let length = atom1_loc.distance(atom2_loc);
-    let entity = commands.spawn((bond, MyBond { length })).id();
-    commands.entity(parent).add_child(entity);
+    let bond_bundle = create_bond(
+        material,
+        mol_render,
+        start_points.bond1_start,
+        start_points.bond1_end,
+        &preloaded_assets.bond_cyl_mesh,
+        &preloaded_assets.bond_caps_mesh,
+        bond,
+    );
+
+    let bond_bundle_2 = create_bond(
+        material,
+        mol_render,
+        start_points.bond2_start,
+        start_points.bond2_end,
+        &preloaded_assets.bond_cyl_mesh,
+        &preloaded_assets.bond_caps_mesh,
+        bond,
+    );
+
+    let entity1 = commands.spawn((bond_bundle, MyBond { length })).id();
+    let entity2 = commands.spawn((bond_bundle_2, MyBond { length })).id();
+    commands.entity(parent).push_children(&[entity1, entity2]);
+    // commands.entity(parent).push_children(&[entity1]);
 }
 
+/// Represents location of a bond, start and end are atom (center) positions
+#[derive(Debug)]
+struct BondCoords {
+    start: Vec3,
+    end: Vec3,
+}
+
+#[derive(Debug)]
+struct DoubleBondCoords {
+    bond1_start: Vec3,
+    bond1_end: Vec3,
+    bond2_start: Vec3,
+    bond2_end: Vec3,
+}
+
+fn calculate_double_bond_coords(line: BondCoords, distance: f32) -> DoubleBondCoords {
+    let v = line.end - line.start;
+
+    // choose arbitrary vector that is not parallel to v - axis vectors here for brevity
+    let not_parallel_unit_vector = if v.dot(Vec3::X).abs() < 0.99 {
+        Vec3::X
+    } else if v.dot(Vec3::Y).abs() < 0.99 {
+        Vec3::Y
+    } else {
+        Vec3::Z
+    };
+
+    // cross product of v and arbitrary vector above is a vector perpendicular to v
+    // this is the direction across which we want to position the bond's start
+    let u = v.cross(not_parallel_unit_vector).normalize();
+
+    // multiply direction unit vector by distance to get actual start
+    let point1 = u * distance;
+    // point 2, that is the start of the other bond same thing in the opposite direction
+    let point2 = -u * distance;
+
+    DoubleBondCoords {
+        bond1_start: line.start + point1,
+        bond1_end: line.end + point1,
+        bond2_start: line.start + point2,
+        bond2_end: line.end + point2,
+    }
+}
+
+/// set bond length via transform (instead of directly on the mesh, which would require loading separate ones),
+/// for better performance
 #[allow(clippy::too_many_arguments)]
 pub fn update_bond_length(
     scene: ResMut<MolScene>,
@@ -381,8 +451,6 @@ pub fn update_bond_length(
 ) {
     // Only BallStick uses cylinders (instead of Capsule3d or nothing)
     if scene.render == MolRender::BallStick || scene.render == MolRender::Stick {
-        // set bond length via transform (instead of directly on the cylinder, which would require loading separate meshes),
-        // for better performance
         for (mut transform, bond) in bond_query.iter_mut() {
             let length = if scene.render == MolRender::Stick {
                 // shorten a bit for corners to look smooth
@@ -402,6 +470,7 @@ fn create_bond(
     p2: Vec3,
     cylinder_mesh: &Handle<Mesh>,
     capsule_mesh: &Handle<Mesh>,
+    bond: &Mol2Bond,
 ) -> PbrBundle {
     let midpoint = (p1 + p2) / 2.0;
 

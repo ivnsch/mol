@@ -14,5 +14,10 @@ pub struct MyBond {
     pub length: f32,
 }
 
+#[derive(Component, Default)]
+pub struct MyDoubleBond {
+    pub length: f32,
+}
+
 #[derive(Component)]
 pub struct Shape;
