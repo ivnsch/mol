@@ -48,6 +48,8 @@ pub fn preload_item_assets(
     let bond_mat: Handle<StandardMaterial> = bond_material(materials);
     let bond_cyl_mesh: Handle<Mesh> = bond_cylinder_mesh(&mut meshes, 0.07);
     let bond_caps_mesh: Handle<Mesh> = bond_capsule_mesh(&mut meshes, 0.07);
+    let bond_small_cyl_mesh: Handle<Mesh> = bond_cylinder_mesh(&mut meshes, 0.04);
+    let bond_small_caps_mesh: Handle<Mesh> = bond_capsule_mesh(&mut meshes, 0.04);
 
     *preloaded_assets = PreloadedAssets {
         h_mat,
@@ -62,6 +64,8 @@ pub fn preload_item_assets(
         bond_mat,
         bond_cyl_mesh,
         bond_caps_mesh,
+        bond_small_cyl_mesh,
+        bond_small_caps_mesh,
     };
 }
 
@@ -391,20 +395,32 @@ pub fn add_bond(
         }],
     };
 
+    let bond_diam = match bond_coords.len() {
+        2 | 3 => BondDiameter::Small,
+        _ => BondDiameter::Regular,
+    };
+
+    let mesh = match (mol_render, bond_diam) {
+        (MolRender::BallStick, BondDiameter::Regular) => preloaded_assets.bond_cyl_mesh.clone(),
+        (MolRender::BallStick, BondDiameter::Small) => preloaded_assets.bond_small_cyl_mesh.clone(),
+        (MolRender::Stick, BondDiameter::Regular) => preloaded_assets.bond_caps_mesh.clone(),
+        (MolRender::Stick, BondDiameter::Small) => preloaded_assets.bond_small_caps_mesh.clone(),
+        // not used, can be anything
+        (MolRender::Ball, _) => preloaded_assets.bond_cyl_mesh.clone(),
+    };
+
     for bond_coord in bond_coords {
-        let bond = create_bond(
-            material,
-            mol_render,
-            bond_coord.start,
-            bond_coord.end,
-            &preloaded_assets.bond_cyl_mesh,
-            &preloaded_assets.bond_caps_mesh,
-        );
+        let bond = create_bond(material, bond_coord.start, bond_coord.end, &mesh);
         let entity = commands.spawn((bond, MyBond { length })).id();
         commands.entity(parent).add_child(entity);
     }
 }
 
+#[derive(Debug)]
+enum BondDiameter {
+    Regular,
+    Small,
+}
 /// Represents location of a bond, start and end are atom (center) positions
 #[derive(Debug)]
 struct BondCoords {
@@ -493,22 +509,14 @@ pub fn update_bond_length(
 
 fn create_bond(
     material: &Handle<StandardMaterial>,
-    mol_render: &MolRender,
     p1: Vec3,
     p2: Vec3,
-    cylinder_mesh: &Handle<Mesh>,
-    capsule_mesh: &Handle<Mesh>,
+    mesh: &Handle<Mesh>,
 ) -> PbrBundle {
     let midpoint = (p1 + p2) / 2.0;
 
     let direction = (p2 - p1).normalize();
     let rotation = Quat::from_rotation_arc(Vec3::Y, direction);
-
-    let mesh = match mol_render {
-        // Just clone mesh. Length will be adjusted via transform for better performance
-        MolRender::BallStick | MolRender::Ball => cylinder_mesh.clone(),
-        MolRender::Stick => capsule_mesh.clone(),
-    };
 
     PbrBundle {
         mesh: mesh.clone(),

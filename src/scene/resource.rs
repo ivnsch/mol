@@ -51,4 +51,6 @@ pub struct PreloadedAssets {
     pub bond_mat: Handle<StandardMaterial>,
     pub bond_cyl_mesh: Handle<Mesh>,
     pub bond_caps_mesh: Handle<Mesh>,
+    pub bond_small_cyl_mesh: Handle<Mesh>,
+    pub bond_small_caps_mesh: Handle<Mesh>,
 }
