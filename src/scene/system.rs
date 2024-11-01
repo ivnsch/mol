@@ -372,30 +372,44 @@ pub fn add_bond(
         0.1,
     );
 
-    let bond_bundle = create_bond(
-        material,
-        mol_render,
-        start_points.bond1_start,
-        start_points.bond1_end,
-        &preloaded_assets.bond_cyl_mesh,
-        &preloaded_assets.bond_caps_mesh,
-        bond,
-    );
+    let mut bonds = vec![];
 
-    let bond_bundle_2 = create_bond(
-        material,
-        mol_render,
-        start_points.bond2_start,
-        start_points.bond2_end,
-        &preloaded_assets.bond_cyl_mesh,
-        &preloaded_assets.bond_caps_mesh,
-        bond,
-    );
+    if bond.type_ == "2" {
+        bonds.push(create_bond(
+            material,
+            mol_render,
+            start_points.bond1_start,
+            start_points.bond1_end,
+            &preloaded_assets.bond_cyl_mesh,
+            &preloaded_assets.bond_caps_mesh,
+            bond,
+        ));
 
-    let entity1 = commands.spawn((bond_bundle, MyBond { length })).id();
-    let entity2 = commands.spawn((bond_bundle_2, MyBond { length })).id();
-    commands.entity(parent).push_children(&[entity1, entity2]);
-    // commands.entity(parent).push_children(&[entity1]);
+        bonds.push(create_bond(
+            material,
+            mol_render,
+            start_points.bond2_start,
+            start_points.bond2_end,
+            &preloaded_assets.bond_cyl_mesh,
+            &preloaded_assets.bond_caps_mesh,
+            bond,
+        ));
+    } else {
+        bonds.push(create_bond(
+            material,
+            mol_render,
+            atom1_loc,
+            atom2_loc,
+            &preloaded_assets.bond_cyl_mesh,
+            &preloaded_assets.bond_caps_mesh,
+            bond,
+        ));
+    }
+
+    for bond in bonds {
+        let entity = commands.spawn((bond, MyBond { length })).id();
+        commands.entity(parent).add_child(entity);
+    }
 }
 
 /// Represents location of a bond, start and end are atom (center) positions
