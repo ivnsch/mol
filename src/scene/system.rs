@@ -368,6 +368,16 @@ pub fn add_bond(
 ) {
     let length = atom1_loc.distance(atom2_loc);
 
+    // // uncomment this and comment next block to see all bonds as triple bonds (or double, adjusted)
+    // let c = calculate_triple_bond_coords(
+    //     &BondCoords {
+    //         start: atom1_loc,
+    //         end: atom2_loc,
+    //     },
+    //     0.08,
+    // );
+    // let bond_coords = vec![c.bond1, c.bond2, c.bond3];
+
     let bond_coords = match bond.type_.as_ref() {
         "2" => {
             let c = calculate_double_bond_coords(
