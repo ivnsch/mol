@@ -367,7 +367,7 @@ pub fn add_bond(
     let bond_coords = match bond.type_.as_ref() {
         "2" => {
             let c = calculate_double_bond_coords(
-                BondCoords {
+                &BondCoords {
                     start: atom1_loc,
                     end: atom2_loc,
                 },
@@ -377,7 +377,7 @@ pub fn add_bond(
         }
         "3" => {
             let c = calculate_triple_bond_coords(
-                BondCoords {
+                &BondCoords {
                     start: atom1_loc,
                     end: atom2_loc,
                 },
@@ -425,7 +425,7 @@ struct TripleBondCoords {
     bond3: BondCoords,
 }
 
-fn calculate_double_bond_coords(line: BondCoords, distance: f32) -> DoubleBondCoords {
+fn calculate_double_bond_coords(line: &BondCoords, distance: f32) -> DoubleBondCoords {
     let v = line.end - line.start;
 
     // choose arbitrary vector that is not parallel to v - axis vectors here for brevity
@@ -458,36 +458,11 @@ fn calculate_double_bond_coords(line: BondCoords, distance: f32) -> DoubleBondCo
     }
 }
 
-fn calculate_triple_bond_coords(line: BondCoords, distance: f32) -> TripleBondCoords {
-    let v = line.end - line.start;
-
-    // choose arbitrary vector that is not parallel to v - axis vectors here for brevity
-    let not_parallel_unit_vector = if v.dot(Vec3::X).abs() < 0.99 {
-        Vec3::X
-    } else if v.dot(Vec3::Y).abs() < 0.99 {
-        Vec3::Y
-    } else {
-        Vec3::Z
-    };
-
-    // cross product of v and arbitrary vector above is a vector perpendicular to v
-    // this is the direction across which we want to position the bond's start
-    let u = v.cross(not_parallel_unit_vector).normalize();
-
-    // multiply direction unit vector by distance to get actual start
-    let point1 = u * distance;
-    // point 2, that is the start of the other bond same thing in the opposite direction
-    let point2 = -u * distance;
-
+fn calculate_triple_bond_coords(line: &BondCoords, distance: f32) -> TripleBondCoords {
+    let double_bond_coords = calculate_double_bond_coords(line, distance);
     TripleBondCoords {
-        bond1: BondCoords {
-            start: line.start + point1,
-            end: line.end + point1,
-        },
-        bond2: BondCoords {
-            start: line.start + point2,
-            end: line.end + point2,
-        },
+        bond1: double_bond_coords.bond1,
+        bond2: double_bond_coords.bond2,
         bond3: BondCoords {
             start: line.start,
             end: line.end,
