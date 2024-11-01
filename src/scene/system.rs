@@ -364,85 +364,84 @@ pub fn add_bond(
 ) {
     let length = atom1_loc.distance(atom2_loc);
 
-    // let bond_coords = calculate_double_bond_coords(
-    //     BondCoords {
-    //         start: atom1_loc,
-    //         end: atom2_loc,
-    //     },
-    //     0.1,
-    // );
-
-    let bond_coords = calculate_triple_bond_coords(
-        BondCoords {
-            start: atom1_loc,
-            end: atom2_loc,
-        },
-        0.1,
-    );
-
     let mut bonds = vec![];
 
-    bonds.push(create_bond(
-        material,
-        mol_render,
-        bond_coords.bond1_start,
-        bond_coords.bond1_end,
-        &preloaded_assets.bond_cyl_mesh,
-        &preloaded_assets.bond_caps_mesh,
-        bond,
-    ));
+    if bond.type_ == "3" {
+        let bond_coords = calculate_triple_bond_coords(
+            BondCoords {
+                start: atom1_loc,
+                end: atom2_loc,
+            },
+            0.1,
+        );
+        bonds.push(create_bond(
+            material,
+            mol_render,
+            bond_coords.bond1_start,
+            bond_coords.bond1_end,
+            &preloaded_assets.bond_cyl_mesh,
+            &preloaded_assets.bond_caps_mesh,
+            bond,
+        ));
 
-    bonds.push(create_bond(
-        material,
-        mol_render,
-        bond_coords.bond2_start,
-        bond_coords.bond2_end,
-        &preloaded_assets.bond_cyl_mesh,
-        &preloaded_assets.bond_caps_mesh,
-        bond,
-    ));
+        bonds.push(create_bond(
+            material,
+            mol_render,
+            bond_coords.bond2_start,
+            bond_coords.bond2_end,
+            &preloaded_assets.bond_cyl_mesh,
+            &preloaded_assets.bond_caps_mesh,
+            bond,
+        ));
 
-    bonds.push(create_bond(
-        material,
-        mol_render,
-        bond_coords.bond3_start,
-        bond_coords.bond3_end,
-        &preloaded_assets.bond_cyl_mesh,
-        &preloaded_assets.bond_caps_mesh,
-        bond,
-    ));
+        bonds.push(create_bond(
+            material,
+            mol_render,
+            bond_coords.bond3_start,
+            bond_coords.bond3_end,
+            &preloaded_assets.bond_cyl_mesh,
+            &preloaded_assets.bond_caps_mesh,
+            bond,
+        ));
+    } else if bond.type_ == "2" {
+        let bond_coords = calculate_double_bond_coords(
+            BondCoords {
+                start: atom1_loc,
+                end: atom2_loc,
+            },
+            0.1,
+        );
 
-    // if bond.type_ == "2" {
-    //     bonds.push(create_bond(
-    //         material,
-    //         mol_render,
-    //         bond_coords.bond1_start,
-    //         bond_coords.bond1_end,
-    //         &preloaded_assets.bond_cyl_mesh,
-    //         &preloaded_assets.bond_caps_mesh,
-    //         bond,
-    //     ));
+        bonds.push(create_bond(
+            material,
+            mol_render,
+            bond_coords.bond1_start,
+            bond_coords.bond1_end,
+            &preloaded_assets.bond_cyl_mesh,
+            &preloaded_assets.bond_caps_mesh,
+            bond,
+        ));
 
-    //     bonds.push(create_bond(
-    //         material,
-    //         mol_render,
-    //         bond_coords.bond2_start,
-    //         bond_coords.bond2_end,
-    //         &preloaded_assets.bond_cyl_mesh,
-    //         &preloaded_assets.bond_caps_mesh,
-    //         bond,
-    //     ));
-    // } else {
-    //     bonds.push(create_bond(
-    //         material,
-    //         mol_render,
-    //         atom1_loc,
-    //         atom2_loc,
-    //         &preloaded_assets.bond_cyl_mesh,
-    //         &preloaded_assets.bond_caps_mesh,
-    //         bond,
-    //     ));
-    // }
+        bonds.push(create_bond(
+            material,
+            mol_render,
+            bond_coords.bond2_start,
+            bond_coords.bond2_end,
+            &preloaded_assets.bond_cyl_mesh,
+            &preloaded_assets.bond_caps_mesh,
+            bond,
+        ));
+    } else {
+        bonds.push(create_bond(
+            material,
+            mol_render,
+            atom1_loc,
+            atom2_loc,
+            &preloaded_assets.bond_cyl_mesh,
+            &preloaded_assets.bond_caps_mesh,
+            bond,
+        ));
+    }
 
     for bond in bonds {
         let entity = commands.spawn((bond, MyBond { length })).id();
