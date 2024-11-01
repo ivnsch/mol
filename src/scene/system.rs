@@ -365,20 +365,26 @@ pub fn add_bond(
     let length = atom1_loc.distance(atom2_loc);
 
     let bond_coords = match bond.type_.as_ref() {
-        "2" => calculate_double_bond_coords(
-            BondCoords {
-                start: atom1_loc,
-                end: atom2_loc,
-            },
-            0.1,
-        ),
-        "3" => calculate_triple_bond_coords(
-            BondCoords {
-                start: atom1_loc,
-                end: atom2_loc,
-            },
-            0.1,
-        ),
+        "2" => {
+            let c = calculate_double_bond_coords(
+                BondCoords {
+                    start: atom1_loc,
+                    end: atom2_loc,
+                },
+                0.1,
+            );
+            vec![c.bond1, c.bond2]
+        }
+        "3" => {
+            let c = calculate_triple_bond_coords(
+                BondCoords {
+                    start: atom1_loc,
+                    end: atom2_loc,
+                },
+                0.1,
+            );
+            vec![c.bond1, c.bond2, c.bond3]
+        }
         "1" | _ => vec![BondCoords {
             start: atom1_loc,
             end: atom2_loc,
@@ -406,40 +412,20 @@ struct BondCoords {
     end: Vec3,
 }
 
-fn calculate_double_bond_coords(line: BondCoords, distance: f32) -> Vec<BondCoords> {
-    let v = line.end - line.start;
-
-    // choose arbitrary vector that is not parallel to v - axis vectors here for brevity
-    let not_parallel_unit_vector = if v.dot(Vec3::X).abs() < 0.99 {
-        Vec3::X
-    } else if v.dot(Vec3::Y).abs() < 0.99 {
-        Vec3::Y
-    } else {
-        Vec3::Z
-    };
-
-    // cross product of v and arbitrary vector above is a vector perpendicular to v
-    // this is the direction across which we want to position the bond's start
-    let u = v.cross(not_parallel_unit_vector).normalize();
-
-    // multiply direction unit vector by distance to get actual start
-    let point1 = u * distance;
-    // point 2, that is the start of the other bond same thing in the opposite direction
-    let point2 = -u * distance;
-
-    vec![
-        BondCoords {
-            start: line.start + point1,
-            end: line.end + point1,
-        },
-        BondCoords {
-            start: line.start + point2,
-            end: line.end + point2,
-        },
-    ]
+#[derive(Debug)]
+struct DoubleBondCoords {
+    bond1: BondCoords,
+    bond2: BondCoords,
 }
 
-fn calculate_triple_bond_coords(line: BondCoords, distance: f32) -> Vec<BondCoords> {
+#[derive(Debug)]
+struct TripleBondCoords {
+    bond1: BondCoords,
+    bond2: BondCoords,
+    bond3: BondCoords,
+}
+
+fn calculate_double_bond_coords(line: BondCoords, distance: f32) -> DoubleBondCoords {
     let v = line.end - line.start;
 
     // choose arbitrary vector that is not parallel to v - axis vectors here for brevity
@@ -460,20 +446,53 @@ fn calculate_triple_bond_coords(line: BondCoords, distance: f32) -> Vec<BondCoor
     // point 2, that is the start of the other bond same thing in the opposite direction
     let point2 = -u * distance;
 
-    vec![
-        BondCoords {
+    DoubleBondCoords {
+        bond1: BondCoords {
             start: line.start + point1,
             end: line.end + point1,
         },
-        BondCoords {
+        bond2: BondCoords {
             start: line.start + point2,
             end: line.end + point2,
         },
-        BondCoords {
+    }
+}
+
+fn calculate_triple_bond_coords(line: BondCoords, distance: f32) -> TripleBondCoords {
+    let v = line.end - line.start;
+
+    // choose arbitrary vector that is not parallel to v - axis vectors here for brevity
+    let not_parallel_unit_vector = if v.dot(Vec3::X).abs() < 0.99 {
+        Vec3::X
+    } else if v.dot(Vec3::Y).abs() < 0.99 {
+        Vec3::Y
+    } else {
+        Vec3::Z
+    };
+
+    // cross product of v and arbitrary vector above is a vector perpendicular to v
+    // this is the direction across which we want to position the bond's start
+    let u = v.cross(not_parallel_unit_vector).normalize();
+
+    // multiply direction unit vector by distance to get actual start
+    let point1 = u * distance;
+    // point 2, that is the start of the other bond same thing in the opposite direction
+    let point2 = -u * distance;
+
+    TripleBondCoords {
+        bond1: BondCoords {
+            start: line.start + point1,
+            end: line.end + point1,
+        },
+        bond2: BondCoords {
+            start: line.start + point2,
+            end: line.end + point2,
+        },
+        bond3: BondCoords {
             start: line.start,
             end: line.end,
         },
-    ]
+    }
 }
 
 /// set bond length via transform (instead of directly on the mesh, which would require loading separate ones),
